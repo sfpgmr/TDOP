@@ -1,6 +1,4 @@
-# sgl
-
-[![Build Status](https://travis-ci.org/sfpgmr/sgl.svg?branch=master)](https://travis-ci.org/sfpgmr/sgl)
+# sgl2
 
 glsl風の文法でwasmを出力する言語をJavaScript(node.js)で作っていきます。
 ゲームを作るための言語を意図しています。
