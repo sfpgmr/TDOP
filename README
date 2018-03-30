@@ -1,17 +1,25 @@
-TDOP, Top Down Operator Precedence
+# sgl
 
-Douglas Crockford
-douglas@crockford.com
+[![Build Status](https://travis-ci.org/sfpgmr/sgl.svg?branch=master)](https://travis-ci.org/sfpgmr/sgl)
 
-2010-11-12
+glsl風の文法でwasmを出力する言語をJavaScript(node.js)で作っていきます。
+ゲームを作るための言語を意図しています。
 
-tdop.html contains a description of Vaughn Pratt's Top Down Operator Precedence,
-and describes a parser for Simplified JavaScript in Simplified JavaScript.
+## 実装の目標
 
-index.html parses parse.js and displays its AST. The page depends on json2.js
-(which is not included in this project) and on parse.js and tokens.js (which
-are).
+1. wasmコードをコマンドラインで生成できるようにする
+2. コルーチンを言語サポートする
+3. インライン・アセンブルを可能にする。もしくはwasm動的コンパイル機能をライブラリサポート、もしくは言語サポートする。
 
-tdop.js contains a Simplified JavaScript parser. See tdop.html for commentary.
+## ベースとするプロジェクト
 
-tokens.js produces an array of token objects from a string.
+以下のレポジトリのコードをベースまたは参考にして、作成します。
+
+* [TDOP](https://github.com/douglascrockford/TDOP)
+* [glsl-tokenizer](https://github.com/glslify/glsl-tokenizer) 
+* [glsl-transpiler](https://github.com/stackgl/glsl-transpiler) 
+* [glsl-parser](https://github.com/stackgl/glsl-parser)
+
+## License
+
+MIT, see [LICENSE.md](LICENSE.md) for further information.
