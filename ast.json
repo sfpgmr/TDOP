@@ -1,0 +1,26 @@
+[
+    {
+        "value": "=",
+        "arity": "binary",
+        "first": {
+            "value": "a",
+            "arity": "name"
+        },
+        "second": {
+            "value": 1,
+            "arity": "literal"
+        }
+    },
+    {
+        "value": "=",
+        "arity": "binary",
+        "first": {
+            "value": "b",
+            "arity": "name"
+        },
+        "second": {
+            "value": 1,
+            "arity": "literal"
+        }
+    }
+]

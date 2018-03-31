@@ -22,12 +22,12 @@
 <body>
 <h1>オレオレ言語を作る</h1>
 <h2>デモページ</h2>
-<textarea id="INPU"></textarea>
+<textarea id="INPUT"></textarea>
 <input id="PARSE" value=parse type=button>
 <pre id=OUTPUT></pre>
 <script type="module">
 
-import './tokens.mjs';
+import tokenize from './tokens.mjs';
 import make_parse from './parse.mjs';
 
 /*jslint evil: true */
@@ -64,7 +64,7 @@ Object.prototype.error = function (message, t) {
     function go(source) {
         var string, tree;
         try {
-            tree = parse(source);
+            tree = parse(tokenize(source));
             string = JSON.stringify(tree, ['key', 'name', 'message',
                 'value', 'arity', 'first', 'second', 'third', 'fourth'], 4);
         } catch (e) {
@@ -76,8 +76,7 @@ Object.prototype.error = function (message, t) {
             .replace(/[<]/g, '&lt;');
     }
 
-    go("var make_parse = " + (make_parse.toSource ?
-            make_parse.toSource() : make_parse.toString()) + ";");
+    go("var a = 1;");
 
     document.getElementById('PARSE').onclick = function (e) {
         go(document.getElementById('INPUT').value);

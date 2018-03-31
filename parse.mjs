@@ -544,8 +544,9 @@ export default function  make_parse () {
         return this;
     });
 
-    return function (source) {
-        tokens = source.tokens("=<>!+-*&|/%^", "=<>&|");
+    return function (t) {
+        tokens = t;
+//        tokens = source.tokens("=<>!+-*&|/%^", "=<>&|");
         token_nr = 0;
         scope = null;
         new_scope();
