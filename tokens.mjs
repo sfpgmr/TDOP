@@ -27,6 +27,7 @@ export default function tokenize (source,prefix, suffix) {
     var c;                      // The current character.
     var from;                   // The index of the start of the token.
     var i = 0;                  // The index of the current character.
+    let lineNo = 1;
     var length = source.length;
     var n;                      // The number value.
     var q;                      // The quote character.
@@ -41,6 +42,7 @@ export default function tokenize (source,prefix, suffix) {
         return {
             type: type,
             value: value,
+            line:lineNo,
             from: from,
             to: i
         };
@@ -68,6 +70,10 @@ export default function tokenize (source,prefix, suffix) {
     while (c) {
         from = i;
 
+        if(c === '\n'){
+            ++lineNo;
+            //from = i = 0;
+        }
 // Ignore whitespace.
 
         if (c <= ' ') {
@@ -205,6 +211,7 @@ export default function tokenize (source,prefix, suffix) {
                         break;
                     case 'n':
                         c = '\n';
+                        //++lineNo;
                         break;
                     case 'r':
                         c = '\r';
@@ -241,6 +248,7 @@ export default function tokenize (source,prefix, suffix) {
                 if (c === '\n' || c === '\r' || c === '') {
                     break;
                 }
+
                 i += 1;
             }
 

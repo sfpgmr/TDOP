@@ -7,7 +7,14 @@
 
 //jslint for, this
 
-export default function  make_parse () {
+Object.prototype.error = function (message, t) {
+    t = t || this;
+    t.name = "SyntaxError";
+    t.message = message;
+    throw t;
+};
+
+export default function make_parse() {
     var scope;
     var symbol_table = {};
     var token;
@@ -111,6 +118,7 @@ export default function  make_parse () {
             t.error("Unexpected token.");
         }
         token = Object.create(o);
+        token.line = t.line;
         token.from = t.from;
         token.to = t.to;
         token.value = v;
@@ -280,6 +288,13 @@ export default function  make_parse () {
     constant("Object", {});
     constant("Array", []);
 
+    symbol('u32');
+    symbol('u64');
+    symbol('i32');
+    symbol('i64');
+    symbol('f32');
+    symbol('f64');
+
     symbol("(literal)").nud = itself;
 
     symbol("this").nud = function () {
@@ -299,6 +314,13 @@ export default function  make_parse () {
         this.third = expression(0);
         this.arity = "ternary";
         return this;
+    });
+
+    infix(":", 20, function (left) {
+        this.first = left;
+        advance();
+        this.second = token.name;
+
     });
 
     infixr("&&", 30);
@@ -346,11 +368,17 @@ export default function  make_parse () {
             this.third = a;
         } else {
             this.arity = "binary";
-            this.first = left;
+            debugger;
+            if(left.arity === 'function'){
+                //this.first = symbol("(name)");
+                this.arity = "call";
+            } else {
+                this.first = left;
+            }
             this.second = a;
-            if ((left.arity !== "unary" || left.id !== "function") &&
-                    left.arity !== "name" && left.id !== "(" &&
-                    left.id !== "&&" && left.id !== "||" && left.id !== "?") {
+            if ((left.arity !== "unary" || left.arity !== "function") &&
+                left.arity !== "name" && left.id !== "(" &&
+                left.id !== "&&" && left.id !== "||" && left.id !== "?") {
                 left.error("Expected a variable name.");
             }
         }
@@ -378,38 +406,53 @@ export default function  make_parse () {
         return e;
     });
 
-    prefix("function", function () {
-        var a = [];
-        new_scope();
-        if (token.arity === "name") {
-            scope.define(token);
-            this.name = token.value;
-            advance();
-        }
-        advance("(");
-        if (token.id !== ")") {
-            while (true) {
-                if (token.arity !== "name") {
-                    token.error("Expected a parameter name.");
-                }
-                scope.define(token);
-                a.push(token);
-                advance();
-                if (token.id !== ",") {
-                    break;
-                }
-                advance(",");
-            }
-        }
-        this.first = a;
-        advance(")");
-        advance("{");
-        this.second = statements();
-        scope.pop();
-        advance("}");
-        this.arity = "function";
-        return this;
-    });
+    // const func_ = function () {
+    //     // 引数を格納する配列
+    //     let a = [];
+
+    //     // 関数名がついてるかどうか
+    //     if (token.arity === "name") {
+    //         // 名前があれば現在のスコープに定義する
+    //         scope.define(token);
+    //         // 関数名
+    //         this.name = token.value;
+    //         advance();
+    //     }
+    //     // ローカル・スコープを開く
+    //     new_scope();
+    //     // 1つ進める
+    //     advance("(");// 期待する文字は ')'
+    //     if (token.id !== ")") {
+    //         // 変数を取り出して配列に格納する
+    //         while (true) {
+    //             if (token.arity !== "name") {
+    //                 token.error("Expected a parameter name.");
+    //             }
+    //             scope.define(token);
+    //             a.push(token);
+    //             advance();
+    //             if (token.id !== ",") {
+    //                 break;
+    //             }
+    //             advance(",");
+    //         }
+    //     }
+    //     // ツリーの左に格納
+    //     this.first = a;
+    //     advance(")");
+    //     // 戻り値の型の指定
+    //     advance("{");
+    //     // ツリーの右に文を格納
+    //     this.second = statements();
+    //     scope.pop();
+    //     advance("}");
+    //     this.arity = "function";
+    //     return this;
+    // };
+
+    // // function式・文
+    // prefix("function", func_)
+    //     .std = func_;
 
     prefix("[", function () {
         var a = [];
@@ -464,37 +507,131 @@ export default function  make_parse () {
         return a;
     });
 
-    stmt("var", function () {
-        var a = [];
-        var n;
-        var t;
-        while (true) {
-            n = token;
-            if (n.arity !== "name") {
-                n.error("Expected a new variable name.");
-            }
-            scope.define(n);
-            advance();
-            if (token.id === "=") {
-                t = token;
-                advance("=");
-                t.first = n;
-                t.second = expression(0);
-                t.arity = "binary";
-                a.push(t);
-            }
-            if (token.id !== ",") {
-                break;
-            }
-            advance(",");
-        }
-        advance(";");
-        return (a.length === 0)
-            ? null
-            : (a.length === 1)
-                ? a[0]
-                : a;
-    });
+
+    function var_(str, std) {
+        stmt(str,
+            std || function () {
+                var a = [];
+                var n;
+                var t;
+                while (true) {
+                    n = token;
+                    if (n.arity !== "name") {
+                        n.error("Expected a new variable name.");
+                    }
+                    scope.define(n);
+                    n.type = str;
+                    advance();
+                    // 関数定義かどうか
+                    if (token.id === "(") {
+                        advance();
+                        debugger;
+                        // ローカル・スコープを開く
+                        new_scope();
+                        if (token.id !== ")") {
+                            // 変数を取り出して配列に格納する
+                            while (true) {
+                                const t = token;
+                                if (token.arity !== "name") {
+                                    token.error("Expected a parameter name.");
+                                }
+                                advance();
+                                token.type = t.value;
+                                scope.define(token);
+                                a.push(token);
+                                advance();
+                                if (token.id !== ",") {
+                                    break;
+                                }
+                                advance(",");
+                            }
+                        }
+                        // ツリーの左に格納
+                        n.first = a;
+                        advance(")");
+                        // 戻り値の型の指定
+                        advance("{");
+                        // ツリーの右に文を格納
+                        n.second = statements();
+                        scope.pop();
+                        advance("}");
+                        n.arity = "function";
+                        return n;
+                    }
+
+                    if (token.id === "=") {
+                        t = token;
+                        advance("=");
+                        t.first = n;
+                        t.second = expression(0);
+                        t.second.type = str;
+                        t.arity = "binary";
+                        a.push(t);
+                    }
+
+
+                    if (token.id !== ",") {
+                        break;
+                    }
+                    advance(",");
+                }
+                advance(";");
+                return (a.length === 0)
+                    ? null
+                    : (a.length === 1)
+                        ? a[0]
+                        : a;
+            });
+    }
+
+    var_("u32");
+    var_("u64");
+    var_("i32");
+    var_("i64");
+    var_("f32");
+    var_("f64");
+
+    // stmt("var", function () {
+    //     var a = [];
+    //     var n;
+    //     var t;
+    //     while (true) {
+    //         n = token;
+    //         if (n.arity !== "name") {
+    //             n.error("Expected a new variable name.");
+    //         }
+    //         scope.define(n);
+    //         advance();
+    //         if(token.id !== ':'){
+    //             token.error('no type specified.');
+    //         }
+    //         advance(':');
+    //         debugger;
+    //         const tp = symbol_table[token.value];
+    //         if(!tp) token.error('illegal type specified.');
+    //         n.type = tp.id;
+    //         advance();
+    //         if (token.id === "=") {
+    //             t = token;
+    //             advance("=");
+    //             t.first = n;
+    //             t.second = expression(0);
+    //             t.second.type = tp.id;
+    //             t.arity = "binary";
+    //             a.push(t);
+    //         }
+    //         if (token.id !== ",") {
+    //             break;
+    //         }
+    //         advance(",");
+    //     }
+    //     advance(";");
+    //     return (a.length === 0)
+    //         ? null
+    //         : (a.length === 1)
+    //             ? a[0]
+    //             : a;
+    // });
 
     stmt("if", function () {
         advance("(");
@@ -546,7 +683,7 @@ export default function  make_parse () {
 
     return function (t) {
         tokens = t;
-//        tokens = source.tokens("=<>!+-*&|/%^", "=<>&|");
+        //        tokens = source.tokens("=<>!+-*&|/%^", "=<>&|");
         token_nr = 0;
         scope = null;
         new_scope();

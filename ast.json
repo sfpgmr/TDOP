@@ -1,26 +1,64 @@
 [
     {
-        "value": "=",
-        "arity": "binary",
-        "first": {
-            "value": "a",
-            "arity": "name"
-        },
+        "value": "func",
+        "arity": "function",
+        "first": [
+            {
+                "value": "b",
+                "arity": "name",
+                "type": "f64"
+            }
+        ],
         "second": {
-            "value": 1,
-            "arity": "literal"
-        }
+            "value": "return",
+            "arity": "statement",
+            "first": {
+                "value": "b",
+                "arity": "name",
+                "type": "f64"
+            }
+        },
+        "type": "f64"
     },
     {
         "value": "=",
         "arity": "binary",
         "first": {
             "value": "b",
-            "arity": "name"
+            "arity": "name",
+            "type": "f64"
         },
         "second": {
-            "value": 1,
-            "arity": "literal"
+            "value": "(",
+            "arity": "binary",
+            "first": {
+                "value": "func",
+                "arity": "name",
+                "first": [
+                    {
+                        "value": "b",
+                        "arity": "name",
+                        "type": "f64"
+                    }
+                ],
+                "second": {
+                    "value": "return",
+                    "arity": "statement",
+                    "first": {
+                        "value": "b",
+                        "arity": "name",
+                        "type": "f64"
+                    }
+                },
+                "type": "f64"
+            },
+            "second": [
+                {
+                    "value": 1,
+                    "arity": "literal"
+                }
+            ],
+            "type": "f64"
         }
     }
 ]
