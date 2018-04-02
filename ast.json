@@ -1,19 +1,23 @@
 [
     {
+        "id": "(name)",
         "value": "func",
         "arity": "function",
         "first": [
             {
-                "value": "b",
+                "id": "(name)",
+                "value": "a",
                 "arity": "name",
                 "type": "f64"
             }
         ],
         "second": {
+            "id": "return",
             "value": "return",
             "arity": "statement",
             "first": {
-                "value": "b",
+                "id": "(name)",
+                "value": "a",
                 "arity": "name",
                 "type": "f64"
             }
@@ -21,31 +25,55 @@
         "type": "f64"
     },
     {
+        "id": "=",
         "value": "=",
         "arity": "binary",
         "first": {
-            "value": "b",
+            "id": "(name)",
+            "value": "d",
             "arity": "name",
             "type": "f64"
         },
         "second": {
+            "id": "(literal)",
+            "value": 2,
+            "arity": "literal",
+            "type": "f64"
+        }
+    },
+    {
+        "id": "=",
+        "value": "=",
+        "arity": "binary",
+        "first": {
+            "id": "(name)",
+            "value": "b",
+            "arity": "name",
+            "type": "f32"
+        },
+        "second": {
+            "id": "(",
             "value": "(",
-            "arity": "binary",
+            "arity": "call",
             "first": {
+                "id": "(name)",
                 "value": "func",
                 "arity": "name",
                 "first": [
                     {
-                        "value": "b",
+                        "id": "(name)",
+                        "value": "a",
                         "arity": "name",
                         "type": "f64"
                     }
                 ],
                 "second": {
+                    "id": "return",
                     "value": "return",
                     "arity": "statement",
                     "first": {
-                        "value": "b",
+                        "id": "(name)",
+                        "value": "a",
                         "arity": "name",
                         "type": "f64"
                     }
@@ -54,7 +82,68 @@
             },
             "second": [
                 {
-                    "value": 1,
+                    "id": "*",
+                    "value": "*",
+                    "arity": "binary",
+                    "first": {
+                        "id": "(literal)",
+                        "value": 1,
+                        "arity": "literal"
+                    },
+                    "second": {
+                        "id": "(name)",
+                        "value": "d",
+                        "arity": "name",
+                        "type": "f64"
+                    }
+                }
+            ],
+            "type": "f32"
+        }
+    },
+    {
+        "id": "=",
+        "value": "=",
+        "arity": "binary",
+        "first": {
+            "id": "(name)",
+            "value": "c",
+            "arity": "name",
+            "type": "f64"
+        },
+        "second": {
+            "id": "(",
+            "value": "(",
+            "arity": "call",
+            "first": {
+                "id": "(name)",
+                "value": "func",
+                "arity": "name",
+                "first": [
+                    {
+                        "id": "(name)",
+                        "value": "a",
+                        "arity": "name",
+                        "type": "f64"
+                    }
+                ],
+                "second": {
+                    "id": "return",
+                    "value": "return",
+                    "arity": "statement",
+                    "first": {
+                        "id": "(name)",
+                        "value": "a",
+                        "arity": "name",
+                        "type": "f64"
+                    }
+                },
+                "type": "f64"
+            },
+            "second": [
+                {
+                    "id": "(literal)",
+                    "value": 2,
                     "arity": "literal"
                 }
             ],
