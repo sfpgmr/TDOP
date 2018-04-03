@@ -5,6 +5,8 @@ import fs from 'fs';
 
 const testSrc =
   `
+
+f64 h,i,j;
 f64 mul(f64 a,f64 b) {
   return a;
 }
@@ -22,6 +24,7 @@ fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
 
 const parse = make_parse();
 const ast = parse(tokens);
+debugger;
 //console.log(ast.find("main"));
 const json = JSON.stringify(ast, ['id', 'key', 'name', 'message',
   'value', 'arity', 'first', 'second', 'third', 'fourth', 'type', 'assignment'], 4);
