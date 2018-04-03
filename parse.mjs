@@ -272,11 +272,19 @@ export default function make_parse() {
   }
 
   symbol("(end)");
-  stmt("(name)",function () {
+
+  function stmt_std () {
+    
+    if(!scope.find(this.value)){
+      this.error("undefined type.");
+    }
+
     //debugger;
     let a = [];
     let n;
     let t;
+
+
     while (true) {
       n = token;
       if (n.arity !== "name") {
@@ -345,7 +353,98 @@ export default function make_parse() {
       : (a.length === 1)
         ? a[0]
         : a;
-  });
+  }
+
+  stmt("u32",stmt_std);
+  stmt("u64",stmt_std);
+  stmt("i32",stmt_std);
+  stmt("i64",stmt_std);
+  stmt("f32",stmt_std);
+  stmt("f64",stmt_std);
+  stmt("void",stmt_std);
+
+  symbol("(name)");
+  // stmt("(name)",function () {
+  //   debugger;
+  //   if(!scope.find(this.value)){
+  //     this.error("undefined type.");
+  //   }
+
+  //   //debugger;
+  //   let a = [];
+  //   let n;
+  //   let t;
+
+
+  //   while (true) {
+  //     n = token;
+  //     if (n.arity !== "name") {
+  //       n.error("Expected a new variable name.");
+  //     }
+  //     scope.define(n);
+  //     n.type = this.value;
+  //     advance();
+  //     // 関数定義かどうか
+  //     if (token.id === "(") {
+  //       advance();
+  //       // ローカル・スコープを開く
+  //       new_scope();
+  //       if (token.id !== ")") {
+  //         // 変数を取り出して配列に格納する
+  //         while (true) {
+  //           const t = token;
+  //           if (token.arity !== "name") {
+  //             token.error("Expected a parameter name.");
+  //           }
+  //           advance();
+  //           token.type = t.value;
+  //           scope.define(token);
+  //           a.push(token);
+  //           advance();
+  //           if (token.id !== ",") {
+  //             break;
+  //           }
+  //           advance(",");
+  //         }
+  //       }
+  //       // ツリーの左に格納
+  //       n.first = a;
+  //       advance(")");
+  //       // 戻り値の型の指定
+  //       advance("{");
+  //       // ツリーの右に文を格納
+  //       n.second = statements();
+  //       scope.pop();
+  //       advance("}");
+  //       n.arity = "function";
+  //       return n;
+  //     }
+
+  //     if (token.id === "=") {
+  //       t = token;
+  //       advance("=");
+  //       t.first = n;
+  //       //debugger;
+  //       t.second = expression(0);
+  //       t.second.type = this.value;
+
+  //       t.arity = "binary";
+  //       a.push(t);
+  //     }
+
+
+  //     if (token.id !== ",") {
+  //       break;
+  //     }
+  //     advance(",");
+  //   }
+  //   advance(";");
+  //   return (a.length === 0)
+  //     ? null
+  //     : (a.length === 1)
+  //       ? a[0]
+  //       : a;
+  // });
 
   symbol(":");
   symbol(";");
@@ -393,8 +492,8 @@ export default function make_parse() {
   infixr("&&", 30);
   infixr("||", 30);
 
-  infixr("===", 40);
-  infixr("!==", 40);
+  infixr("==", 40);
+  infixr("!=", 40);
   infixr("<", 40);
   infixr("<=", 40);
   infixr(">", 40);
@@ -666,6 +765,7 @@ export default function make_parse() {
   });
 
   return function (t) {
+    //debugger;
     tokens = t;
     //        tokens = source.tokens("=<>!+-*&|/%^", "=<>&|");
     token_nr = 0;
