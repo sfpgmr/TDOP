@@ -4,10 +4,10 @@ import make_parse from './parse.mjs';
 import fs from 'fs';
 
 const testSrc =
-  `
-
+ `
 f64 h,i,j;
 f64 mul(f64 a,f64 b) {
+  h = 2;
   return a;
 }
 
