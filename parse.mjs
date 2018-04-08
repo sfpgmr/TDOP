@@ -21,7 +21,6 @@ export default function make_parse() {
   let token;
   let tokens;
   let token_nr;
-
   const labels = new Map();
   
 
@@ -37,6 +36,7 @@ export default function make_parse() {
       this.parent = scope;
       scope = this;
     }
+
     define(n)
     {
       const def = n.typedef ? this.typedef : this.def;
@@ -56,8 +56,8 @@ export default function make_parse() {
       return n;     
     }
 
-    find(n) {
-      if(!n.typedef){
+    find(n,typedef = n.typedef) {
+      if(!typedef){
         let e = this;
         let o;
         while (true) {
@@ -70,7 +70,7 @@ export default function make_parse() {
             o = symbol_table.get(n);
             return (o && typeof o !== 'function')
               ? o
-              : symbol_table.get('(name)');
+              : null/*symbol_table.get('(name)')*/;
           }
         }
       } else {
@@ -108,6 +108,9 @@ export default function make_parse() {
       n.reserved = true;
     }          
   }
+
+  const global = new Scope();
+
 
   // var original_scope = {
   //   define(n,typedef = false) {
@@ -192,7 +195,12 @@ export default function make_parse() {
     v = t.value;
     a = t.type;
     if (a === 'name') {
-      o = scope.find(v);
+      // 型名かどうか
+      o = scope.find(v,true);
+      // 変数名かどうか
+      if(!o) o = scope.find(v,false);
+      if(!o) o = symbol_table.get('(name)');
+
     } else if (a === 'operator') {
       o = symbol_table.get(v);
       if (!o) {
@@ -209,8 +217,8 @@ export default function make_parse() {
     token.line = t.line;
     token.from = t.from;
     token.to = t.to;
-    (!token.value) && (token.value = v);
-    (!token.nodeType) && (token.nodeType = a) ;
+    token.value = o.typedef ? o.value : v;
+    token.nodeType = o.typedef ? o.nodeType : a;
 
     return token;
   }
@@ -232,12 +240,21 @@ export default function make_parse() {
     const n = token;
     let v;
 
+    // ステートメント
     if (n.std) {
       advance();
       scope.reserve(n);
       return n.std();
     }
+
+    // 変数定義
+    if(n.dvd){
+      return n.dvd();
+    }
+
+    // 式
     v = expression(0);
+    
     if (!v.assignment && v.id !== '(') {
       v.error('Bad expression statement.');
     }
@@ -269,6 +286,7 @@ export default function make_parse() {
     advance('{');
     return t.std();
   }
+
 
   class SymbolBase {
     constructor({id ,value,bp = 0,nud,led,std}){
@@ -462,58 +480,62 @@ export default function make_parse() {
 
   sym('(end)');
 
-  function stmt_std () {
-   
-    debugger;
+  function defVar(){
     let a = [];
     let n;
     let t;
+    debugger;
+    advance();
 
+    n = token;
+      
+    // ローカルスコープですでに定義されているか
+    if(scope.def.get(n.value)){
+      n.error('Already Defined');
+    }
+
+    n.type = this.type;
+    scope.define(n);
+    advance();
+
+    // 関数定義かどうか
+    if (token.id === '(') {
+      advance();
+      // ローカル・スコープを開く
+      new Scope();
+      if (token.id !== ')') {
+      // 変数を取り出して配列に格納する
+        while (true) {
+          const t = token;
+          if (token.nodeType !== 'define') {
+            token.error('Expected a parameter name.');
+          }
+          advance();
+          token.type = t.type;
+          scope.define(token);
+          a.push(token);
+          advance();
+          if (token.id !== ',') {
+            break;
+          }
+          advance(',');
+        }
+      }
+      // ツリーの左に格納
+      n.first = a;
+      advance(')');
+      // 戻り値の型の指定
+      advance('{');
+      // ツリーの右に文を格納
+      n.second = statements();
+      scope.pop();
+      advance('}');
+      n.nodeType = 'function';
+      return n;
+    }
 
     while (true) {
-      n = token;
-      if (n.nodeType !== 'name') {
-        n.error('Expected a new variable name.');
-      }
-      scope.define(n);
-      n.type = this.value;
-      advance();
-      // 関数定義かどうか
-      if (token.id === '(') {
-        advance();
-        // ローカル・スコープを開く
-        new Scope();
-        if (token.id !== ')') {
-          // 変数を取り出して配列に格納する
-          while (true) {
-            const t = token;
-            if (token.nodeType !== 'name') {
-              token.error('Expected a parameter name.');
-            }
-            advance();
-            token.type = t.value;
-            scope.define(token);
-            a.push(token);
-            advance();
-            if (token.id !== ',') {
-              break;
-            }
-            advance(',');
-          }
-        }
-        // ツリーの左に格納
-        n.first = a;
-        advance(')');
-        // 戻り値の型の指定
-        advance('{');
-        // ツリーの右に文を格納
-        n.second = statements();
-        scope.pop();
-        advance('}');
-        n.nodeType = 'function';
-        return n;
-      }
-
+      // 代入演算子
       if (token.id === '=') {
         t = token;
         advance('=');
@@ -527,19 +549,121 @@ export default function make_parse() {
       }
 
       a.push(n);
-
+      // カンマ演算子
       if (token.id !== ',') {
         break;
       }
       advance(',');
+      n = token;
+      advance();
     }
+
     advance(';');
-    return (a.length === 0)
-      ? null
-      : (a.length === 1)
-        ? a[0]
-        : a;
+
+    this.first = a;
+
+    return this;
+    // return (a.length === 0)
+    //   ? null
+    //   : (a.length === 1)
+    //     ? a[0]
+    //     : a;
   }
+
+  // function stmt_std () {
+  //   let a = [];
+  //   let n;
+  //   let t;
+
+  //   while (true) {
+
+  //     n = token;
+
+  //     // 型名かどうか
+  //     let n1 = scope.find(n,true);
+  //     if(n1){
+  //       // 型名である
+  //       n.type = n1.type;
+  //       n.typedef = true;
+  //       advance();
+
+  //     } else {
+  //       // 変数名かどうか
+  //       let nvar = scope.find(n,false);
+  //       if(!nvar){
+  //         n.error('Undefined variable.');
+  //       }
+  //       n = nvar;
+  //     }
+
+  //     // if (n.nodeType !== 'name') {
+  //     //   n.error('Expected a new variable name.');
+  //     // }
+  //     scope.define(n);
+  //     n.type = this.value;
+  //     advance();
+  //     // 関数定義かどうか
+  //     if (token.id === '(') {
+  //       advance();
+  //       // ローカル・スコープを開く
+  //       new Scope();
+  //       if (token.id !== ')') {
+  //         // 変数を取り出して配列に格納する
+  //         while (true) {
+  //           const t = token;
+  //           if (token.nodeType !== 'name') {
+  //             token.error('Expected a parameter name.');
+  //           }
+  //           advance();
+  //           token.type = t.value;
+  //           scope.define(token);
+  //           a.push(token);
+  //           advance();
+  //           if (token.id !== ',') {
+  //             break;
+  //           }
+  //           advance(',');
+  //         }
+  //       }
+  //       // ツリーの左に格納
+  //       n.first = a;
+  //       advance(')');
+  //       // 戻り値の型の指定
+  //       advance('{');
+  //       // ツリーの右に文を格納
+  //       n.second = statements();
+  //       scope.pop();
+  //       advance('}');
+  //       n.nodeType = 'function';
+  //       return n;
+  //     }
+
+  //     if (token.id === '=') {
+  //       t = token;
+  //       advance('=');
+  //       t.first = n;
+  //       //debugger;
+  //       t.second = expression(0);
+  //       t.second.type = this.value;
+
+  //       t.nodeType = 'binary';
+  //       a.push(t);
+  //     }
+
+  //     a.push(n);
+
+  //     if (token.id !== ',') {
+  //       break;
+  //     }
+  //     advance(',');
+  //   }
+  //   advance(';');
+  //   return (a.length === 0)
+  //     ? null
+  //     : (a.length === 1)
+  //       ? a[0]
+  //       : a;
+  // }
 
   // stmt('u32',stmt_std);
   // stmt('u64',stmt_std);
@@ -549,7 +673,7 @@ export default function make_parse() {
   // stmt('f64',stmt_std);
   // stmt('void',stmt_std);
 
-  stmt('(name)',stmt_std);
+  stmt('(name)');
   // stmt('(name)',function () {
   //   // debugger;
   //   if(scope.find(this.value).id === '(name)'){
@@ -884,16 +1008,15 @@ export default function make_parse() {
     tokens = t;
     //        tokens = source.tokens('=<>!+-*&|/%^', '=<>&|');
     token_nr = 0;
-    scope = null;
-    new Scope();
+    //scope = null;
+    //new Scope();
+    //global = scope;
  
     // ビルトイン変数
     ['i32','i64','u32','u64','f32','f64']
       .forEach(t=>{
-        scope.define({id:t,type:t,nodeType:'typedef',typedef:true});
+        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
       });
-
-    debugger;
     advance();
     const s = statements();
     advance('(end)');
