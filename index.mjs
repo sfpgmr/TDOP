@@ -20,7 +20,7 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-f64 h,i,j;
+f64 h = 1,i,j;
 f64 mul(f64 a,f64 b) {
   h = 2;
   return a;
@@ -34,6 +34,6 @@ const parse = make_parse();
 const ast = parse(tokens);
 //console.log(ast.find("main"));
 const json = JSON.stringify(ast, ['id', 'key', 'name', 'message',
-  'value', 'arity', 'first', 'second', 'third', 'fourth', 'type', 'assignment'], 4);
+  'value', 'nodeType', 'first', 'second', 'third', 'fourth', 'type', 'assignment'], 4);
 
 fs.writeFileSync('./ast.json', json, 'utf8');

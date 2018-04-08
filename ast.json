@@ -1,216 +1,81 @@
 [
-    [
-        {
-            "id": "(name)",
-            "value": "h",
-            "arity": "name",
-            "type": "f64"
-        },
-        {
-            "id": "(name)",
-            "value": "i",
-            "arity": "name",
-            "type": "f64"
-        },
-        {
-            "id": "(name)",
-            "value": "j",
-            "arity": "name",
-            "type": "f64"
-        }
-    ],
     {
-        "id": "(name)",
-        "value": "mul",
-        "arity": "function",
+        "id": "f64",
+        "value": "f64",
+        "nodeType": "define",
         "first": [
             {
                 "id": "(name)",
-                "value": "a",
-                "arity": "name",
+                "value": "h",
+                "nodeType": "name",
                 "type": "f64"
             },
             {
                 "id": "(name)",
-                "value": "b",
-                "arity": "name",
+                "value": "i",
+                "nodeType": "name",
                 "type": "f64"
-            }
-        ],
-        "second": [
-            {
-                "id": "=",
-                "value": "=",
-                "arity": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "h",
-                    "arity": "name",
-                    "type": "f64"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "value": 2,
-                    "arity": "literal"
-                },
-                "assignment": true
             },
             {
-                "id": "return",
-                "value": "return",
-                "arity": "statement",
-                "first": {
-                    "id": "(name)",
-                    "value": "a",
-                    "arity": "name",
-                    "type": "f64"
-                }
+                "id": "(name)",
+                "value": "j",
+                "nodeType": "name",
+                "type": "f64"
             }
         ],
         "type": "f64"
     },
     {
         "id": "(name)",
-        "value": "main",
-        "arity": "function",
-        "first": [],
+        "value": "mul",
+        "nodeType": "function",
+        "first": [
+            {
+                "id": "(name)",
+                "value": "a",
+                "nodeType": "name",
+                "type": "f64"
+            },
+            {
+                "id": "(name)",
+                "value": "b",
+                "nodeType": "name",
+                "type": "f64"
+            }
+        ],
         "second": [
-            [
-                {
+            {
+                "id": {
                     "id": "=",
-                    "value": "=",
-                    "arity": "binary",
-                    "first": {
-                        "id": "(name)",
-                        "value": "d",
-                        "arity": "name",
-                        "type": "f64"
-                    },
-                    "second": {
-                        "id": "(literal)",
-                        "value": 2,
-                        "arity": "literal",
-                        "type": "f64"
-                    }
+                    "value": "="
                 },
-                {
+                "value": "=",
+                "nodeType": "binary",
+                "first": {
                     "id": "(name)",
-                    "value": "d",
-                    "arity": "name",
+                    "value": "h",
+                    "nodeType": "name",
                     "type": "f64"
-                }
-            ],
-            [
-                {
-                    "id": "=",
-                    "value": "=",
-                    "arity": "binary",
-                    "first": {
-                        "id": "(name)",
-                        "value": "b",
-                        "arity": "name",
-                        "type": "f32"
-                    },
-                    "second": {
-                        "id": "(",
-                        "value": "(",
-                        "arity": "call",
-                        "first": {
-                            "id": "(name)",
-                            "value": "mul",
-                            "arity": "name",
-                            "first": [
-                                {
-                                    "id": "(name)",
-                                    "value": "a",
-                                    "arity": "name",
-                                    "type": "f64"
-                                },
-                                {
-                                    "id": "(name)",
-                                    "value": "b",
-                                    "arity": "name",
-                                    "type": "f64"
-                                }
-                            ],
-                            "second": [
-                                {
-                                    "id": "=",
-                                    "value": "=",
-                                    "arity": "binary",
-                                    "first": {
-                                        "id": "(name)",
-                                        "value": "h",
-                                        "arity": "name",
-                                        "type": "f64"
-                                    },
-                                    "second": {
-                                        "id": "(literal)",
-                                        "value": 2,
-                                        "arity": "literal"
-                                    },
-                                    "assignment": true
-                                },
-                                {
-                                    "id": "return",
-                                    "value": "return",
-                                    "arity": "statement",
-                                    "first": {
-                                        "id": "(name)",
-                                        "value": "a",
-                                        "arity": "name",
-                                        "type": "f64"
-                                    }
-                                }
-                            ],
-                            "type": "f64"
-                        },
-                        "second": [
-                            {
-                                "id": "(name)",
-                                "value": "d",
-                                "arity": "name",
-                                "type": "f64"
-                            },
-                            {
-                                "id": "(literal)",
-                                "value": 3,
-                                "arity": "literal"
-                            }
-                        ],
-                        "type": "f32"
-                    }
                 },
-                {
-                    "id": "(name)",
-                    "value": "b",
-                    "arity": "name",
-                    "type": "f32"
-                }
-            ],
+                "second": {
+                    "id": "(literal)",
+                    "value": 2,
+                    "nodeType": "literal"
+                },
+                "assignment": true
+            },
             {
                 "id": "return",
                 "value": "return",
-                "arity": "statement",
+                "nodeType": "statement",
                 "first": {
-                    "id": "+",
-                    "value": "+",
-                    "arity": "binary",
-                    "first": {
-                        "id": "(name)",
-                        "value": "d",
-                        "arity": "name",
-                        "type": "f64"
-                    },
-                    "second": {
-                        "id": "(name)",
-                        "value": "b",
-                        "arity": "name",
-                        "type": "f32"
-                    }
+                    "id": "(name)",
+                    "value": "a",
+                    "nodeType": "name",
+                    "type": "f64"
                 }
             }
         ],
-        "type": "void"
+        "type": "f64"
     }
 ]

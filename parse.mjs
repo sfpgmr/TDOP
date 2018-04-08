@@ -61,7 +61,7 @@ export default function make_parse() {
         let e = this;
         let o;
         while (true) {
-          o = this.def.get(n);
+          o = e.def.get(n);
           if (o && typeof o !== 'function') {
             return e.def.get(n);
           }
@@ -77,7 +77,7 @@ export default function make_parse() {
         let e = this;
         let o;
         while (e) {
-          o = this.typedef.get(n);
+          o = e.typedef.get(n);
           if (o && typeof o !== 'function') {
             return e.typedef.get(n);
           } 
@@ -187,7 +187,7 @@ export default function make_parse() {
       token.error('Expected "' + id + '".');
     }
     if (token_nr >= tokens.length) {
-      token = symbol_table['(end)'];
+      token = symbol_table.get('(end)');
       return;
     }
     t = tokens[token_nr];
@@ -484,7 +484,6 @@ export default function make_parse() {
     let a = [];
     let n;
     let t;
-    debugger;
     advance();
 
     n = token;
@@ -500,6 +499,7 @@ export default function make_parse() {
 
     // 関数定義かどうか
     if (token.id === '(') {
+      debugger;
       advance();
       // ローカル・スコープを開く
       new Scope();
@@ -511,7 +511,7 @@ export default function make_parse() {
             token.error('Expected a parameter name.');
           }
           advance();
-          token.type = t.type;
+          token.type = this.type;
           scope.define(token);
           a.push(token);
           advance();
@@ -542,7 +542,7 @@ export default function make_parse() {
         t.first = n;
         //debugger;
         t.second = expression(0);
-        t.second.type = this.value;
+        t.second.type = this.type;
 
         t.nodeType = 'binary';
         a.push(t);
@@ -555,6 +555,7 @@ export default function make_parse() {
       }
       advance(',');
       n = token;
+      n.type = this.type;
       advance();
     }
 
@@ -1011,7 +1012,7 @@ export default function make_parse() {
     //scope = null;
     //new Scope();
     //global = scope;
- 
+    debugger;
     // ビルトイン変数
     ['i32','i64','u32','u64','f32','f64']
       .forEach(t=>{
