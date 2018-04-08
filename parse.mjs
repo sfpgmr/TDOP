@@ -411,7 +411,7 @@ export default function make_parse() {
   }
 
   class Assignment extends SymbolBase {
-    constructor(id){
+    constructor({id}){
       super({id:id,bp:10});
     }
     led(left){
@@ -499,7 +499,6 @@ export default function make_parse() {
 
     // 関数定義かどうか
     if (token.id === '(') {
-      debugger;
       advance();
       // ローカル・スコープを開く
       new Scope();
@@ -535,6 +534,9 @@ export default function make_parse() {
     }
 
     while (true) {
+      debugger;
+      
+      a.push(n);
       // 代入演算子
       if (token.id === '=') {
         t = token;
@@ -548,7 +550,6 @@ export default function make_parse() {
         a.push(t);
       }
 
-      a.push(n);
       // カンマ演算子
       if (token.id !== ',') {
         break;

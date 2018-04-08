@@ -11,6 +11,23 @@
                 "type": "f64"
             },
             {
+                "id": "=",
+                "value": "=",
+                "nodeType": "binary",
+                "first": {
+                    "id": "(name)",
+                    "value": "h",
+                    "nodeType": "name",
+                    "type": "f64"
+                },
+                "second": {
+                    "id": "(literal)",
+                    "value": 1,
+                    "nodeType": "literal",
+                    "type": "f64"
+                }
+            },
+            {
                 "id": "(name)",
                 "value": "i",
                 "nodeType": "name",
@@ -45,10 +62,7 @@
         ],
         "second": [
             {
-                "id": {
-                    "id": "=",
-                    "value": "="
-                },
+                "id": "=",
                 "value": "=",
                 "nodeType": "binary",
                 "first": {
