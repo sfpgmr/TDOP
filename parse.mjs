@@ -224,6 +224,7 @@ export default function make_parse() {
   }
 
   function expression(rbp) {
+    //debugger;
     let left;
     let t = token;
     advance();
@@ -303,9 +304,6 @@ export default function make_parse() {
     led(){
       this.error('Missing operator.');
     }
-    std(){
-      this.error('Not Impl.');
-    }
   }
 
   // const original_symbol = {
@@ -368,6 +366,9 @@ export default function make_parse() {
     led(left){
       this.first = left;
       this.second = expression(this.lbp);
+      if(this.first.type != this.second.type){
+        this.error('type unmatched.')
+      }
       this.nodeType = 'binary';
       return this;      
     }
@@ -534,8 +535,7 @@ export default function make_parse() {
     }
 
     while (true) {
-      debugger;
-      
+      n.nud = itself;
       a.push(n);
       // 代入演算子
       if (token.id === '=') {
@@ -557,6 +557,7 @@ export default function make_parse() {
       advance(',');
       n = token;
       n.type = this.type;
+      scope.define(n);
       advance();
     }
 
@@ -1015,7 +1016,7 @@ export default function make_parse() {
     //global = scope;
     debugger;
     // ビルトイン変数
-    ['i32','i64','u32','u64','f32','f64']
+    ['i32','i64','u32','u64','f32','f64','void','string']
       .forEach(t=>{
         scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
       });

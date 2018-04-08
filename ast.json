@@ -32,15 +32,68 @@
                 "value": "i",
                 "nodeType": "name",
                 "type": "f64"
-            },
+            }
+        ],
+        "type": "f64"
+    },
+    {
+        "id": "i32",
+        "value": "i32",
+        "nodeType": "define",
+        "first": [
             {
                 "id": "(name)",
                 "value": "j",
                 "nodeType": "name",
-                "type": "f64"
+                "type": "i32"
+            },
+            {
+                "id": "=",
+                "value": "=",
+                "nodeType": "binary",
+                "first": {
+                    "id": "(name)",
+                    "value": "j",
+                    "nodeType": "name",
+                    "type": "i32"
+                },
+                "second": {
+                    "id": "(literal)",
+                    "value": 3,
+                    "nodeType": "literal",
+                    "type": "i32"
+                }
             }
         ],
-        "type": "f64"
+        "type": "i32"
+    },
+    {
+        "id": "=",
+        "value": "=",
+        "nodeType": "binary",
+        "first": {
+            "id": "(name)",
+            "value": "i",
+            "nodeType": "name",
+            "type": "f64"
+        },
+        "second": {
+            "id": "+",
+            "value": "+",
+            "nodeType": "binary",
+            "first": {
+                "id": "(name)",
+                "value": "h",
+                "nodeType": "name",
+                "type": "f64"
+            },
+            "second": {
+                "id": "(literal)",
+                "value": 2,
+                "nodeType": "literal"
+            }
+        },
+        "assignment": true
     },
     {
         "id": "(name)",
@@ -86,6 +139,101 @@
                     "id": "(name)",
                     "value": "a",
                     "nodeType": "name",
+                    "type": "f64"
+                }
+            }
+        ],
+        "type": "f64"
+    },
+    {
+        "id": "f64",
+        "value": "f64",
+        "nodeType": "define",
+        "first": [
+            {
+                "id": "(name)",
+                "value": "k",
+                "nodeType": "name",
+                "type": "f64"
+            },
+            {
+                "id": "=",
+                "value": "=",
+                "nodeType": "binary",
+                "first": {
+                    "id": "(name)",
+                    "value": "k",
+                    "nodeType": "name",
+                    "type": "f64"
+                },
+                "second": {
+                    "id": "(",
+                    "value": "(",
+                    "nodeType": "call",
+                    "first": {
+                        "id": "(name)",
+                        "value": "mul",
+                        "nodeType": "name",
+                        "first": [
+                            {
+                                "id": "(name)",
+                                "value": "a",
+                                "nodeType": "name",
+                                "type": "f64"
+                            },
+                            {
+                                "id": "(name)",
+                                "value": "b",
+                                "nodeType": "name",
+                                "type": "f64"
+                            }
+                        ],
+                        "second": [
+                            {
+                                "id": "=",
+                                "value": "=",
+                                "nodeType": "binary",
+                                "first": {
+                                    "id": "(name)",
+                                    "value": "h",
+                                    "nodeType": "name",
+                                    "type": "f64"
+                                },
+                                "second": {
+                                    "id": "(literal)",
+                                    "value": 2,
+                                    "nodeType": "literal"
+                                },
+                                "assignment": true
+                            },
+                            {
+                                "id": "return",
+                                "value": "return",
+                                "nodeType": "statement",
+                                "first": {
+                                    "id": "(name)",
+                                    "value": "a",
+                                    "nodeType": "name",
+                                    "type": "f64"
+                                }
+                            }
+                        ],
+                        "type": "f64"
+                    },
+                    "second": [
+                        {
+                            "id": "(name)",
+                            "value": "h",
+                            "nodeType": "name",
+                            "type": "f64"
+                        },
+                        {
+                            "id": "(name)",
+                            "value": "i",
+                            "nodeType": "name",
+                            "type": "f64"
+                        }
+                    ],
                     "type": "f64"
                 }
             }

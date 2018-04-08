@@ -20,16 +20,17 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-f64 h = 1,i,j;
+f64 h = 1,i;
+f64 j = 3;
 
-i = h + 2;
+i = h + 2 + j;
 
 f64 mul(f64 a,f64 b) {
   h = 2;
   return a;
 }
 
-f64 j = mul(h,i);
+f64 k = mul(h,i);
 `;
 const tokens = tokenize(testSrc);
 fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
