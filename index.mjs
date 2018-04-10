@@ -20,10 +20,13 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-f64 h = 1,i;
+f64 h = 1,i,𩸽軍団;
 f64 j = 3;
 
-i = h + 2 + j;
+i = h + 0x222.222p+5l + j;
+
+i32 k = 0x222;
+i32 bit = 0b0001 0001 0001 0000 0000 0000 0000 0100b;
 
 f64 mul(f64 a,f64 b) {
   h = 2;

@@ -22,17 +22,29 @@
 
 /*jslint this */
 "use strict";
-export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&|") {
-  var c;                      // The current character.
-  var from;                   // The index of the start of the token.
-  var i = 0;                  // The index of the current character.
+
+// サロゲートペアを考慮した文字列配列化
+function stringToArray (str) {
+  return str.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
+}
+
+export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|") {
+  let c;                      // The current character.
+  let from;                   // The index of the start of the token.
+  let i = 0;                  // The index of the current character.
   let lineNo = 1;
-  var length = source.length;
-  var n;                      // The number value.
-  var q;                      // The quote character.
-  var str;                    // The string value.
+  const source = stringToArray(src);
+  
+  const prefix = stringToArray(prefix_);
+  const suffix = stringToArray(suffix_);
+
+  let length = source.length;
+  let n;                      // The number value.
+  let q;                      // The quote character.
+  let str;                    // The string value.
 
   var result = [];            // An array to hold the results.
+
 
   var make = function (type, value) {
 
@@ -47,6 +59,8 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
     };
   };
 
+
+
     // Begin tokenization. If the source string is empty, return nothing.
 
   if (!source) {
@@ -55,17 +69,9 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
 
   // If prefix and suffix strings are not provided, supply defaults.
 
-  if (typeof prefix !== 'string') {
-    prefix = '<>+-&';
-  }
-  if (typeof suffix !== 'string') {
-    suffix = '=>&:';
-  }
-
-
   // Loop through this text, one character at a time.
 
-  c = source.charAt(i);
+  c = source[i];
   while (c) {
     from = i;
 
@@ -77,17 +83,17 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
 
     if (c <= ' ') {
       i += 1;
-      c = source.charAt(i);
+      c = source[i];
 
       // name.
 
-    } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+    } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z' || c > '\u00ff')) {
       str = c;
       i += 1;
       while (true) {
-        c = source.charAt(i);
+        c = source[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                    (c >= '0' && c <= '9') || c === '_') {
+                    (c >= '0' && c <= '9') || c === '_' || c > '\u00ff') {
           str += c;
           i += 1;
         } else {
@@ -102,73 +108,178 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
       // possibly '0'.
 
     } else if (c >= '0' && c <= '9') {
+
       str = c;
-      i += 1;
+      ++i;
 
-      // Look for more digits.
+      let nc = source[i];
 
-      while (true) {
-        c = source.charAt(i);
-        if (c < '0' || c > '9') {
-          break;
+      if(c == '0' && (nc == 'x' || nc == 'X')){
+        //debugger;
+        let type = 'hex';
+        // 16進数
+        c = nc;
+        let hexfp = false;
+        do {
+          str += c;
+          ++i;
+          c = source[i];
+        } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+
+        if(c == '.'){
+          // 16進浮動小数 少数部
+          do {
+            str += c;
+            ++i;
+            c = source[i];
+            hexfp = true;
+          } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
         }
-        i += 1;
-        str += c;
-      }
 
-      // Look for a decimal fraction part.
+        if(c == 'p' || c == 'P'){
+          // 16進浮動小数 指数部
+          let first = true;
 
-      if (c === '.') {
-        i += 1;
-        str += c;
+          do {
+            str += c;
+            ++i;
+            c = source[i];
+            if(first && (c == '+' || c == '-')){
+              first = false;
+              str += c;
+              ++i;
+              c = source[i];
+              continue;
+            } 
+            first = false;
+          } while((c >= '0' && c <= '9'));
+          hexfp = true;
+        } else if(hexfp) {
+          make('hexfp',str + c).error('Bad hexdecimal floating point number.');
+        }
+
+        if(c == 'f' || c == 'F'){
+          if(hexfp){
+            str += c;
+            ++i;
+            type = 'hexfp32';
+          } else {
+            make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+          }
+        } else if(c == 'l' || c == 'L') {
+          if(hexfp){
+            str += c;
+            ++i;
+            type = 'hexfp64';
+          } else {
+            make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+          }
+        } else if(hexfp) {
+          make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+        }
+
+        c = source[i];
+        result.push(make(type,str));
+
+      } else if(c == '0' && (nc == 'b' || nc == 'B')) {
+        debugger;
+        str = c + nc;
+        ++i;
+        c = source[i];
+        // 2進数
+        do {
+          c != ' ' && (str += c);
+          ++i;
+          c = source[i];
+        } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B');
+        
+        (str.charAt(str.length - 1) != 'b') && make('binary',str+c).error('Invalid binary literal format.');
+        make('binary',str);
+      }  else {
+
+        let type = 'integer';
+        // Look for more digits.
+        
+        let integer = true;
+
         while (true) {
-          c = source.charAt(i);
+          c = source[i];
           if (c < '0' || c > '9') {
             break;
           }
           i += 1;
           str += c;
         }
-      }
 
-      // Look for an exponent part.
+        // Look for a decimal fraction part.
 
-      if (c === 'e' || c === 'E') {
-        i += 1;
-        str += c;
-        c = source.charAt(i);
-        if (c === '-' || c === '+') {
+        if (c === '.') {
+          integer = false;
+          type ='fp32';
           i += 1;
           str += c;
-          c = source.charAt(i);
+          while (true) {
+            c = source[i];
+            if (c < '0' || c > '9') {
+              break;
+            }
+            i += 1;
+            str += c;
+          }
         }
-        if (c < '0' || c > '9') {
-          make('number', str).error("Bad exponent");
-        }
-        do {
+
+        // Look for an exponent part.
+
+        if (c === 'e' || c === 'E') {
+          integer = false;
+          type = 'fp32';
           i += 1;
           str += c;
-          c = source.charAt(i);
-        } while (c >= '0' && c <= '9');
+          c = source[i];
+          if (c === '-' || c === '+') {
+            i += 1;
+            str += c;
+            c = source[i];
+          }
+          if (c < '0' || c > '9') {
+            make(type, str).error("Bad exponent");
+          }
+          do {
+            i += 1;
+            str += c;
+            c = source[i];
+          } while (c >= '0' && c <= '9');
+        }
+
+        if(c == 'f'){
+          if(!integer){
+            str += c;
+          } else {
+            make()
+          }
+        }
+
+        // Make sure the next character is not a letter.
+
+        if (c >= 'a' && c <= 'z') {
+          str += c;
+          i += 1;
+          make('number', str).error("Bad number");
+        }
+
+        // Convert the string value to a number. If it is finite, then it is a good
+        // token.
+
+        n = +str;
+        if (isFinite(n)) {
+          result.push(make('number', n));
+        } else {
+          make('number', str).error("Bad number");
+        }        
+
       }
 
-      // Make sure the next character is not a letter.
 
-      if (c >= 'a' && c <= 'z') {
-        str += c;
-        i += 1;
-        make('number', str).error("Bad number");
-      }
-
-      // Convert the string value to a number. If it is finite, then it is a good
-      // token.
-
-      n = +str;
-      if (isFinite(n)) {
-        result.push(make('number', n));
-      } else {
-        make('number', str).error("Bad number");
-      }
 
       // string
 
@@ -177,7 +288,7 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
       q = c;
       i += 1;
       while (true) {
-        c = source.charAt(i);
+        c = source[i];
         if (c < ' ') {
           make('string', str).error(
             (c === '\n' || c === '\r' || c === '')
@@ -200,7 +311,7 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
           if (i >= length) {
             make('string', str).error("Unterminated string");
           }
-          c = source.charAt(i);
+          c = source[i];
           switch (c) {
           case 'b':
             c = '\b';
@@ -236,14 +347,14 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
       }
       i += 1;
       result.push(make('string', str));
-      c = source.charAt(i);
+      c = source[i];
 
       // comment.
 
-    } else if (c === '/' && source.charAt(i + 1) === '/') {
+    } else if (c === '/' && source[i + 1] === '/') {
       i += 1;
       while (true) {
-        c = source.charAt(i);
+        c = source[i];
         if (c === '\n' || c === '\r' || c === '') {
           break;
         }
@@ -253,12 +364,12 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
 
       // combining
 
-    } else if (prefix.indexOf(c) >= 0) {
+    } else if (prefix.findIndex(p=>c == p) >= 0) {
       str = c;
       i += 1;
       while (true) {
-        c = source.charAt(i);
-        if (i >= length || suffix.indexOf(c) < 0) {
+        c = source[i];
+        if (i >= length || suffix.findIndex(p=>c == p) < 0) {
           break;
         }
         str += c;
@@ -271,7 +382,7 @@ export default function tokenize(source, prefix = "=<>!+-*&|/%^", suffix = "=<>&
     } else {
       i += 1;
       result.push(make('operator', c));
-      c = source.charAt(i);
+      c = source[i];
     }
   }
   return result;
