@@ -39,29 +39,28 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
   const suffix = stringToArray(suffix_);
 
   let length = source.length;
-  let n;                      // The number value.
   let q;                      // The quote character.
   let str;                    // The string value.
 
   var result = [];            // An array to hold the results.
 
 
-  var make = function (type, value) {
+  function make(type, value,opt = {}) {
 
     // Make a token object.
 
-    return {
+    return Object.assign({
       type: type,
       value: value,
       line: lineNo,
       from: from,
       to: i
-    };
-  };
+    },opt);
+  }
 
 
 
-    // Begin tokenization. If the source string is empty, return nothing.
+  // Begin tokenization. If the source string is empty, return nothing.
 
   if (!source) {
     return;
@@ -116,7 +115,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
 
       if(c == '0' && (nc == 'x' || nc == 'X')){
         //debugger;
-        let type = 'hex';
+        let type = 'int';
+        let kind = 'hex';
         // 16進数
         c = nc;
         let hexfp = false;
@@ -162,15 +162,17 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           if(hexfp){
             str += c;
             ++i;
-            type = 'hexfp32';
+            type = 'f32';
+            kind = 'hex';
           } else {
-            make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+            make('f32',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
           }
         } else if(c == 'l' || c == 'L') {
           if(hexfp){
             str += c;
             ++i;
-            type = 'hexfp64';
+            type = 'f64';
+            kind = 'hex';
           } else {
             make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
           }
@@ -179,10 +181,10 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         }
 
         c = source[i];
-        result.push(make(type,str));
+        result.push(make(type,str,{kind:kind}));
 
       } else if(c == '0' && (nc == 'b' || nc == 'B')) {
-        debugger;
+        // 2進数リテラル
         str = c + nc;
         ++i;
         c = source[i];
@@ -194,13 +196,13 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B');
         
         (str.charAt(str.length - 1) != 'b') && make('binary',str+c).error('Invalid binary literal format.');
-        make('binary',str);
+        result.push(make('int',str,{kind:'binary'}));
       }  else {
-
-        let type = 'integer';
+        // 数リテラル
+        let type = 'int';
         // Look for more digits.
         
-        let integer = true;
+        let int = true;
 
         while (true) {
           c = source[i];
@@ -214,8 +216,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         // Look for a decimal fraction part.
 
         if (c === '.') {
-          integer = false;
-          type ='fp32';
+          int = false;
+          type ='f32';
           i += 1;
           str += c;
           while (true) {
@@ -231,8 +233,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         // Look for an exponent part.
 
         if (c === 'e' || c === 'E') {
-          integer = false;
-          type = 'fp32';
+          int = false;
+          type = 'f32';
           i += 1;
           str += c;
           c = source[i];
@@ -251,31 +253,36 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           } while (c >= '0' && c <= '9');
         }
 
-        if(c == 'f'){
-          if(!integer){
-            str += c;
-          } else {
-            make()
-          }
-        }
-
-        // Make sure the next character is not a letter.
-
-        if (c >= 'a' && c <= 'z') {
+        if(c == 'f' || c == 'F'){
+          type = 'f32';
+          int = false;
+          str += c;
+          ++i;
+          c = source[i];
+        } else if(c == 'l' || c == 'L'){
+          type = 'f64';
+          int = false;
+          str += c;
+          ++i;
+          c = source[i];
+        } else if (c >= 'a' && c <= 'z') {
           str += c;
           i += 1;
           make('number', str).error("Bad number");
+        } else {
+          type = 'f32';
+          int = false;
         }
 
         // Convert the string value to a number. If it is finite, then it is a good
         // token.
 
-        n = +str;
-        if (isFinite(n)) {
-          result.push(make('number', n));
-        } else {
-          make('number', str).error("Bad number");
-        }        
+        // n = +str;
+        // if (isFinite(n)) {
+        result.push(make(type, str));
+        // } else {
+        //   make('number', str).error("Bad number");
+        // }        
 
       }
 

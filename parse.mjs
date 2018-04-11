@@ -183,6 +183,7 @@ export default function make_parse() {
     let o;
     let t;
     let v;
+    let type;
     if (id && token.id !== id) {
       token.error('Expected "' + id + '".');
     }
@@ -206,8 +207,9 @@ export default function make_parse() {
       if (!o) {
         t.error('Unknown operator.');
       }
-    } else if (a === 'string' || a === 'number') {
+    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32') {
       o = symbol_table.get('(literal)');
+      type = a;
       a = 'literal';
     } else {
       t.error('Unexpected token.');
@@ -219,6 +221,8 @@ export default function make_parse() {
     token.to = t.to;
     token.value = o.typedef ? o.value : v;
     token.nodeType = o.typedef ? o.nodeType : a;
+    type && (token.type = type);
+    t.kind && (token.kind = t.kind);
 
     return token;
   }
@@ -366,9 +370,9 @@ export default function make_parse() {
     led(left){
       this.first = left;
       this.second = expression(this.lbp);
-      if(this.first.type != this.second.type){
-        this.error('type unmatched.')
-      }
+      // if(this.first.type != this.second.type){
+      //   this.error('type unmatched.');
+      // }
       this.nodeType = 'binary';
       return this;      
     }
@@ -1016,7 +1020,7 @@ export default function make_parse() {
     //global = scope;
     debugger;
     // ビルトイン変数
-    ['i32','i64','u32','u64','f32','f64','void','string']
+    ['i32','i64','f32','f64','void','string']
       .forEach(t=>{
         scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
       });
