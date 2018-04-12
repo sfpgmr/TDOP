@@ -1,22 +1,45 @@
-[
-    {
-        "id": "f64",
-        "value": "f64",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "h",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "=",
-                "value": "=",
+{
+    "id": "(name)",
+    "value": "main",
+    "nodeType": "function",
+    "first": [],
+    "second": [
+        {
+            "id": "f64",
+            "value": "f64",
+            "nodeType": "define",
+            "first": [
+                {
+                    "id": "=",
+                    "value": "=",
+                    "nodeType": "binary",
+                    "first": {
+                        "id": "(name)",
+                        "value": "z",
+                        "nodeType": "name",
+                        "type": "f64"
+                    },
+                    "second": {
+                        "id": "(literal)",
+                        "value": "1.0l",
+                        "nodeType": "literal",
+                        "type": "f64"
+                    }
+                }
+            ],
+            "type": "f64"
+        },
+        {
+            "id": "if",
+            "value": "if",
+            "nodeType": "statement",
+            "first": {
+                "id": ">",
+                "value": ">",
                 "nodeType": "binary",
                 "first": {
                     "id": "(name)",
-                    "value": "h",
+                    "value": "z",
                     "nodeType": "name",
                     "type": "f64"
                 },
@@ -27,332 +50,35 @@
                     "type": "f64"
                 }
             },
-            {
-                "id": "(name)",
-                "value": "i",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "(name)",
-                "value": "𩸽軍団",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "𩸽軍団",
-                    "nodeType": "name",
-                    "type": "f64"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "value": "2.0l",
-                    "nodeType": "literal",
-                    "type": "f64"
-                }
-            }
-        ],
-        "type": "f64"
-    },
-    {
-        "id": "f64",
-        "value": "f64",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "j",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "j",
-                    "nodeType": "name",
-                    "type": "f64"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "value": "3.0l",
-                    "nodeType": "literal",
-                    "type": "f64"
-                }
-            }
-        ],
-        "type": "f64"
-    },
-    {
-        "id": "=",
-        "value": "=",
-        "nodeType": "binary",
-        "first": {
-            "id": "(name)",
-            "value": "i",
-            "nodeType": "name",
-            "type": "f64"
-        },
-        "second": {
-            "id": "+",
-            "value": "+",
-            "nodeType": "binary",
-            "first": {
-                "id": "+",
-                "value": "+",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "h",
-                    "nodeType": "name",
-                    "type": "f64"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "kind": "hex",
-                    "value": "0x222.222p+5l",
-                    "nodeType": "literal",
-                    "type": "f64"
-                }
-            },
             "second": {
-                "id": "(name)",
-                "value": "j",
-                "nodeType": "name",
-                "type": "f64"
-            }
-        },
-        "assignment": true
-    },
-    {
-        "id": "string",
-        "value": "string",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "s",
-                "nodeType": "name",
-                "type": "string"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "s",
-                    "nodeType": "name",
-                    "type": "string"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "value": "函館𩸽軍団",
-                    "nodeType": "literal",
-                    "type": "string"
-                }
-            }
-        ],
-        "type": "string"
-    },
-    {
-        "id": "i32",
-        "value": "i32",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "k",
-                "nodeType": "name",
-                "type": "i32"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "k",
-                    "nodeType": "name",
-                    "type": "i32"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "kind": "hex",
-                    "value": "0x222",
-                    "nodeType": "literal",
-                    "type": "i32"
-                }
-            }
-        ],
-        "type": "i32"
-    },
-    {
-        "id": "i32",
-        "value": "i32",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "bit",
-                "nodeType": "name",
-                "type": "i32"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "bit",
-                    "nodeType": "name",
-                    "type": "i32"
-                },
-                "second": {
-                    "id": "(literal)",
-                    "kind": "binary",
-                    "value": "0b00010001000100000000000000000100b",
-                    "nodeType": "literal",
-                    "type": "i32"
-                }
-            }
-        ],
-        "type": "i32"
-    },
-    {
-        "id": "(name)",
-        "value": "mul",
-        "nodeType": "function",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "a",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "(name)",
-                "value": "b",
-                "nodeType": "name",
-                "type": "f64"
-            }
-        ],
-        "second": {
-            "id": "return",
-            "value": "return",
-            "nodeType": "statement",
-            "first": {
-                "id": "*",
-                "value": "*",
-                "nodeType": "binary",
-                "first": {
-                    "id": "(name)",
-                    "value": "a",
-                    "nodeType": "name",
-                    "type": "f64"
-                },
-                "second": {
-                    "id": "(name)",
-                    "value": "b",
-                    "nodeType": "name",
-                    "type": "f64"
-                }
-            }
-        },
-        "type": "f64"
-    },
-    {
-        "id": "f64",
-        "value": "f64",
-        "nodeType": "define",
-        "first": [
-            {
-                "id": "(name)",
-                "value": "z",
-                "nodeType": "name",
-                "type": "f64"
-            },
-            {
-                "id": "=",
-                "value": "=",
-                "nodeType": "binary",
+                "id": "return",
+                "value": "return",
+                "nodeType": "statement",
                 "first": {
                     "id": "(name)",
                     "value": "z",
                     "nodeType": "name",
                     "type": "f64"
-                },
-                "second": {
-                    "id": "(",
-                    "value": "(",
-                    "nodeType": "call",
-                    "first": {
-                        "id": "(name)",
-                        "value": "mul",
-                        "nodeType": "name",
-                        "first": [
-                            {
-                                "id": "(name)",
-                                "value": "a",
-                                "nodeType": "name",
-                                "type": "f64"
-                            },
-                            {
-                                "id": "(name)",
-                                "value": "b",
-                                "nodeType": "name",
-                                "type": "f64"
-                            }
-                        ],
-                        "second": {
-                            "id": "return",
-                            "value": "return",
-                            "nodeType": "statement",
-                            "first": {
-                                "id": "*",
-                                "value": "*",
-                                "nodeType": "binary",
-                                "first": {
-                                    "id": "(name)",
-                                    "value": "a",
-                                    "nodeType": "name",
-                                    "type": "f64"
-                                },
-                                "second": {
-                                    "id": "(name)",
-                                    "value": "b",
-                                    "nodeType": "name",
-                                    "type": "f64"
-                                }
-                            }
-                        },
-                        "type": "f64"
-                    },
-                    "second": [
-                        {
-                            "id": "(name)",
-                            "value": "h",
-                            "nodeType": "name",
-                            "type": "f64"
-                        },
-                        {
-                            "id": "(name)",
-                            "value": "i",
-                            "nodeType": "name",
-                            "type": "f64"
-                        }
-                    ],
+                }
+            },
+            "third": null
+        },
+        {
+            "id": "return",
+            "value": "return",
+            "nodeType": "statement",
+            "first": {
+                "id": "-",
+                "value": "-",
+                "nodeType": "unary",
+                "first": {
+                    "id": "(literal)",
+                    "value": "1.0l",
+                    "nodeType": "literal",
                     "type": "f64"
                 }
             }
-        ],
-        "type": "f64"
-    }
-]
+        }
+    ],
+    "type": "f64"
+}

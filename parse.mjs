@@ -326,6 +326,11 @@ export default function make_parse() {
       if (bp >= s.lbp) {
         s.lbp = bp;
       }
+      nud && (s.nud = nud);
+      std && (s.std = std);
+      led && (s.led = led);
+      value && (s.value = value);
+      symbol_table.set(id,s);
     } else {
       const params = {id:id,value:value?value:id,bp:bp,nud:nud,led:led,std:std};
       s = cons ? new cons(params) : new SymbolBase(params);
@@ -351,7 +356,7 @@ export default function make_parse() {
   }
 
   function constant(s, v) {
-    return symbol({id:s,value:v,cons:Constant});
+    return symbol({id:s,value:v,nud:Constant.prototype.nud,cons:Constant});
     // x.nud = function () {
     //   scope.reserve(this);
     //   this.value = symbol_table.get(this.id).value;
@@ -379,7 +384,7 @@ export default function make_parse() {
   }
 
   function infix(id, bp, led) {
-    return symbol({id:id,bp:bp,led:led,cons:Infix});
+    return symbol({id:id,bp:bp,led:led || Infix.prototype.led,cons:Infix});
     // const s = symbol(id, bp);
     // s.led = led || function (left) {
     //   this.first = left;
@@ -404,7 +409,7 @@ export default function make_parse() {
   }
 
   function infixr(id, bp, led) {
-    return symbol({id:id,bp:bp,led:led,cons:Infixr});
+    return symbol({id:id,bp:bp,led:led || Infixr.prototype.led,cons:Infixr});
     // const s = symbol(id, bp);
     // s.led = led || function (left) {
     //   this.first = left;
@@ -432,7 +437,7 @@ export default function make_parse() {
   }
 
   function assignment(id) {
-    return symbol({id:id,cons:Assignment});
+    return symbol({id:id,bp:10,led:Assignment.prototype.led,cons:Assignment});
     // return infixr(id, 10, function (left) {
     //   if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
     //     left.error('Bad lvalue.');
@@ -459,7 +464,7 @@ export default function make_parse() {
   }
 
   function prefix(id, nud) {
-    return symbol({id:id,nud:nud,cons:Prefix});
+    return symbol({id:id,nud:nud || Prefix.prototype.nud,cons:Prefix});
     // const s = symbol(id);
     // s.nud = nud || function () {
     //   scope.reserve(this);
@@ -540,7 +545,6 @@ export default function make_parse() {
 
     while (true) {
       n.nud = itself;
-      a.push(n);
       // 代入演算子
       if (token.id === '=') {
         t = token;
@@ -552,6 +556,8 @@ export default function make_parse() {
 
         t.nodeType = 'binary';
         a.push(t);
+      } else {
+        a.push(n);
       }
 
       // カンマ演算子
@@ -966,6 +972,7 @@ export default function make_parse() {
     advance('(');
     this.first = expression(0);
     advance(')');
+    debugger;
     this.second = block();
     if (token.id === 'else') {
       scope.reserve(token);
@@ -1018,7 +1025,6 @@ export default function make_parse() {
     //scope = null;
     //new Scope();
     //global = scope;
-    debugger;
     // ビルトイン変数
     ['i32','i64','f32','f64','void','string']
       .forEach(t=>{
@@ -1026,6 +1032,7 @@ export default function make_parse() {
       });
     advance();
     const s = statements();
+//    if(token.id == '}') advance('}');
     advance('(end)');
     scope.pop();
     return s;
