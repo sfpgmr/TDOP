@@ -20,7 +20,7 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-f64 h = 1.0l,i,𩸽軍団;
+f64 h = 1.0l,i,𩸽軍団 = 2.0l;
 f64 j = 3.0l;
 
 i = h + 0x222.222p+5l + j;

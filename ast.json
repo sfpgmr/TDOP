@@ -38,6 +38,23 @@
                 "value": "𩸽軍団",
                 "nodeType": "name",
                 "type": "f64"
+            },
+            {
+                "id": "=",
+                "value": "=",
+                "nodeType": "binary",
+                "first": {
+                    "id": "(name)",
+                    "value": "𩸽軍団",
+                    "nodeType": "name",
+                    "type": "f64"
+                },
+                "second": {
+                    "id": "(literal)",
+                    "value": "2.0l",
+                    "nodeType": "literal",
+                    "type": "f64"
+                }
             }
         ],
         "type": "f64"
