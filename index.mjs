@@ -1,4 +1,4 @@
-import binaryen from 'binaryen';
+import generateCode from './generateCode.mjs';
 import tokenize from './tokens.mjs';
 import make_parse from './parse.mjs';
 import fs from 'fs';
@@ -44,12 +44,22 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-f64 main(){
-  f64 z = 1.0l;
-  if(z > 1.0l){
+i32 p = 1,j;
+i32 main(i32 a){
+  i32 d = 1;
+  i32 z = a * a;
+  
+  if(z > 1){
     return z;
+  } else {
+    return a;
   }
-  return -1.0l;
+
+  {
+    i32 c = 1;
+    z += c;
+  }
+  return -1;
 }
 `;
 const tokens = tokenize(testSrc);
@@ -57,8 +67,21 @@ fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
 
 const parse = make_parse();
 const ast = parse(tokens);
+const module = generateCode(ast);
+fs.writeFileSync('aut.wat',module.emitText(),'utf8');
 //console.log(ast.find("main"));
-const json = JSON.stringify(ast, ['id','token','kind','key', 'name', 'message',
-  'value', 'nodeType', 'first', 'second', 'third', 'fourth', 'type', 'assignment'], 4);
+//const json = JSON.stringify(ast, ['id','token','kind','key', 'name', 'message',
+//  'value', 'nodeType', 'first', 'def','typedef','scope','second', 'third', 'fourth', 'type', 'assignment'], 4);
+const json = JSON.stringify(ast,
+  (key,value)=>{
+    if(key == 'parent')  return undefined;
+    // if(key == 'def' || key == 'typedef'){
+    //   let m = [...value];
+    //   debugger;
+    //   return ;
+    // }
+    return value;
+  } 
+  , 2);
 
 fs.writeFileSync('./ast.json', json, 'utf8');

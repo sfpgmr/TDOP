@@ -14,29 +14,35 @@ Object.prototype.error = function (message, t) {
   throw t;
 };
 
+
 // パーサの生成
 export default function make_parse() {
-  let scope;
+//  let scope = new Scope();
   const symbol_table = new Map();
   let token;
   let tokens;
   let token_nr;
   const labels = new Map();
-  
+  let scope;
+  let scopeTop;
 
+  function createScope(){
+    const s = new Scope(scope);
+    scope = s;
+    return s;  
+  }
+  
   function itself() {
     return this;
   }
-
-  // Scope
+  
   class Scope {
-    constructor(){
+    constructor(s){
       this.def = new Map();
       this.typedef = new Map();
-      this.parent = scope;
-      scope = this;
+      this.parent = s;
     }
-
+  
     define(n)
     {
       const def = n.typedef ? this.typedef : this.def;
@@ -55,7 +61,7 @@ export default function make_parse() {
       n.scope = scope;
       return n;     
     }
-
+  
     find(n,typedef = n.typedef) {
       if(!typedef){
         let e = this;
@@ -109,74 +115,9 @@ export default function make_parse() {
     }          
   }
 
-  const global = new Scope();
-
-
-  // var original_scope = {
-  //   define(n,typedef = false) {
-  //     const def = typedef?this.def:this.typedef;
-  //     const t = def[n.value];
-
-  //     if (typeof t === 'object') {
-  //       n.error((t.reserved)
-  //         ? 'Already reserved.'
-  //         : 'Already defined.');
-  //     }
-  //     this.def[n.value] = n;
-  //     n.reserved = false;
-  //     n.nud = itself;
-  //     n.led = null;
-  //     n.std = null;
-  //     n.lbp = 0;
-  //     n.scope = scope;
-  //     return n;
-  //   },
-  //   find(n) {
-  //     var e = this;
-  //     var o;
-  //     while (true) {
-  //       o = e.def[n];
-  //       if (o && typeof o !== 'function') {
-  //         return e.def[n];
-  //       }
-  //       e = e.parent;
-  //       if (!e) {
-  //         o = symbol_table[n];
-  //         return (o && typeof o !== 'function')
-  //           ? o
-  //           : symbol_table['(name)'];
-  //       }
-  //     }
-  //   },
-  //   pop() {
-  //     scope = this.parent;
-  //   },
-  //   // 予約語
-  //   reserve(n) {
-  //     if (n.nodeType !== 'name' || n.reserved) {
-  //       return;
-  //     }
-  //     var t = this.def[n.value];
-  //     if (t) {
-  //       if (t.reserved) {
-  //         return;
-  //       }
-  //       if (t.nodeType === 'name') {
-  //         n.error('Already defined.');
-  //       }
-  //     }
-  //     this.def[n.value] = n;
-  //     n.reserved = true;
-  //   }
-  // };
-
-  // function new_scope() {
-  //   var s = scope;
-  //   scope = new Scope(s);
-  //   //    scope.def = {};
-  //   //    scope.parent = s;
-  //   return scope;
-  // }
+  function itself() {
+    return this;
+  }
 
   function advance(id) {
     let a;
@@ -279,11 +220,12 @@ export default function make_parse() {
         a.push(s);
       }
     }
-    return a.length === 0
-      ? null
-      : a.length === 1
-        ? a[0]
-        : a;
+    return a;
+    // .length === 0
+    //   ? null
+    //   : a.length === 1
+    //     ? a[0]
+    //     : a;
   }
 
   function block() {
@@ -309,15 +251,6 @@ export default function make_parse() {
       this.error('Missing operator.');
     }
   }
-
-  // const original_symbol = {
-  //   nud() {
-  //     this.error('Undefined.');
-  //   },
-  //   led(ignore) {
-  //     this.error('Missing operator.');
-  //   }
-  // };
 
   function symbol({id, bp = 0,value,nud,led,std,cons}) {
     let s = symbol_table.get(id);
@@ -511,7 +444,7 @@ export default function make_parse() {
     if (token.id === '(') {
       advance();
       // ローカル・スコープを開く
-      new Scope();
+      createScope();
       if (token.id !== ')') {
       // 変数を取り出して配列に格納する
         while (true) {
@@ -537,6 +470,7 @@ export default function make_parse() {
       advance('{');
       // ツリーの右に文を格納
       n.second = statements();
+      n.scope = scope;
       scope.pop();
       advance('}');
       n.nodeType = 'function';
@@ -583,121 +517,9 @@ export default function make_parse() {
     //     : a;
   }
 
-  // function stmt_std () {
-  //   let a = [];
-  //   let n;
-  //   let t;
-
-  //   while (true) {
-
-  //     n = token;
-
-  //     // 型名かどうか
-  //     let n1 = scope.find(n,true);
-  //     if(n1){
-  //       // 型名である
-  //       n.type = n1.type;
-  //       n.typedef = true;
-  //       advance();
-
-  //     } else {
-  //       // 変数名かどうか
-  //       let nvar = scope.find(n,false);
-  //       if(!nvar){
-  //         n.error('Undefined variable.');
-  //       }
-  //       n = nvar;
-  //     }
-
-  //     // if (n.nodeType !== 'name') {
-  //     //   n.error('Expected a new variable name.');
-  //     // }
-  //     scope.define(n);
-  //     n.type = this.value;
-  //     advance();
-  //     // 関数定義かどうか
-  //     if (token.id === '(') {
-  //       advance();
-  //       // ローカル・スコープを開く
-  //       new Scope();
-  //       if (token.id !== ')') {
-  //         // 変数を取り出して配列に格納する
-  //         while (true) {
-  //           const t = token;
-  //           if (token.nodeType !== 'name') {
-  //             token.error('Expected a parameter name.');
-  //           }
-  //           advance();
-  //           token.type = t.value;
-  //           scope.define(token);
-  //           a.push(token);
-  //           advance();
-  //           if (token.id !== ',') {
-  //             break;
-  //           }
-  //           advance(',');
-  //         }
-  //       }
-  //       // ツリーの左に格納
-  //       n.first = a;
-  //       advance(')');
-  //       // 戻り値の型の指定
-  //       advance('{');
-  //       // ツリーの右に文を格納
-  //       n.second = statements();
-  //       scope.pop();
-  //       advance('}');
-  //       n.nodeType = 'function';
-  //       return n;
-  //     }
-
-  //     if (token.id === '=') {
-  //       t = token;
-  //       advance('=');
-  //       t.first = n;
-  //       //debugger;
-  //       t.second = expression(0);
-  //       t.second.type = this.value;
-
-  //       t.nodeType = 'binary';
-  //       a.push(t);
-  //     }
-
-  //     a.push(n);
-
-  //     if (token.id !== ',') {
-  //       break;
-  //     }
-  //     advance(',');
-  //   }
-  //   advance(';');
-  //   return (a.length === 0)
-  //     ? null
-  //     : (a.length === 1)
-  //       ? a[0]
-  //       : a;
-  // }
-
-  // stmt('u32',stmt_std);
-  // stmt('u64',stmt_std);
-  // stmt('i32',stmt_std);
-  // stmt('i64',stmt_std);
-  // stmt('f32',stmt_std);
-  // stmt('f64',stmt_std);
-  // stmt('void',stmt_std);
-
+  
   stmt('(name)');
-  // stmt('(name)',function () {
-  //   // debugger;
-  //   if(scope.find(this.value).id === '(name)'){
-  //     this.error('undefined type.');
-  //   }
-
-  //   // return stmt_std.bind(this)();
-  //   return stmt_std();
-
-  // });
-
+  
   sym(':');
   sym(';');
   sym(')');
@@ -824,54 +646,6 @@ export default function make_parse() {
     return e;
   });
 
-  // const func_ = function () {
-  //     // 引数を格納する配列
-  //     let a = [];
-
-  //     // 関数名がついてるかどうか
-  //     if (token.nodeType === 'name') {
-  //         // 名前があれば現在のスコープに定義する
-  //         scope.define(token);
-  //         // 関数名
-  //         this.name = token.value;
-  //         advance();
-  //     }
-  //     // ローカル・スコープを開く
-  //     new_scope();
-  //     // 1つ進める
-  //     advance('(');// 期待する文字は ')'
-  //     if (token.id !== ')') {
-  //         // 変数を取り出して配列に格納する
-  //         while (true) {
-  //             if (token.nodeType !== 'name') {
-  //                 token.error('Expected a parameter name.');
-  //             }
-  //             scope.define(token);
-  //             a.push(token);
-  //             advance();
-  //             if (token.id !== ',') {
-  //                 break;
-  //             }
-  //             advance(',');
-  //         }
-  //     }
-  //     // ツリーの左に格納
-  //     this.first = a;
-  //     advance(')');
-  //     // 戻り値の型の指定
-  //     advance('{');
-  //     // ツリーの右に文を格納
-  //     this.second = statements();
-  //     scope.pop();
-  //     advance('}');
-  //     this.nodeType = 'function';
-  //     return this;
-  // };
-
-  // // function式・文
-  // prefix('function', func_)
-  //     .std = func_;
-
   prefix('[', function () {
     const a = [];
     if (token.id !== ']') {
@@ -918,61 +692,20 @@ export default function make_parse() {
 
 
   stmt('{', function () {
-    new Scope();
+    createScope(scope);
     var a = statements();
     scope.pop();
     advance('}');
-    return a;
+    this.nodeType = 'block';
+    this.first = a;
+
+    return this;
   });
-
-
-  // stmt('var', function () {
-  //     var a = [];
-  //     var n;
-  //     var t;
-  //     while (true) {
-  //         n = token;
-  //         if (n.nodeType !== 'name') {
-  //             n.error('Expected a new variable name.');
-  //         }
-  //         scope.define(n);
-  //         advance();
-  //         if(token.id !== ':'){
-  //             token.error('no type specified.');
-  //         }
-  //         advance(':');
-  //         debugger;
-  //         const tp = symbol_table[token.value];
-  //         if(!tp) token.error('illegal type specified.');
-  //         n.type = tp.id;
-  //         advance();
-  //         if (token.id === '=') {
-  //             t = token;
-  //             advance('=');
-  //             t.first = n;
-  //             t.second = expression(0);
-  //             t.second.type = tp.id;
-  //             t.nodeType = 'binary';
-  //             a.push(t);
-  //         }
-  //         if (token.id !== ',') {
-  //             break;
-  //         }
-  //         advance(',');
-  //     }
-  //     advance(';');
-  //     return (a.length === 0)
-  //         ? null
-  //         : (a.length === 1)
-  //             ? a[0]
-  //             : a;
-  // });
-
+  
   stmt('if', function () {
     advance('(');
     this.first = expression(0);
     advance(')');
-    debugger;
     this.second = block();
     if (token.id === 'else') {
       scope.reserve(token);
@@ -1025,6 +758,7 @@ export default function make_parse() {
     //scope = null;
     //new Scope();
     //global = scope;
+    scopeTop = createScope();
     // ビルトイン変数
     ['i32','i64','f32','f64','void','string']
       .forEach(t=>{
@@ -1032,9 +766,12 @@ export default function make_parse() {
       });
     advance();
     const s = statements();
-//    if(token.id == '}') advance('}');
     advance('(end)');
     scope.pop();
-    return s;
+    return {
+      id:'(program)',
+      scope: scopeTop,
+      first:s
+    };
   };
 }

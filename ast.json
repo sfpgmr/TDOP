@@ -1,84 +1,370 @@
 {
-    "id": "(name)",
-    "value": "main",
-    "nodeType": "function",
-    "first": [],
-    "second": [
+  "id": "(program)",
+  "scope": {
+    "def": {},
+    "typedef": {}
+  },
+  "first": [
+    {
+      "line": 2,
+      "from": 1,
+      "to": 4,
+      "value": "i32",
+      "nodeType": "define",
+      "first": [
         {
-            "id": "f64",
-            "value": "f64",
-            "nodeType": "define",
-            "first": [
-                {
-                    "id": "=",
-                    "value": "=",
-                    "nodeType": "binary",
-                    "first": {
-                        "id": "(name)",
-                        "value": "z",
-                        "nodeType": "name",
-                        "type": "f64"
-                    },
-                    "second": {
-                        "id": "(literal)",
-                        "value": "1.0l",
-                        "nodeType": "literal",
-                        "type": "f64"
-                    }
-                }
-            ],
-            "type": "f64"
+          "line": 2,
+          "from": 7,
+          "to": 8,
+          "value": "=",
+          "nodeType": "binary",
+          "first": {
+            "line": 2,
+            "from": 5,
+            "to": 6,
+            "value": "p",
+            "nodeType": "name",
+            "type": "i32",
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "lbp": 0,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            }
+          },
+          "second": {
+            "line": 2,
+            "from": 9,
+            "to": 10,
+            "value": "1",
+            "nodeType": "literal",
+            "type": "i32"
+          }
         },
         {
-            "id": "if",
-            "value": "if",
-            "nodeType": "statement",
-            "first": {
-                "id": ">",
-                "value": ">",
+          "line": 2,
+          "from": 11,
+          "to": 12,
+          "value": "j",
+          "nodeType": "name",
+          "type": "i32",
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "lbp": 0,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          }
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "from": 18,
+      "to": 22,
+      "value": "main",
+      "nodeType": "function",
+      "type": "i32",
+      "reserved": false,
+      "led": null,
+      "std": null,
+      "lbp": 0,
+      "scope": {
+        "def": {},
+        "typedef": {}
+      },
+      "first": [
+        {
+          "line": 3,
+          "from": 27,
+          "to": 28,
+          "value": "a",
+          "nodeType": "name",
+          "type": "i32",
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "lbp": 0,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "varIndex": 0
+        }
+      ],
+      "second": [
+        {
+          "line": 4,
+          "from": 33,
+          "to": 36,
+          "value": "i32",
+          "nodeType": "define",
+          "first": [
+            {
+              "line": 4,
+              "from": 39,
+              "to": 40,
+              "value": "=",
+              "nodeType": "binary",
+              "first": {
+                "line": 4,
+                "from": 37,
+                "to": 38,
+                "value": "d",
+                "nodeType": "name",
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "varIndex": 1
+              },
+              "second": {
+                "line": 4,
+                "from": 41,
+                "to": 42,
+                "value": "1",
+                "nodeType": "literal",
+                "type": "i32"
+              }
+            }
+          ]
+        },
+        {
+          "line": 5,
+          "from": 46,
+          "to": 49,
+          "value": "i32",
+          "nodeType": "define",
+          "first": [
+            {
+              "line": 5,
+              "from": 52,
+              "to": 53,
+              "value": "=",
+              "nodeType": "binary",
+              "first": {
+                "line": 5,
+                "from": 50,
+                "to": 51,
+                "value": "z",
+                "nodeType": "name",
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "varIndex": 2
+              },
+              "second": {
+                "line": 5,
+                "from": 56,
+                "to": 57,
+                "value": "*",
                 "nodeType": "binary",
                 "first": {
-                    "id": "(name)",
-                    "value": "z",
-                    "nodeType": "name",
-                    "type": "f64"
+                  "line": 5,
+                  "from": 54,
+                  "to": 55,
+                  "value": "a",
+                  "nodeType": "name"
                 },
                 "second": {
-                    "id": "(literal)",
-                    "value": "1.0l",
-                    "nodeType": "literal",
-                    "type": "f64"
-                }
-            },
-            "second": {
-                "id": "return",
-                "value": "return",
-                "nodeType": "statement",
-                "first": {
-                    "id": "(name)",
-                    "value": "z",
-                    "nodeType": "name",
-                    "type": "f64"
-                }
-            },
-            "third": null
+                  "line": 5,
+                  "from": 58,
+                  "to": 59,
+                  "value": "a",
+                  "nodeType": "name"
+                },
+                "type": "i32"
+              }
+            }
+          ]
         },
         {
-            "id": "return",
-            "value": "return",
-            "nodeType": "statement",
+          "line": 7,
+          "from": 66,
+          "to": 68,
+          "value": "if",
+          "nodeType": "statement",
+          "reserved": true,
+          "first": {
+            "line": 7,
+            "from": 71,
+            "to": 72,
+            "value": ">",
+            "nodeType": "binary",
             "first": {
-                "id": "-",
-                "value": "-",
-                "nodeType": "unary",
-                "first": {
-                    "id": "(literal)",
-                    "value": "1.0l",
-                    "nodeType": "literal",
-                    "type": "f64"
-                }
+              "line": 7,
+              "from": 69,
+              "to": 70,
+              "value": "z",
+              "nodeType": "name"
+            },
+            "second": {
+              "line": 7,
+              "from": 73,
+              "to": 74,
+              "value": "1",
+              "nodeType": "literal",
+              "type": "f32"
             }
+          },
+          "second": {
+            "line": 7,
+            "from": 75,
+            "to": 76,
+            "value": "{",
+            "nodeType": "block",
+            "first": [
+              {
+                "line": 8,
+                "from": 81,
+                "to": 87,
+                "value": "return",
+                "nodeType": "statement",
+                "reserved": true,
+                "first": {
+                  "line": 8,
+                  "from": 88,
+                  "to": 89,
+                  "value": "z",
+                  "nodeType": "name"
+                }
+              }
+            ]
+          },
+          "third": {
+            "line": 9,
+            "from": 100,
+            "to": 101,
+            "value": "{",
+            "nodeType": "block",
+            "first": [
+              {
+                "line": 10,
+                "from": 106,
+                "to": 112,
+                "value": "return",
+                "nodeType": "statement",
+                "reserved": true,
+                "first": {
+                  "line": 10,
+                  "from": 113,
+                  "to": 114,
+                  "value": "a",
+                  "nodeType": "name"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "line": 13,
+          "from": 123,
+          "to": 124,
+          "value": "{",
+          "nodeType": "block",
+          "first": [
+            {
+              "line": 14,
+              "from": 129,
+              "to": 132,
+              "value": "i32",
+              "nodeType": "define",
+              "first": [
+                {
+                  "line": 14,
+                  "from": 135,
+                  "to": 136,
+                  "value": "=",
+                  "nodeType": "binary",
+                  "first": {
+                    "line": 14,
+                    "from": 133,
+                    "to": 134,
+                    "value": "c",
+                    "nodeType": "name",
+                    "type": "i32",
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "lbp": 0,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    }
+                  },
+                  "second": {
+                    "line": 14,
+                    "from": 137,
+                    "to": 138,
+                    "value": "1",
+                    "nodeType": "literal",
+                    "type": "i32"
+                  }
+                }
+              ]
+            },
+            {
+              "line": 15,
+              "from": 146,
+              "to": 148,
+              "value": "+=",
+              "nodeType": "binary",
+              "first": {
+                "line": 15,
+                "from": 144,
+                "to": 145,
+                "value": "z",
+                "nodeType": "name"
+              },
+              "second": {
+                "line": 15,
+                "from": 149,
+                "to": 150,
+                "value": "c",
+                "nodeType": "name"
+              },
+              "assignment": true
+            }
+          ]
+        },
+        {
+          "line": 17,
+          "from": 158,
+          "to": 164,
+          "value": "return",
+          "nodeType": "statement",
+          "reserved": true,
+          "first": {
+            "line": 17,
+            "from": 165,
+            "to": 166,
+            "value": "-",
+            "nodeType": "unary",
+            "first": {
+              "line": 17,
+              "from": 166,
+              "to": 167,
+              "value": "1",
+              "nodeType": "literal",
+              "type": "f32"
+            }
+          }
         }
-    ],
-    "type": "f64"
+      ]
+    }
+  ]
 }
