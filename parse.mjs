@@ -660,8 +660,8 @@ export default function make_parse() {
 
   prefix('++');
   prefix('--');
-  suffix('++').lbp = 10;
-  suffix('--').lbp = 10;
+  suffix('++').lbp = 70;
+  suffix('--').lbp = 70;
 
   prefix('!');
   prefix('-');

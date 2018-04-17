@@ -108,34 +108,41 @@
           ]
         },
         {
-          "id": "++",
-          "value": "++",
+          "id": "=",
+          "value": "=",
           "lbp": 10,
           "line": 5,
-          "pos": 11,
-          "nodeType": "suffix",
+          "pos": 8,
+          "nodeType": "binary",
           "first": {
+            "id": "(name)",
+            "value": "a",
+            "lbp": 0,
+            "line": 5,
+            "pos": 6,
+            "nodeType": "name",
+            "type": "i32",
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            }
+          },
+          "second": {
             "id": "+",
             "value": "+",
             "lbp": 50,
             "line": 5,
-            "pos": 7,
+            "pos": 12,
             "nodeType": "binary",
             "first": {
-              "id": "(literal)",
-              "value": "1",
-              "lbp": 0,
-              "line": 5,
-              "pos": 5,
-              "nodeType": "literal",
-              "type": "f32"
-            },
-            "second": {
               "id": "(name)",
-              "value": "c",
+              "value": "a",
               "lbp": 0,
               "line": 5,
-              "pos": 9,
+              "pos": 10,
               "nodeType": "name",
               "type": "i32",
               "reserved": false,
@@ -145,8 +152,33 @@
                 "def": {},
                 "typedef": {}
               }
+            },
+            "second": {
+              "id": "++",
+              "value": "++",
+              "lbp": 70,
+              "line": 5,
+              "pos": 16,
+              "nodeType": "suffix",
+              "first": {
+                "id": "(name)",
+                "value": "c",
+                "lbp": 0,
+                "line": 5,
+                "pos": 14,
+                "nodeType": "name",
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                }
+              }
             }
-          }
+          },
+          "assignment": true
         }
       ]
     }

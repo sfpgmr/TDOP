@@ -69,7 +69,7 @@ const testSrc =
 i32 main(){
   i32 c = 1,a = 2;
   //++c + a;
-  1 + c++;
+   a = a + c++;
 }
 `;
 const tokens = tokenize(testSrc);
