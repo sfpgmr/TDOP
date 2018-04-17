@@ -156,10 +156,9 @@ export default function make_parse() {
       t.error('Unexpected token.');
     }
 
-    token = Object.create(o);
+    token = Object.assign(Object.create(o),o);
     token.line = t.line;
-    token.from = t.from;
-    token.to = t.to;
+    token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
     token.nodeType = o.typedef ? o.nodeType : a;
     type && (token.type = type);
@@ -199,11 +198,12 @@ export default function make_parse() {
     }
 
     // 式
+    debugger;
+
     v = expression(0);
-    
-    if (!v.assignment && v.id !== '(') {
-      v.error('Bad expression statement.');
-    }
+    // if (!v.assignment && v.id !== '(' && v.nodeType !== 'unary') {
+    //   v.error('Bad expression statement.');
+    // }
     advance(';');
     return v;
   }
@@ -408,6 +408,14 @@ export default function make_parse() {
     // return s;
   }
 
+  function suffix(id,led = function(left){
+    this.first = left;
+    this.nodeType = 'suffix';
+    return this;
+  }){
+    return symbol({id:id,led:led});
+  }
+
   class Statement extends SymbolBase {
     constructor(id,std){
       super({id:id,std:std});
@@ -448,15 +456,29 @@ export default function make_parse() {
       if (token.id !== ')') {
       // 変数を取り出して配列に格納する
         while (true) {
-          const t = token;
           if (token.nodeType !== 'define') {
             token.error('Expected a parameter name.');
           }
           advance();
-          token.type = this.type;
-          scope.define(token);
-          a.push(token);
+          const t = token;
+          t.type = this.type;
+          scope.define(t);
           advance();
+          
+          if (token.id === '=') {
+            const n = token;
+            advance('=');
+            n.first = t;
+            //debugger;
+            n.second = expression(0);
+            n.second.type = this.type;
+            n.assignment = true;
+            n.nodeType = 'binary';
+            a.push(n);
+          } else {
+            a.push(t);
+          }
+
           if (token.id !== ',') {
             break;
           }
@@ -464,12 +486,12 @@ export default function make_parse() {
         }
       }
       // ツリーの左に格納
-      n.first = a;
+      n.params = a;
       advance(')');
       // 戻り値の型の指定
       advance('{');
       // ツリーの右に文を格納
-      n.second = statements();
+      n.statements = statements();
       n.scope = scope;
       scope.pop();
       advance('}');
@@ -636,6 +658,11 @@ export default function make_parse() {
   });
 
 
+  prefix('++');
+  prefix('--');
+  suffix('++').lbp = 10;
+  suffix('--').lbp = 10;
+
   prefix('!');
   prefix('-');
   prefix('typeof');
@@ -751,7 +778,6 @@ export default function make_parse() {
   });
 
   return function (t) {
-    //debugger;
     tokens = t;
     //        tokens = source.tokens('=<>!+-*&|/%^', '=<>&|');
     token_nr = 0;

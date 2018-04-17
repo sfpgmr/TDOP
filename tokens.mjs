@@ -28,11 +28,12 @@ function stringToArray (str) {
   return str.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
 }
 
-export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|") {
+export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-&|") {
   let c;                      // The current character.
-  let from;                   // The index of the start of the token.
+  //let from;                   // The index of the start of the token.
   let i = 0;                  // The index of the current character.
   let lineNo = 1;
+  let posx = 1;
   const source = stringToArray(src);
   
   const prefix = stringToArray(prefix_);
@@ -42,7 +43,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
   let q;                      // The quote character.
   let str;                    // The string value.
 
-  var result = [];            // An array to hold the results.
+  let result = [];            // An array to hold the results.
 
 
   function make(type, value,opt = {}) {
@@ -53,8 +54,9 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
       type: type,
       value: value,
       line: lineNo,
-      from: from,
-      to: i
+      pos:posx,
+      /*      from: from,
+      to: i*/
     },opt);
   }
 
@@ -72,29 +74,33 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
 
   c = source[i];
   while (c) {
-    from = i;
+    //from = i;
 
     if (c === '\n') {
       ++lineNo;
+      posx = 1;
       //from = i = 0;
     }
     // Ignore whitespace.
 
     if (c <= ' ') {
-      i += 1;
+      ++i;
+      ++posx;
       c = source[i];
 
       // name.
 
     } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z' || c > '\u00ff')) {
       str = c;
-      i += 1;
+      ++i;
+      ++posx;
       while (true) {
         c = source[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
                     (c >= '0' && c <= '9') || c === '_' || c > '\u00ff') {
           str += c;
-          i += 1;
+          ++i;
+          ++posx;
         } else {
           break;
         }
@@ -110,6 +116,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
 
       str = c;
       ++i;
+      ++posx;
 
       let nc = source[i];
 
@@ -123,6 +130,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         do {
           str += c;
           ++i;
+          ++posx;
           c = source[i];
         } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
 
@@ -131,6 +139,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           do {
             str += c;
             ++i;
+            ++posx;
             c = source[i];
             hexfp = true;
           } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
@@ -143,11 +152,13 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           do {
             str += c;
             ++i;
+            ++posx;
             c = source[i];
             if(first && (c == '+' || c == '-')){
               first = false;
               str += c;
               ++i;
+              ++posx;
               c = source[i];
               continue;
             } 
@@ -162,6 +173,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           if(hexfp){
             str += c;
             ++i;
+            ++posx;
             type = 'f32';
             kind = 'hex';
           } else {
@@ -171,6 +183,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           if(hexfp){
             str += c;
             ++i;
+            ++posx;
             type = 'f64';
             kind = 'hex';
           } else {
@@ -187,11 +200,13 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         // 2進数リテラル
         str = c + nc;
         ++i;
+        ++posx;
         c = source[i];
         // 2進数
         do {
           c != ' ' && (str += c);
           ++i;
+          ++posx;
           c = source[i];
         } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B');
         
@@ -209,7 +224,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           if (c < '0' || c > '9') {
             break;
           }
-          i += 1;
+          ++i;
+          ++posx;
           str += c;
         }
 
@@ -218,14 +234,16 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         if (c === '.') {
           int = false;
           type ='f32';
-          i += 1;
+          ++i;
+          ++posx;
           str += c;
           while (true) {
             c = source[i];
             if (c < '0' || c > '9') {
               break;
             }
-            i += 1;
+            ++i;
+            ++posx;
             str += c;
           }
         }
@@ -235,11 +253,13 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         if (c === 'e' || c === 'E') {
           int = false;
           type = 'f32';
-          i += 1;
+          ++i;
+          ++posx;
           str += c;
           c = source[i];
           if (c === '-' || c === '+') {
-            i += 1;
+            ++i;
+            ++posx;
             str += c;
             c = source[i];
           }
@@ -247,7 +267,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
             make(type, str).error("Bad exponent");
           }
           do {
-            i += 1;
+            ++i;
+            ++posx;
             str += c;
             c = source[i];
           } while (c >= '0' && c <= '9');
@@ -258,16 +279,19 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
           int = false;
           str += c;
           ++i;
+          ++posx;
           c = source[i];
         } else if(c == 'l' || c == 'L'){
           type = 'f64';
           int = false;
           str += c;
           ++i;
+          ++posx;
           c = source[i];
         } else if (c >= 'a' && c <= 'z') {
           str += c;
-          i += 1;
+          ++i;
+          ++posx;
           make('number', str).error("Bad number");
         } else {
           type = 'f32';
@@ -293,7 +317,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
     } else if (c === '\'' || c === '"') {
       str = '';
       q = c;
-      i += 1;
+      ++i;
+      ++posx;
       while (true) {
         c = source[i];
         if (c < ' ') {
@@ -314,7 +339,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
         // Look for escapement.
 
         if (c === '\\') {
-          i += 1;
+          ++i;
+          ++posx;
           if (i >= length) {
             make('string', str).error("Unterminated string");
           }
@@ -346,48 +372,56 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>&|
             }
             c = String.fromCharCode(c);
             i += 4;
+            posx += 4;
             break;
           }
         }
         str += c;
-        i += 1;
+        ++i;
+        ++posx;
       }
-      i += 1;
+      ++i;
+      ++posx;
       result.push(make('string', str));
       c = source[i];
 
       // comment.
 
     } else if (c === '/' && source[i + 1] === '/') {
-      i += 1;
+      ++i;
+      ++posx;
       while (true) {
         c = source[i];
         if (c === '\n' || c === '\r' || c === '') {
           break;
         }
 
-        i += 1;
+        ++i;
+        ++posx;
       }
 
       // combining
 
     } else if (prefix.findIndex(p=>c == p) >= 0) {
       str = c;
-      i += 1;
+      ++i;
+      ++posx;
       while (true) {
         c = source[i];
         if (i >= length || suffix.findIndex(p=>c == p) < 0) {
           break;
         }
         str += c;
-        i += 1;
+        ++i;
+        ++posx;
       }
       result.push(make('operator', str));
 
       // single-character operator
 
     } else {
-      i += 1;
+      ++i;
+      ++posx;
       result.push(make('operator', c));
       c = source[i];
     }
