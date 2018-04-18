@@ -115,10 +115,6 @@ export default function make_parse() {
     }          
   }
 
-  function itself() {
-    return this;
-  }
-
   function advance(id) {
     let a;
     let o;
@@ -198,8 +194,6 @@ export default function make_parse() {
     }
 
     // 式
-    debugger;
-
     v = expression(0);
     // if (!v.assignment && v.id !== '(' && v.nodeType !== 'unary') {
     //   v.error('Bad expression statement.');
@@ -486,12 +480,12 @@ export default function make_parse() {
         }
       }
       // ツリーの左に格納
-      n.params = a;
+      n.first = a;
       advance(')');
       // 戻り値の型の指定
       advance('{');
       // ツリーの右に文を格納
-      n.statements = statements();
+      n.second = statements();
       n.scope = scope;
       scope.pop();
       advance('}');

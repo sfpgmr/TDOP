@@ -12,27 +12,32 @@ export default function generateCode(ast) {
   const module = new binaryen.Module();
   //  const exp = new binaryen.Expression();
 
-  module.setMemory(1, null, 'test1');
-  module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
-  const localVars = [];
+  //module.setMemory(1, null, 'test1');
+  //module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
+  let localVars;
   //module.addMemoryImport('test','test','a');
 
   const statements = ast.first;
 
-  function generate(statements, module) {
-    statements.forEach((statement) => {
-      generate_(statement, module);
+  function generate(stmts) {
+    const result = [];
+    stmts.forEach((stmt) => {
+      const r = generate_(stmt);
+      if(r instanceof Array){
+        result.push(...r);
+      } else if(r){
+        result.push(r);
+      }
     });
+    return result;
   }
 
   function generate_(s) {
     switch (s.nodeType) {
     case 'define':
-      define(s);
-      break;
+      return define(s);
     case 'function':
-      function_(s);
-      break;
+      return function_(s);
     case 'unary':
       break;
     case 'binary':
@@ -57,7 +62,7 @@ export default function generateCode(ast) {
     const wasmStatement = [];
 
     // ローカル変数テーブル
-    const localVars = [];
+    localVars = [];
     let varIndex = 0;
 
     // 関数名
@@ -67,24 +72,27 @@ export default function generateCode(ast) {
     const funcReturnType = binaryen[funcNode.type];
 
     // 関数パラメータ
-    const funcParams = funcNode.first;
-    funcParams.forEach(p => {
-      switch (p.nodeType) {
-      case 'binary':
-        {
-          if (p.value != '=') throw p;
-          const param = p.first;
-          localVars[varIndex] = binaryen[param.type];
-          param.varIndex = varIndex++;
-          wasmStatement.push(assignment(p));
+    if(funcNode.first){
+      const funcParams = funcNode.first;
+      funcParams.forEach(p => {
+        switch (p.nodeType) {
+        case 'binary':
+          {
+            if (p.value != '=') throw p;
+            const param = p.first;
+            localVars[varIndex] = binaryen[param.type];
+            param.varIndex = varIndex++;
+            wasmStatement.push(assignment(p));
+          }
+          break;
+        case 'name':
+          localVars[varIndex] = binaryen[p.type];
+          p.varIndex = varIndex++;
+          break;
         }
-        break;
-      case 'name':
-        localVars[varIndex] = binaryen[p.type];
-        p.varIndex = varIndex++;
-        break;
-      }
-    });
+      });
+  
+    }
 
 
 
@@ -105,19 +113,26 @@ export default function generateCode(ast) {
     //   }
     // });
 
-    // //const statements = generate(funcNode.second);
-    // const ftype = module.addFunctionType(funcNode.value,binaryen[funcNode.type]);
-    // module.addFunction(funcNode.value,ftype,locals,module.block(null,wasmStmt));
+    debugger;
+    const statements = generate(funcNode.second);
+    const ftype = module.addFunctionType(funcNode.value,binaryen[funcNode.type]);
+    module.addFunction(funcNode.value,ftype,localVars,module.block(null,statements));
 
   }
 
-  function define(statement, localVars) {
+  function define(statement) {
+    const result = [];
     statement.first.forEach(d => {
       switch (d.nodeType) {
       case 'binary':
         // ローカル
-        if (d.scope && d.scope.parent) {
-          localVars.push(d);
+        if (d.first.scope) {
+          const left = d.first;
+          localVars.push(binaryen[left.type]);
+          left.varIndex = d.localVars - 1;
+          // 初期値の設定ステートメント
+          result.push(module.setLocal(left.varIndex,expression(d.second)));
+          d.global = false;
         } else {
           module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
           d.global = true;
@@ -125,8 +140,11 @@ export default function generateCode(ast) {
         break;
       case 'name':
         // ローカル
-        if (d.scope && d.scope.parent) {
-          localVars.push(d);
+        if (d.scope) {
+          localVars.push(binaryen[d.type]);
+          d.varIndex = d.localVars - 1;
+          result.push(module.setLocal(d.varIndex,module[d.type].const(0)));
+          d.global = false;
         } else {
           module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
           d.global = true;
@@ -134,6 +152,7 @@ export default function generateCode(ast) {
         break;
       }
     });
+    return result;
   }
 
 
@@ -177,6 +196,10 @@ export default function generateCode(ast) {
       return mul(e);
     case '/':
       return div(e);
+    case '(name)':
+      return name(e);
+    case '(literal)':
+      return literal(e);
     }
     e.error('Bad Binary Operator');
   }
@@ -186,15 +209,19 @@ export default function generateCode(ast) {
     case '+':
       return expression(e);
     case '-':
-      if(e.first.type == 'i32')
-      return module.f64.neg()
-
+      //if(e.first.type == 'i32')
+      //return module.f64.neg()
+      break;
     }
 
   }
 
   function name(e) {
-
+    if(!e.global){
+      return module.getLocal(e.varIndex,e.type);
+    } else {
+      return module.getGlobal(e.value,e.type);
+    }
   }
 
   function assignment(e) {
@@ -203,7 +230,7 @@ export default function generateCode(ast) {
     if (left.global) {
       return module.setGlobal(left.value, right);
     } else {
-      return module.setLocal(left.varIndex, right);
+      return module.setLocal(left.varIndex,right);
     }
   }
 
@@ -211,11 +238,23 @@ export default function generateCode(ast) {
     return module[e.type].add(expression(e.first), expression(e.second));
   }
 
-  function statement(statement) {
+  function sub(e) {
+    return module[e.type].sub(expression(e.first), expression(e.second));
+  }
+
+  function mul(e) {
+    return module[e.type].mul(expression(e.first), expression(e.second));
+  }
+
+  function div(e) {
+    return module[e.type].mul(expression(e.first), expression(e.second));
+  }
+
+  function statement(s) {
 
   }
 
-  generate(statements, module);
+  generate(statements);
 
   console.log(localVars);
   return module;

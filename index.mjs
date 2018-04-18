@@ -68,8 +68,9 @@ const testSrc =
 `
 i32 main(){
   i32 c = 1,a = 2;
+  c = c + 1;
   //++c + a;
-   a = a + c++;
+  // a = a + c++;
 }
 `;
 const tokens = tokenize(testSrc);
@@ -77,8 +78,8 @@ fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
 
 const parse = make_parse();
 const ast = parse(tokens);
-//const module = generateCode(ast);
-//fs.writeFileSync('aut.wat',module.emitText(),'utf8');
+const module = generateCode(ast);
+fs.writeFileSync('aut.wat',module.emitText(),'utf8');
 //console.log(ast.find("main"));
 //const json = JSON.stringify(ast, ['id','token','kind','key', 'name', 'message',
 //  'value', 'nodeType', 'first', 'def','typedef','scope','second', 'third', 'fourth', 'type', 'assignment'], 4);
