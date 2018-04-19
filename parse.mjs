@@ -144,7 +144,7 @@ export default function make_parse() {
       if (!o) {
         t.error('Unknown operator.');
       }
-    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32') {
+    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a== 'i32' || a == 'i64') {
       o = symbol_table.get('(literal)');
       type = a;
       a = 'literal';
@@ -173,6 +173,7 @@ export default function make_parse() {
       t = token;
       advance();
       left = t.led(left);
+      !t.type && (t.type = left.type);
     }
     return left;
   }
@@ -302,6 +303,7 @@ export default function make_parse() {
     led(left){
       this.first = left;
       this.second = expression(this.lbp);
+      !this.type  && (this.type = left.type);
       // if(this.first.type != this.second.type){
       //   this.error('type unmatched.');
       // }
@@ -330,6 +332,7 @@ export default function make_parse() {
     led(left){
       this.first = left;
       this.second = expression(this.lbp - 1);
+      !this.type && (this.type = left.type);
       this.nodeType = 'binary';
       return this;
     }
@@ -357,6 +360,7 @@ export default function make_parse() {
       }
       this.first = left;
       this.second = expression(this.lbp - 1);
+      !this.type && (this.type = left.type);
       this.assignment = true;
       this.nodeType = 'binary';
       return this;
@@ -385,6 +389,7 @@ export default function make_parse() {
     nud(){
       scope.reserve(this);
       this.first = expression(70);
+      !this.type && (this.type = this.first.type);
       this.nodeType = 'unary';
       return this;
     }
@@ -404,6 +409,7 @@ export default function make_parse() {
 
   function suffix(id,led = function(left){
     this.first = left;
+    !this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
   }){
@@ -426,6 +432,7 @@ export default function make_parse() {
   sym('(end)');
 
   function defVar(){
+    debugger;
     let a = [];
     let n;
     let t;
@@ -439,6 +446,7 @@ export default function make_parse() {
     }
 
     n.type = this.type;
+    n.export = this.export;
     scope.define(n);
     advance();
 
@@ -533,6 +541,10 @@ export default function make_parse() {
     //     : a;
   }
 
+  stmt('export',function(){
+    token.export = true;
+    return defVar.bind(token)();
+  });
   
   stmt('(name)');
   
@@ -569,12 +581,14 @@ export default function make_parse() {
     advance(':');
     this.third = expression(0);
     this.nodeType = 'ternary';
+    !this.type && (this.type = left.type);
     return this;
   });
 
   infix(':', 20, function (left) {
     this.first = left;
     advance();
+    !this.type && (this.type = left.type);
     this.second = token.name;
 
   });
@@ -604,6 +618,7 @@ export default function make_parse() {
     this.second = token;
     this.nodeType = 'binary';
     advance();
+    !this.type && (this.type = left.type);
     return this;
   });
 
@@ -648,6 +663,7 @@ export default function make_parse() {
       }
     }
     advance(')');
+    !this.type && (this.type = left.type);
     return this;
   });
 
@@ -750,6 +766,7 @@ export default function make_parse() {
       token.error('Unreachable statement.');
     }
     this.nodeType = 'statement';
+    !this.type && (this.type = this.first.type);
     return this;
   });
 

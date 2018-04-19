@@ -214,7 +214,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         result.push(make('int',str,{kind:'binary'}));
       }  else {
         // 数リテラル
-        let type = 'int';
+        let type = 'i32';
         // Look for more digits.
         
         let int = true;
@@ -293,10 +293,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++i;
           ++posx;
           make('number', str).error("Bad number");
-        } else {
-          type = 'f32';
-          int = false;
-        }
+        } 
 
         // Convert the string value to a number. If it is finite, then it is a good
         // token.

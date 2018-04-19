@@ -10,9 +10,10 @@
       "value": "main",
       "lbp": 0,
       "line": 2,
-      "pos": 10,
+      "pos": 17,
       "nodeType": "function",
       "type": "i32",
+      "export": true,
       "reserved": false,
       "led": null,
       "std": null,
@@ -60,19 +61,17 @@
                 "scope": {
                   "def": {},
                   "typedef": {}
-                },
-                "varIndex": null
+                }
               },
               "second": {
                 "id": "(literal)",
-                "value": "1",
+                "value": "2",
                 "lbp": 0,
                 "line": 3,
                 "pos": 13,
                 "nodeType": "literal",
                 "type": "i32"
-              },
-              "global": false
+              }
             },
             {
               "id": "=",
@@ -95,8 +94,7 @@
                 "scope": {
                   "def": {},
                   "typedef": {}
-                },
-                "varIndex": null
+                }
               },
               "second": {
                 "id": "(literal)",
@@ -106,8 +104,7 @@
                 "pos": 19,
                 "nodeType": "literal",
                 "type": "i32"
-              },
-              "global": false
+              }
             }
           ]
         },
@@ -139,35 +136,88 @@
             "value": "+",
             "lbp": 50,
             "line": 4,
-            "pos": 11,
+            "pos": 15,
             "nodeType": "binary",
             "first": {
-              "id": "(name)",
-              "value": "c",
-              "lbp": 0,
+              "id": "*",
+              "value": "*",
+              "lbp": 60,
               "line": 4,
-              "pos": 9,
-              "nodeType": "name",
-              "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              }
+              "pos": 11,
+              "nodeType": "binary",
+              "first": {
+                "id": "(name)",
+                "value": "c",
+                "lbp": 0,
+                "line": 4,
+                "pos": 9,
+                "nodeType": "name",
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                }
+              },
+              "second": {
+                "id": "(name)",
+                "value": "a",
+                "lbp": 0,
+                "line": 4,
+                "pos": 13,
+                "nodeType": "name",
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                }
+              },
+              "type": "i32"
             },
             "second": {
               "id": "(literal)",
-              "value": "1",
+              "value": "2",
               "lbp": 0,
               "line": 4,
-              "pos": 13,
+              "pos": 17,
               "nodeType": "literal",
-              "type": "f32"
+              "type": "i32"
+            },
+            "type": "i32"
+          },
+          "type": "i32",
+          "assignment": true
+        },
+        {
+          "id": "return",
+          "value": "return",
+          "lbp": 0,
+          "line": 5,
+          "pos": 10,
+          "nodeType": "statement",
+          "reserved": true,
+          "first": {
+            "id": "(name)",
+            "value": "c",
+            "lbp": 0,
+            "line": 5,
+            "pos": 12,
+            "nodeType": "name",
+            "type": "i32",
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "scope": {
+              "def": {},
+              "typedef": {}
             }
           },
-          "assignment": true
+          "type": "i32"
         }
       ]
     }

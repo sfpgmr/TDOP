@@ -66,11 +66,10 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-i32 main(){
-  i32 c = 1,a = 2;
-  c = c + 1;
-  //++c + a;
-  // a = a + c++;
+export i32 main(){
+  i32 c = 2,a = 2;
+  c = c * a + 2;
+  return c;
 }
 `;
 const tokens = tokenize(testSrc);
@@ -78,21 +77,24 @@ fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
 
 const parse = make_parse();
 const ast = parse(tokens);
-const module = generateCode(ast);
-fs.writeFileSync('aut.wat',module.emitText(),'utf8');
-//console.log(ast.find("main"));
-//const json = JSON.stringify(ast, ['id','token','kind','key', 'name', 'message',
-//  'value', 'nodeType', 'first', 'def','typedef','scope','second', 'third', 'fourth', 'type', 'assignment'], 4);
 const json = JSON.stringify(ast,
   (key,value)=>{
     if(key == 'parent')  return undefined;
-    // if(key == 'def' || key == 'typedef'){
-    //   let m = [...value];
-    //   debugger;
-    //   return ;
-    // }
     return value;
   } 
   , 2);
-
 fs.writeFileSync('./ast.json', json, 'utf8');
+
+const module = generateCode(ast);
+
+fs.writeFileSync('out.wat',module.emitText(),'utf8');
+const compiled = module.emitBinary();
+fs.writeFileSync('out.wasm',compiled);
+
+// 実行
+
+//const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
+const bin = new WebAssembly.Module(compiled);
+const inst = new WebAssembly.Instance(bin,{});
+console.log(inst.exports.main());
+
