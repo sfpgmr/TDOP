@@ -120,6 +120,7 @@ export default function make_parse() {
     let o;
     let t;
     let v;
+    let sign = true;
     let type;
     if (id && token.id !== id) {
       token.error('Expected "' + id + '".');
@@ -144,10 +145,16 @@ export default function make_parse() {
       if (!o) {
         t.error('Unknown operator.');
       }
-    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a== 'i32' || a == 'i64') {
+    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a== 'i32' || a == 'i64' || a=='u32' || a== 'u64') {
       o = symbol_table.get('(literal)');
       type = a;
       a = 'literal';
+      if(a.substr(0,1) == 'i'){
+        sign = true;
+      } else {
+        sign = false;
+      }
+
     } else {
       t.error('Unexpected token.');
     }
@@ -157,6 +164,7 @@ export default function make_parse() {
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
     token.nodeType = o.typedef ? o.nodeType : a;
+    token.sign = sign;
     type && (token.type = type);
     t.kind && (token.kind = t.kind);
 
@@ -797,7 +805,7 @@ export default function make_parse() {
     //global = scope;
     scopeTop = createScope();
     // ビルトイン変数
-    ['i32','i64','f32','f64','void','string']
+    ['u32','u64','i32','i64','f32','f64','void','string']
       .forEach(t=>{
         scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
       });

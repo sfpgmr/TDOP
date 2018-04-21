@@ -21,14 +21,18 @@ export default function generateCode(ast) {
 
   function generate(stmts) {
     const result = [];
-    stmts.forEach((stmt) => {
-      const r = generate_(stmt);
-      if (r instanceof Array) {
-        result.push(...r);
-      } else if (r) {
-        result.push(r);
-      }
-    });
+    if(stmts instanceof Array){
+      stmts.forEach((stmt) => {
+        const r = generate_(stmt);
+        if (r instanceof Array) {
+          result.push(...r);
+        } else if (r) {
+          result.push(r);
+        }
+      });
+    } else {
+      return generate_(stmts);
+    }
     return result;
   }
 
@@ -44,6 +48,8 @@ export default function generateCode(ast) {
       return expression(s);
     case 'statement':
       return statement(s);
+    case 'block':
+      return block(s);
     case 'call':
       break;
     case 'name':
@@ -112,7 +118,7 @@ export default function generateCode(ast) {
     //   }
     // });
 
-    debugger;
+    
     const statements = generate(funcNode.second);
     const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type]);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
@@ -186,32 +192,176 @@ export default function generateCode(ast) {
     e.error('Bad Type');
   }
 
-
   function binary(e) {
+    debugger;
+    const left = e.first,right = e.second;
     switch (e.value) {
+    // 代入
     case '=':
-      return assignment(e);
+      return assignment(left,right);
     case '+':
-      return add(e);
+      return binOp('add',left,right);
     case '-':
-      return sub(e);
+      return binOp('sub',left,right);
     case '*':
-      return mul(e);
+      return binOp('mul',left,right);
+    case '%':
+      return binOp('rem',left,right,true);
     case '/':
-      return div(e);
+      return binOp('div',left,right,true);
+    case '+=':
+      return setValue(left,binOp('add',left,right));
+    case '-=':
+      return setValue(left,binOp('sub',left,right));
+    case '*=':
+      return setValue(left,binOp('mul',left,right));
+    case '/=':
+      return setValue(left,binOp('div',left,right,true));
+    // 比較
+    case '==':
+      return binOp('eq',left,right);
+    case '>':
+      return binOp('gt',left,right,true);
+    case '>=':
+      return binOp('ge',left,right,true);
+    case '<':
+      return binOp('lt',left,right,true);
+    case '<=':
+      return binOp('le',left,right,true);
+    case '!=':
+      return binOp('ne',left,right);
+    // 論理
+    case '&&':
+      return logicalAnd(left,right);
+    case '||':
+      return logicalOr(left,right);
+    // ビット演算
+    case '^':
+      return binOp('xor',left,right);
+    case '&':
+      return binOp('and',left,right);
+    case '|':
+      return binOp('or',left,right);
+    case '<<<':
+      return binOp('shl',left,right);
+    case '>>>':
+      return binOp('shr',left,right,true);
+    case '<<':
+      return binOp('rotl',left,right);
+    case '>>':
+      return binOp('rotr',left,right);
     }
     e.error('Bad Binary Operator');
+  }
+
+  function setValue(n,v){
+    return (n.global || !n.scope) ? module.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+
+  }
+
+  function binOp(name,left,right,sign = false){
+    const t =  module[left.type];
+    if(t){
+      switch(left.type){
+      case 'i32':
+      case 'i64':
+      {
+        const op = t[sign ? name + '_s ' : name];
+        if(op){
+          return op(expression(left),expression(right));
+        } else {
+          left.error('Bad Operation');
+        }
+        break;
+      }
+      case 'f32':
+      case 'f64':
+        {
+          const op = t[sign ? name + '_s ' : name];
+          if(op) {
+            op(expression(left),expression(right));
+          } else {
+            left.error('Bad Operation');
+          }
+        }
+        break;
+      }
+    } else {
+      switch(left.type){
+      case 'u32':
+      case 'u64':
+        {
+          const op = module['i' + left.type.slice(-2)][sign?name + '_u':name];
+          if(op) {
+            return op(expression(left),expression(right));
+          } else {
+            left.error('Bad Operation');
+          }
+        }
+        break;
+      default:
+        left.error('Bad Type');
+      }
+    }
+  }
+
+  function logicalAnd(left,right){
+    const t = module[left.type];
+    if(t){
+      return t.and(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+    } else {
+      switch(left.type){
+      case 'u32':
+      case 'u64':
+      {
+        const t = module['i' + left.type.slice(-2)];
+        return t.and(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+      }
+      default:
+        left.error('Bad Type.');
+      }
+    }
+  }
+
+  function logicalOr(left,right){
+    const t = module[left.type];
+    if(t){
+      return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+    } else {
+      switch(left.type){
+      case 'u32':
+      case 'u64':
+      {
+        const t = module['i' + left.type.slice(-2)];
+        return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+      }
+      default:
+        left.error('Bad Type.');
+      }
+    }
   }
 
   function unary(e) {
     switch (e.value) {
     case '+':
-      return expression(e);
+      return expression(e.first);
     case '-':
-      //if(e.first.type == 'i32')
-      //return module.f64.neg()
-      break;
+      return neg(e.first);
+    case '!':
+      return not(e.first);
+    case '~':
+      return bitNot(e.first);
     }
+  }
+
+  function neg(left){
+    switch(left.type){
+
+    }
+
+  }
+
+  function not(left){
 
   }
 
@@ -223,46 +373,29 @@ export default function generateCode(ast) {
     }
   }
 
-  function assignment(e) {
-    const left = e.first;
-    const right = expression(e.second);
-    if (left.global) {
-      return module.setGlobal(left.value, right);
-    } else {
-      return module.setLocal(left.varIndex, right);
-    }
+  function assignment(left,right) {
+    return setValue(left,expression(right));
   }
 
-  function add(e) {
-    const left = e.first,
-      right = e.second;
-    return module[left.type].add(expression(left), expression(right));
-  }
 
-  function sub(e) {
-    const left = e.first,
-      right = e.second;
-    return module[left.type].sub(expression(left), expression(right));
-  }
-
-  function mul(e) {
-    const left = e.first,
-      right = e.second;
-    return module[left.type].mul(expression(left), expression(right));
-  }
-
-  function div(e) {
-    const left = e.first,
-      right = e.second;
-    return module[left.type].neg(expression(left), expression(right));
+  function block(s){
+    return module.block(null,generate(s.first));
   }
 
   function statement(s) {
     switch(s.id){
     case 'return':
       return module.return(expression(s.first));
+    case 'if':
+      return ifStatement(s);
     }
+  }
 
+  function ifStatement(s){
+    const condition = expression(s.first);
+    const thenStatemnts = generate(s.second);
+    const elseStatements = s.third && generate(s.third);
+    return module.if(condition,thenStatemnts,elseStatements);
   }
 
   generate(statements);

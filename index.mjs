@@ -68,7 +68,17 @@ const testSrc =
 `
 export i32 main(){
   i32 c = 2,a = 2;
-  c = c * a + 2;
+
+//  a -= 2;
+
+  if(c == 1){
+    c = 10;
+    a += c;
+  } else {
+    c = 20;
+    a += c;
+  }
+  c = c * a;
   return c;
 }
 `;
@@ -86,6 +96,7 @@ const json = JSON.stringify(ast,
 fs.writeFileSync('./ast.json', json, 'utf8');
 
 const module = generateCode(ast);
+
 
 fs.writeFileSync('out.wat',module.emitText(),'utf8');
 const compiled = module.emitBinary();
