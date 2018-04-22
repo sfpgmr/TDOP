@@ -16,12 +16,15 @@ export default function generateCode(ast) {
   //module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
   let localVars;
   let varIndex = 0;
+  let postOps = [];
   //module.addMemoryImport('test','test','a');
 
   const statements = ast.first;
 
+  
   function generate(stmts) {
     const result = [];
+    postOps.length = 0;
     if(stmts instanceof Array){
       stmts.forEach((stmt) => {
         const r = generate_(stmt);
@@ -30,6 +33,7 @@ export default function generateCode(ast) {
         } else if (r) {
           result.push(r);
         }
+        postOps.length && result.push(...postOps);
       });
     } else {
       return generate_(stmts);
@@ -57,6 +61,8 @@ export default function generateCode(ast) {
       return name(s);
     case 'literal':
       return literal(s);
+    case 'suffix':
+      return suffix(s);
     }
   }
 
@@ -93,27 +99,7 @@ export default function generateCode(ast) {
         paramTypes.push(binaryen[p.type]);
       });
     }
-
-
-
-
-    // funcNode.scope.def.forEach((v,k)=>{
-    //   if(v.reserved || !v.type) return;
-    //   debugger;
-    //   v.varIndex = i++; 
-    //   switch(v.nodeType){
-    //   case 'name':
-    //     locals.push(binaryen[v.type]);
-    //     break;
-    //   case 'binary':
-    //     // 初期化コードの挿入
-    //     wasmStmt.push(module.setLocal(i,expression(v.second)));
-    //     locals.push(binaryen[v.first.type]);
-    //     break;
-    //   }
-    // });
-
-    
+   
     const statements = generate(funcNode.second);
     const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type],paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
@@ -172,6 +158,8 @@ export default function generateCode(ast) {
       return name(e);
     case 'call':
       return call(e);
+    case 'suffix':
+      return suffix(e);
     }
   }
 
@@ -353,6 +341,8 @@ export default function generateCode(ast) {
       return bitNot(e.first);
     case '++':
       return inc(e.first);
+    case '--':
+      return dec(e.first);
     }
   }
 
@@ -430,6 +420,24 @@ export default function generateCode(ast) {
     }
   }
 
+  function dec(left){
+    const builtinType = module[left.type];
+    if(builtinType){
+      return setValue(left,builtinType.sub(expression(left),builtinType.const(1)));
+    } else {
+      switch(left.type){
+      case 'u32':
+      case 'u64':
+      {
+        const t = module['i' + left.type.slice(-2)];
+        return setValue(left,t.sub(expression(left),t.const(1)));      
+      }
+      default:
+        left.error('Bad Type');
+      }
+    }
+  }
+
   function name(e) {
     if (!e.global) {
       return module.getLocal(e.varIndex, binaryen[e.type]);
@@ -453,6 +461,8 @@ export default function generateCode(ast) {
       return module.return(expression(s.first));
     case 'if':
       return ifStatement(s);
+    case 'while':
+      return whileStatement(s);
     }
   }
 
@@ -463,6 +473,31 @@ export default function generateCode(ast) {
     return module.if(condition,thenStatemnts,elseStatements);
   }
 
+  function whileStatement(s){
+
+  }
+
+  function suffix(s){
+    switch(s.id){
+    case '++':
+      return postInc(s);
+    case '--':
+      return postDec(s);
+    default:
+      s.error('Bad Operator');
+    }
+  }
+
+  function postInc(s){
+    postOps.push(inc(s.first));
+    return name(s.first);
+  }
+
+  function postDec(s){
+    postOps.push(dec(s.first));
+    return name(s.first);
+  }
+  
   generate(statements);
 
   console.log(localVars);

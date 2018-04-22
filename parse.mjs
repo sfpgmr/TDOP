@@ -683,7 +683,7 @@ export default function make_parse() {
 
   prefix('!');
   prefix('-');
-  prefix('typeof');
+  //prefix('typeof');
 
   prefix('(', function () {
     const e = expression(0);
