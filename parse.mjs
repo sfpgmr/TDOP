@@ -440,7 +440,7 @@ export default function make_parse() {
   sym('(end)');
 
   function defVar(){
-    debugger;
+    //debugger;
     let a = [];
     let n;
     let t;

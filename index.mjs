@@ -66,10 +66,16 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
+
+i32 mul(i32 a,i32 b){
+  return a * b;
+}
+
 export i32 main(){
   i32 c = 2,a = 2;
 
 //  a -= 2;
+  ++a;
 
   if(c == 1){
     c = 10;
@@ -78,9 +84,11 @@ export i32 main(){
     c = 20;
     a += c;
   }
-  c = c * a;
+  c = mul(a,c) + 2;
   return c;
 }
+
+
 `;
 const tokens = tokenize(testSrc);
 fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
