@@ -17,6 +17,7 @@ export default function generateCode(ast) {
   let localVars;
   let varIndex = 0;
   let postOps = [];
+  let blockId = 0;
   //module.addMemoryImport('test','test','a');
 
   const statements = ast.first;
@@ -68,7 +69,7 @@ export default function generateCode(ast) {
 
   // 関数呼び出し
   function call(stmt){
-    debugger;
+    //debugger;
     const func = stmt.first;
     const params = stmt.second;
     return  module.call(func.value,params.map(e=>expression(e)),binaryen[stmt.type]);
@@ -248,13 +249,14 @@ export default function generateCode(ast) {
   }
 
   function binOp(name,left,right,sign = false){
+    //debugger;
     const t =  module[left.type];
     if(t){
       switch(left.type){
       case 'i32':
       case 'i64':
       {
-        const op = t[sign ? name + '_s ' : name];
+        const op = t[sign ? name + '_s' : name];
         if(op){
           return op(expression(left),expression(right));
         } else {
@@ -265,7 +267,7 @@ export default function generateCode(ast) {
       case 'f32':
       case 'f64':
         {
-          const op = t[sign ? name + '_s ' : name];
+          const op = t[sign ? name + '_s' : name];
           if(op) {
             op(expression(left),expression(right));
           } else {
@@ -350,10 +352,10 @@ export default function generateCode(ast) {
     switch(left.type){
     case 'i32':
     case 'u32':
-      return module.i32.xor(expression(left),module.i32.const(0x70000000));
+      return module.i32.sub(module.i32.const(0),expression(left));
     case 'i64':
     case 'u64':
-      return module.i64.xor(expression(left),module.i64.const(0,0x70000000));
+      return module.i64.sub(module.i64.const(0,0),expression(left));
     case 'f32':
     case 'f64':
       return module[left.type].neg(expression(left));
@@ -463,6 +465,8 @@ export default function generateCode(ast) {
       return ifStatement(s);
     case 'while':
       return whileStatement(s);
+    default:
+      s.error('Bad Statement.');
     }
   }
 
@@ -474,7 +478,49 @@ export default function generateCode(ast) {
   }
 
   function whileStatement(s){
+    debugger;
+    const bid = 'L' + (blockId++).toString(10);
+    const lid = 'L' + (blockId++).toString(10);
+    let stmt = generate_(s.second);
+    stmt = (stmt instanceof Array) ? stmt : [stmt];
+    let condition = expression(s.first);
+    
+    let type = module[s.first.type];
+    if(type){
+      if(type.eqz){
+        condition = type.eqz(condition);
+      } else {
+        switch(s.first.type){
+        case 'f32':
+          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
+          break;
+        case 'f64':
+          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
+          break;
+        default:
+          s.first.error('Bad.Type');
+        }
+      }
+    } else {
+      switch(s.first.type){
+      case 'u32':
+      case 'u64':
+        {
+          type = module['i' + s.first.type.slice(-2)];
+          condition = type.eqz(condition);
+        }
+        break;
+      default:
+        s.first.error('Bad Type');
+      }
+    }
 
+    return module.block(bid,[
+      module.loop(lid,module.block(null,[
+        module.br_if(bid,condition),
+        ...stmt,
+        module.break(lid)
+      ]))]);
   }
 
   function suffix(s){

@@ -66,7 +66,6 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `
-
 i32 𩸽(i32 a,i32 b){
   return a * b;
 }
@@ -81,9 +80,16 @@ export i32 main(){
     c = 3;
     a += c;
   }
-  c = 𩸽(a--,c);
-  c += a;
-  return c;
+
+  while (a > -3){
+    a -= 1;
+    ++c;
+  }  
+
+ // c = 𩸽(a--,c);
+
+  //c += a;
+  return c;// 8
 }
 `;
 const tokens = tokenize(testSrc);
@@ -100,6 +106,7 @@ const json = JSON.stringify(ast,
 fs.writeFileSync('./ast.json', json, 'utf8');
 
 const module = generateCode(ast);
+module.optimize();
 
 
 fs.writeFileSync('out.wat',module.emitText(),'utf8');
