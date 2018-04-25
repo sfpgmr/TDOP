@@ -223,6 +223,42 @@
                 "sign": false,
                 "type": "i32"
               }
+            },
+            {
+              "id": "=",
+              "value": "=",
+              "lbp": 10,
+              "line": 7,
+              "pos": 23,
+              "nodeType": "binary",
+              "sign": true,
+              "first": {
+                "id": "(name)",
+                "value": "b",
+                "lbp": 0,
+                "line": 7,
+                "pos": 21,
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                }
+              },
+              "second": {
+                "id": "(literal)",
+                "value": "0",
+                "lbp": 0,
+                "line": 7,
+                "pos": 25,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32"
+              }
             }
           ]
         },
@@ -471,8 +507,8 @@
           "sign": true,
           "reserved": true,
           "first": {
-            "id": ">",
-            "value": ">",
+            "id": "<",
+            "value": "<",
             "lbp": 40,
             "line": 17,
             "pos": 14,
@@ -480,7 +516,7 @@
             "sign": true,
             "first": {
               "id": "(name)",
-              "value": "a",
+              "value": "b",
               "lbp": 0,
               "line": 17,
               "pos": 12,
@@ -496,23 +532,13 @@
               }
             },
             "second": {
-              "id": "-",
-              "value": "-",
-              "lbp": 50,
+              "id": "(literal)",
+              "value": "2",
+              "lbp": 0,
               "line": 17,
               "pos": 16,
-              "nodeType": "unary",
-              "sign": true,
-              "first": {
-                "id": "(literal)",
-                "value": "3",
-                "lbp": 0,
-                "line": 17,
-                "pos": 17,
-                "nodeType": "literal",
-                "sign": false,
-                "type": "i32"
-              },
+              "nodeType": "literal",
+              "sign": false,
               "type": "i32"
             },
             "type": "i32"
@@ -522,24 +548,24 @@
             "value": "{",
             "lbp": 0,
             "line": 17,
-            "pos": 19,
+            "pos": 18,
             "nodeType": "block",
             "sign": true,
             "first": [
               {
-                "id": "-=",
-                "value": "-=",
-                "lbp": 10,
+                "id": "++",
+                "value": "++",
+                "lbp": 70,
                 "line": 18,
-                "pos": 10,
-                "nodeType": "binary",
+                "pos": 8,
+                "nodeType": "unary",
                 "sign": true,
                 "first": {
                   "id": "(name)",
-                  "value": "a",
+                  "value": "b",
                   "lbp": 0,
                   "line": 18,
-                  "pos": 7,
+                  "pos": 9,
                   "nodeType": "name",
                   "sign": true,
                   "type": "i32",
@@ -551,34 +577,23 @@
                     "typedef": {}
                   }
                 },
-                "second": {
-                  "id": "(literal)",
-                  "value": "1",
-                  "lbp": 0,
-                  "line": 18,
-                  "pos": 12,
-                  "nodeType": "literal",
-                  "sign": false,
-                  "type": "i32"
-                },
-                "type": "i32",
-                "assignment": true
+                "type": "i32"
               },
               {
-                "id": "if",
-                "value": "if",
+                "id": "while",
+                "value": "while",
                 "lbp": 0,
                 "line": 19,
-                "pos": 8,
+                "pos": 11,
                 "nodeType": "statement",
                 "sign": true,
                 "reserved": true,
                 "first": {
-                  "id": "==",
-                  "value": "==",
+                  "id": ">",
+                  "value": ">",
                   "lbp": 40,
                   "line": 19,
-                  "pos": 13,
+                  "pos": 16,
                   "nodeType": "binary",
                   "sign": true,
                   "first": {
@@ -586,7 +601,7 @@
                     "value": "a",
                     "lbp": 0,
                     "line": 19,
-                    "pos": 10,
+                    "pos": 14,
                     "nodeType": "name",
                     "sign": true,
                     "type": "i32",
@@ -603,15 +618,15 @@
                     "value": "-",
                     "lbp": 50,
                     "line": 19,
-                    "pos": 15,
+                    "pos": 18,
                     "nodeType": "unary",
                     "sign": true,
                     "first": {
                       "id": "(literal)",
-                      "value": "1",
+                      "value": "3",
                       "lbp": 0,
                       "line": 19,
-                      "pos": 16,
+                      "pos": 19,
                       "nodeType": "literal",
                       "sign": false,
                       "type": "i32"
@@ -625,50 +640,156 @@
                   "value": "{",
                   "lbp": 0,
                   "line": 19,
-                  "pos": 19,
+                  "pos": 21,
                   "nodeType": "block",
                   "sign": true,
                   "first": [
                     {
-                      "id": "break",
-                      "value": "break",
-                      "lbp": 0,
+                      "id": "-=",
+                      "value": "-=",
+                      "lbp": 10,
                       "line": 20,
-                      "pos": 13,
+                      "pos": 12,
+                      "nodeType": "binary",
+                      "sign": true,
+                      "first": {
+                        "id": "(name)",
+                        "value": "a",
+                        "lbp": 0,
+                        "line": 20,
+                        "pos": 9,
+                        "nodeType": "name",
+                        "sign": true,
+                        "type": "i32",
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        }
+                      },
+                      "second": {
+                        "id": "(literal)",
+                        "value": "1",
+                        "lbp": 0,
+                        "line": 20,
+                        "pos": 14,
+                        "nodeType": "literal",
+                        "sign": false,
+                        "type": "i32"
+                      },
+                      "type": "i32",
+                      "assignment": true
+                    },
+                    {
+                      "id": "if",
+                      "value": "if",
+                      "lbp": 0,
+                      "line": 21,
+                      "pos": 10,
                       "nodeType": "statement",
                       "sign": true,
-                      "reserved": true
+                      "reserved": true,
+                      "first": {
+                        "id": "==",
+                        "value": "==",
+                        "lbp": 40,
+                        "line": 21,
+                        "pos": 15,
+                        "nodeType": "binary",
+                        "sign": true,
+                        "first": {
+                          "id": "(name)",
+                          "value": "a",
+                          "lbp": 0,
+                          "line": 21,
+                          "pos": 12,
+                          "nodeType": "name",
+                          "sign": true,
+                          "type": "i32",
+                          "reserved": false,
+                          "led": null,
+                          "std": null,
+                          "scope": {
+                            "def": {},
+                            "typedef": {}
+                          }
+                        },
+                        "second": {
+                          "id": "-",
+                          "value": "-",
+                          "lbp": 50,
+                          "line": 21,
+                          "pos": 17,
+                          "nodeType": "unary",
+                          "sign": true,
+                          "first": {
+                            "id": "(literal)",
+                            "value": "1",
+                            "lbp": 0,
+                            "line": 21,
+                            "pos": 18,
+                            "nodeType": "literal",
+                            "sign": false,
+                            "type": "i32"
+                          },
+                          "type": "i32"
+                        },
+                        "type": "i32"
+                      },
+                      "second": {
+                        "id": "{",
+                        "value": "{",
+                        "lbp": 0,
+                        "line": 21,
+                        "pos": 21,
+                        "nodeType": "block",
+                        "sign": true,
+                        "first": [
+                          {
+                            "id": "break",
+                            "value": "break",
+                            "lbp": 0,
+                            "line": 22,
+                            "pos": 15,
+                            "nodeType": "statement",
+                            "sign": true,
+                            "reserved": true
+                          }
+                        ]
+                      },
+                      "third": null
+                    },
+                    {
+                      "id": "++",
+                      "value": "++",
+                      "lbp": 70,
+                      "line": 24,
+                      "pos": 10,
+                      "nodeType": "unary",
+                      "sign": true,
+                      "first": {
+                        "id": "(name)",
+                        "value": "c",
+                        "lbp": 0,
+                        "line": 24,
+                        "pos": 11,
+                        "nodeType": "name",
+                        "sign": true,
+                        "type": "i32",
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        }
+                      },
+                      "type": "i32"
                     }
                   ]
-                },
-                "third": null
-              },
-              {
-                "id": "++",
-                "value": "++",
-                "lbp": 70,
-                "line": 22,
-                "pos": 8,
-                "nodeType": "unary",
-                "sign": true,
-                "first": {
-                  "id": "(name)",
-                  "value": "c",
-                  "lbp": 0,
-                  "line": 22,
-                  "pos": 9,
-                  "nodeType": "name",
-                  "sign": true,
-                  "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  }
-                },
-                "type": "i32"
+                }
               }
             ]
           }
@@ -677,27 +798,54 @@
           "id": "return",
           "value": "return",
           "lbp": 0,
-          "line": 28,
+          "line": 31,
           "pos": 10,
           "nodeType": "statement",
           "sign": true,
           "reserved": true,
           "first": {
-            "id": "(name)",
-            "value": "c",
-            "lbp": 0,
-            "line": 28,
-            "pos": 12,
-            "nodeType": "name",
+            "id": "+",
+            "value": "+",
+            "lbp": 50,
+            "line": 31,
+            "pos": 14,
+            "nodeType": "binary",
             "sign": true,
-            "type": "i32",
-            "reserved": false,
-            "led": null,
-            "std": null,
-            "scope": {
-              "def": {},
-              "typedef": {}
-            }
+            "first": {
+              "id": "(name)",
+              "value": "c",
+              "lbp": 0,
+              "line": 31,
+              "pos": 12,
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              }
+            },
+            "second": {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "line": 31,
+              "pos": 16,
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              }
+            },
+            "type": "i32"
           },
           "type": "i32"
         }

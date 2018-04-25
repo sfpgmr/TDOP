@@ -18,6 +18,7 @@ export default function generateCode(ast) {
   let varIndex = 0;
   let postOps = [];
   let blockId = 0;
+  let currentBrakePoint;
   //module.addMemoryImport('test','test','a');
 
   const statements = ast.first;
@@ -47,7 +48,7 @@ export default function generateCode(ast) {
     case 'define':
       return define(s);
     case 'function':
-      return function_(s);
+      return functionStatement(s);
     case 'unary':
       return expression(s);
     case 'binary':
@@ -76,7 +77,7 @@ export default function generateCode(ast) {
   }
 
   // 関数定義
-  function function_(funcNode) {
+  function functionStatement(funcNode) {
     // 関数本体
     const wasmStatement = [];
 
@@ -465,9 +466,15 @@ export default function generateCode(ast) {
       return ifStatement(s);
     case 'while':
       return whileStatement(s);
+    case 'break':
+      return breakStatement(s);
     default:
       s.error('Bad Statement.');
     }
+  }
+
+  function breakStatement(s){
+    return module.break(currentBrakePoint);
   }
 
   function ifStatement(s){
@@ -479,10 +486,12 @@ export default function generateCode(ast) {
 
   function whileStatement(s){
     debugger;
-    const bid = 'L' + (blockId++).toString(10);
-    const lid = 'L' + (blockId++).toString(10);
-    let stmt = generate_(s.second);
-    stmt = (stmt instanceof Array) ? stmt : [stmt];
+    const bid = 'while' + (blockId++).toString(10);
+    currentBrakePoint = bid; 
+    const lid = 'loop' + (blockId++).toString(10);
+    let stmt = generate(s.second);
+    stmt = stmt instanceof Array ? stmt : [stmt];
+    
     let condition = expression(s.first);
     
     let type = module[s.first.type];
@@ -546,7 +555,6 @@ export default function generateCode(ast) {
   
   generate(statements);
 
-  console.log(localVars);
   return module;
 
 }

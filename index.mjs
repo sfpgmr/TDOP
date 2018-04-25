@@ -71,7 +71,7 @@ i32 𩸽(i32 a,i32 b){
 }
 
 export i32 main(){
-  i32 c = 1,a = 1;
+  i32 c = 1,a = 1,b = 0;
 
   if(c != 2){
     c = 2;
@@ -81,18 +81,21 @@ export i32 main(){
     a += c;
   }
 
-  while (a > -3){
-    a -= 1;
-    if(a == -1) {
-      break;
-    }
-    ++c;
-  }  
+  while (b < 2){
+    ++b;
+    while (a > -3){
+      a -= 1;
+      if(a == -1) {
+        break;
+      }
+      ++c;
+    }  
+  }
 
  // c = 𩸽(a--,c);
 
   //c += a;
-  return c;// 8
+  return c + b;// 9
 }
 `;
 const tokens = tokenize(testSrc);
@@ -106,15 +109,20 @@ const json = JSON.stringify(ast,
     return value;
   } 
   , 2);
+
+
 fs.writeFileSync('./ast.json', json, 'utf8');
+console.log('パース完了');
 
 const module = generateCode(ast);
-module.optimize();
+//module.optimize();
 
 
 fs.writeFileSync('out.wat',module.emitText(),'utf8');
 const compiled = module.emitBinary();
 fs.writeFileSync('out.wasm',compiled);
+
+console.log('コンパイル完了');
 
 // 実行
 
