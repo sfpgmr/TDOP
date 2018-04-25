@@ -2,7 +2,7 @@ import binaryen from 'binaryen';
 
 Object.prototype.error = function(message, t) {
   t = t || this;
-  t.name = 'Error';
+  t.name = 'Compiler Error';
   t.message = message;
   throw t;
 };

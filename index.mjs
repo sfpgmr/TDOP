@@ -83,6 +83,9 @@ export i32 main(){
 
   while (a > -3){
     a -= 1;
+    if(a == -1) {
+      break;
+    }
     ++c;
   }  
 

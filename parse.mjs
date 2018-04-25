@@ -9,7 +9,7 @@
 
 Object.prototype.error = function (message, t) {
   t = t || this;
-  t.name = 'SyntaxError';
+  t.name = 'Parser : SyntaxError';
   t.message = message;
   throw t;
 };
