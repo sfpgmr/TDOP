@@ -1,11 +1,10 @@
 import binaryen from 'binaryen';
 
-Object.prototype.error = function(message, t) {
-  t = t || this;
+function error (message, t = this) {
   t.name = 'Compiler Error';
   t.message = message;
   throw t;
-};
+}
 
 export default function generateCode(ast) {
   // Create a module with a single function
@@ -178,7 +177,7 @@ export default function generateCode(ast) {
     case 'f64':
       return module.f64.const(parseFloat(e.value));
     }
-    e.error('Bad Type');
+    error('Bad Type',e);
   }
 
   function binary(e) {
@@ -241,7 +240,7 @@ export default function generateCode(ast) {
     case '>>':
       return binOp('rotr',left,right);
     }
-    e.error('Bad Binary Operator');
+    error('Bad Binary Operator',e);
   }
 
   function setValue(n,v){
@@ -261,7 +260,7 @@ export default function generateCode(ast) {
         if(op){
           return op(expression(left),expression(right));
         } else {
-          left.error('Bad Operation');
+          error('Bad Operation',left);
         }
         break;
       }
@@ -272,7 +271,7 @@ export default function generateCode(ast) {
           if(op) {
             op(expression(left),expression(right));
           } else {
-            left.error('Bad Operation');
+            error('Bad Operation',left);
           }
         }
         break;
@@ -286,12 +285,12 @@ export default function generateCode(ast) {
           if(op) {
             return op(expression(left),expression(right));
           } else {
-            left.error('Bad Operation');
+            error('Bad Operation',left);
           }
         }
         break;
       default:
-        left.error('Bad Type');
+        error('Bad Type',left);
       }
     }
   }
@@ -309,7 +308,7 @@ export default function generateCode(ast) {
         return t.and(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
       }
       default:
-        left.error('Bad Type.');
+        error('Bad Type.',left);
       }
     }
   }
@@ -327,7 +326,7 @@ export default function generateCode(ast) {
         return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
       }
       default:
-        left.error('Bad Type.');
+        error('Bad Type.',left);
       }
     }
   }
@@ -401,7 +400,7 @@ export default function generateCode(ast) {
       return module.i64.xor(expression(left),module.i64.const(0xffffffff,0xffffffff));
     case 'f32':
     case 'f64':
-      return left.error('Bad Operation');
+      return error('Bad Operation',left);
     }
   }
 
@@ -418,7 +417,7 @@ export default function generateCode(ast) {
         return setValue(left,t.add(expression(left),t.const(1)));      
       }
       default:
-        left.error('Bad Type');
+        error('Bad Type',left);
       }
     }
   }
@@ -436,7 +435,7 @@ export default function generateCode(ast) {
         return setValue(left,t.sub(expression(left),t.const(1)));      
       }
       default:
-        left.error('Bad Type');
+        error('Bad Type',left);
       }
     }
   }
@@ -466,10 +465,14 @@ export default function generateCode(ast) {
       return ifStatement(s);
     case 'while':
       return whileStatement(s);
+    case 'do':
+      return doStatement(s);
     case 'break':
       return breakStatement(s);
+    case 'for':
+      return forStatement(s);
     default:
-      s.error('Bad Statement.');
+      error('Bad Statement.',s);
     }
   }
 
@@ -485,7 +488,6 @@ export default function generateCode(ast) {
   }
 
   function whileStatement(s){
-    debugger;
     const bid = 'while' + (blockId++).toString(10);
     currentBrakePoint = bid; 
     const lid = 'loop' + (blockId++).toString(10);
@@ -507,7 +509,7 @@ export default function generateCode(ast) {
           condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
           break;
         default:
-          s.first.error('Bad.Type');
+          error('Bad.Type',s.first);
         }
       }
     } else {
@@ -520,7 +522,7 @@ export default function generateCode(ast) {
         }
         break;
       default:
-        s.first.error('Bad Type');
+        error('Bad Type',s.first);
       }
     }
 
@@ -532,6 +534,109 @@ export default function generateCode(ast) {
       ]))]);
   }
 
+  function doStatement(s){
+    const bid = 'do' + (blockId++).toString(10);
+    currentBrakePoint = bid; 
+    const lid = 'loop' + (blockId++).toString(10);
+    let stmt = generate(s.second);
+    stmt = stmt instanceof Array ? stmt : [stmt];
+    
+    let condition = expression(s.first);
+    
+    let type = module[s.first.type];
+    if(type){
+      if(type.eqz){
+        condition = type.eqz(condition);
+      } else {
+        switch(s.first.type){
+        case 'f32':
+          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
+          break;
+        case 'f64':
+          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
+          break;
+        default:
+          error('Bad.Type',s.first);
+        }
+      }
+    } else {
+      switch(s.first.type){
+      case 'u32':
+      case 'u64':
+        {
+          type = module['i' + s.first.type.slice(-2)];
+          condition = type.eqz(condition);
+        }
+        break;
+      default:
+        error('Bad Type',s.first);
+      }
+    }
+
+    return module.block(bid,[
+      module.loop(lid,module.block(null,[
+        ...stmt,
+        module.br_if(bid,condition),
+        module.break(lid)
+      ]))]);    
+  }
+
+  function forStatement(s){
+    debugger;
+    const bid = 'for' + (blockId++).toString(10);
+    currentBrakePoint = bid; 
+    const lid = 'loop' + (blockId++).toString(10);
+
+    let initStmt = generate(s.first);
+    let condition = generate(s.second);
+    let conditionAfter = expression(s.third);
+    let stmt = generate(s.fourth);
+
+    initStmt = initStmt instanceof Array ? initStmt : [initStmt]; 
+    conditionAfter = conditionAfter instanceof Array ? conditionAfter : [conditionAfter];
+    stmt = stmt instanceof Array ? stmt : [stmt];
+
+    let type = module[s.second.type];
+    if(type){
+      if(type.eqz){
+        condition = type.eqz(condition);
+      } else {
+        switch(s.first.type){
+        case 'f32':
+          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
+          break;
+        case 'f64':
+          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
+          break;
+        default:
+          error('Bad.Type',s.second);
+        }
+      }
+    } else {
+      switch(s.second.type){
+      case 'u32':
+      case 'u64':
+        {
+          type = module['i' + s.second.type.slice(-2)];
+          condition = type.eqz(condition);
+        }
+        break;
+      default:
+        error('Bad Type',s.second);
+      }
+    }
+
+    return module.block(bid,[
+      ...initStmt,
+      module.loop(lid,module.block(null,[
+        module.br_if(bid,condition),
+        ...stmt,
+        ...conditionAfter,
+        module.break(lid)
+      ]))]);    
+    
+  }
+
   function suffix(s){
     switch(s.id){
     case '++':
@@ -539,7 +644,7 @@ export default function generateCode(ast) {
     case '--':
       return postDec(s);
     default:
-      s.error('Bad Operator');
+      error('Bad Operator',s);
     }
   }
 

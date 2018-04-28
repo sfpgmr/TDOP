@@ -64,42 +64,53 @@ import fs from 'fs';
 //   return -1;
 // }
 // `;
+// const testSrc = 
+// `
+// i32 𩸽(i32 a,i32 b){
+//   return a * b;
+// }
+
+// export i32 main(){
+//   i32 c = 1,a = 1,b = 0;
+
+//   if(c != 2){
+//     c = 2;
+//     a += c;
+//   } else {
+//     c = 3;
+//     a += c;
+//   }
+
+//   while (b < 2){
+//     ++b;
+//     while (a > -3){
+//       a -= 1;
+//       if(a == -1) {
+//         break;
+//       }
+//       ++c;
+//     }  
+//   }
+
+//  c = 𩸽(a--,c);
+
+//   c += a;
+//   return c + b;// 9
+// }
+// `;
 const testSrc = 
-`
-i32 𩸽(i32 a,i32 b){
-  return a * b;
-}
+`export i32 main(){
+  i32 a = 0;
 
-export i32 main(){
-  i32 c = 1,a = 1,b = 0;
-
-  if(c != 2){
-    c = 2;
-    a += c;
-  } else {
-    c = 3;
-    a += c;
+  for(i32 c = 0;c < 4;++c) {
+    ++a;
   }
-
-  while (b < 2){
-    ++b;
-    while (a > -3){
-      a -= 1;
-      if(a == -1) {
-        break;
-      }
-      ++c;
-    }  
-  }
-
- // c = 𩸽(a--,c);
-
-  //c += a;
-  return c + b;// 9
-}
-`;
+  return a;// 4
+}`;
 const tokens = tokenize(testSrc);
+
 fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
+
 
 const parse = make_parse();
 const ast = parse(tokens);

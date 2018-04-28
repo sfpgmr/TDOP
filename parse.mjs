@@ -7,12 +7,11 @@
 
 //jslint for, this
 
-Object.prototype.error = function (message, t) {
-  t = t || this;
+function error(message, t = this) {
   t.name = 'Parser : SyntaxError';
   t.message = message;
   throw t;
-};
+}
 
 
 // パーサの生成
@@ -48,9 +47,9 @@ export default function make_parse() {
       const def = n.typedef ? this.typedef : this.def;
       const t = def.get(n.value);
       if (t) {
-        n.error((t.reserved)
+        error((t.reserved)
           ? 'Already reserved.'
-          : 'Already defined.');
+          : 'Already defined.',n);
       }
       def.set(n.value,n);
       n.reserved = false;
@@ -107,7 +106,7 @@ export default function make_parse() {
           return;
         }
         if (t.nodeType === 'name') {
-          n.error('Already defined.');
+          error('Already defined.',n);
         }
       }
       def.set(n.value,n);
@@ -123,7 +122,7 @@ export default function make_parse() {
     let sign = true;
     let type;
     if (id && token.id !== id) {
-      token.error('Expected "' + id + '".');
+      error('Expected "' + id + '".',token);
     }
     if (token_nr >= tokens.length) {
       token = symbol_table.get('(end)');
@@ -143,7 +142,7 @@ export default function make_parse() {
     } else if (a === 'operator') {
       o = symbol_table.get(v);
       if (!o) {
-        t.error('Unknown operator.');
+        error('Unknown operator.',t);
       }
     } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a== 'i32' || a == 'i64' || a=='u32' || a== 'u64') {
       o = symbol_table.get('(literal)');
@@ -156,7 +155,7 @@ export default function make_parse() {
       }
 
     } else {
-      t.error('Unexpected token.');
+      error('Unexpected token.',t);
     }
 
     token = Object.assign(Object.create(o),o);
@@ -219,6 +218,7 @@ export default function make_parse() {
         break;
       }
       s = statement();
+
       if (s) {
         a.push(s);
       }
@@ -248,10 +248,10 @@ export default function make_parse() {
       (typeof std === 'function') && (this.std = std);
     }
     nud(){
-      this.error('Undefined.');
+      error('Undefined.',this);
     }
     led(){
-      this.error('Missing operator.');
+      error('Missing operator.',this);
     }
   }
 
@@ -364,7 +364,7 @@ export default function make_parse() {
     }
     led(left){
       if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
-        left.error('Bad lvalue.');
+        error('Bad lvalue.',left);
       }
       this.first = left;
       this.second = expression(this.lbp - 1);
@@ -450,7 +450,7 @@ export default function make_parse() {
       
     // ローカルスコープですでに定義されているか
     if(scope.def.get(n.value)){
-      n.error('Already Defined');
+      error('Already Defined',n);
     }
 
     n.type = this.type;
@@ -467,7 +467,7 @@ export default function make_parse() {
       // 変数を取り出して配列に格納する
         while (true) {
           if (token.nodeType !== 'define') {
-            token.error('Expected a parameter name.');
+            error('Expected a parameter name.',token);
           }
           advance();
           const t = token;
@@ -620,7 +620,7 @@ export default function make_parse() {
   infix('.', 80, function (left) {
     this.first = left;
     if (token.nodeType !== 'name') {
-      token.error('Expected a property name.');
+      error('Expected a property name.',token);
     }
     token.nodeType = 'literal';
     this.second = token;
@@ -658,7 +658,7 @@ export default function make_parse() {
       if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&
                 left.nodeType !== 'name' && left.id !== '(' &&
                 left.id !== '&&' && left.id !== '||' && left.id !== '?') {
-        left.error('Expected a variable name.');
+        error('Expected a variable name.',left);
       }
     }
     if (token.id !== ')') {
@@ -716,7 +716,7 @@ export default function make_parse() {
       while (true) {
         n = token;
         if (n.nodeType !== 'name' && n.nodeType !== 'literal') {
-          token.error('Bad property name.');
+          error('Bad property name.',token);
         }
         advance();
         advance(':');
@@ -771,7 +771,7 @@ export default function make_parse() {
     }
     advance(';');
     if (token.id !== '}') {
-      token.error('Unreachable statement.');
+      error('Unreachable statement.',token);
     }
     this.nodeType = 'statement';
     !this.type && (this.type = this.first.type);
@@ -781,7 +781,7 @@ export default function make_parse() {
   stmt('break', function () {
     advance(';');
     if (token.id !== '}') {
-      token.error('Unreachable statement.');
+      error('Unreachable statement.',token);
     }
     this.nodeType = 'statement';
     return this;
@@ -795,6 +795,33 @@ export default function make_parse() {
     this.nodeType = 'statement';
     return this;
   });
+
+  stmt('do', function () {
+    this.second = block();
+    advance('while');
+    advance('(');
+    this.first = expression(0);
+    advance(')');
+    advance(';');
+    this.nodeType = 'statement';
+    return this;
+  });
+
+  stmt('for', function () {
+    advance('(');
+    // 初期設定
+    this.first = statement();
+    // 終了条件
+    this.second = statement();
+    // ループ終端時の動作
+    this.third = expression(0);
+    advance(')');
+    // for文の本体
+    this.fourth = block();
+    this.nodeType = 'statement';
+    return this;
+  });
+  
 
   return function (t) {
     tokens = t;

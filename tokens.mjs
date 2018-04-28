@@ -28,6 +28,12 @@ function stringToArray (str) {
   return str.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
 }
 
+function error(message, t = this) {
+  t.name = 'Tokenizer : Error';
+  t.message = message;
+  throw t;
+}
+
 export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-&|") {
   let c;                      // The current character.
   //let from;                   // The index of the start of the token.
@@ -49,15 +55,13 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
   function make(type, value,opt = {}) {
 
     // Make a token object.
-
-    return Object.assign({
+    const o = Object.assign({
       type: type,
       value: value,
       line: lineNo,
-      pos:posx,
-      /*      from: from,
-      to: i*/
+      pos:posx
     },opt);
+    return o;
   }
 
 
@@ -166,7 +170,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           } while((c >= '0' && c <= '9'));
           hexfp = true;
         } else if(hexfp) {
-          make('hexfp',str + c).error('Bad hexdecimal floating point number.');
+          error('Bad hexdecimal floating point number.',make('hexfp',str + c));
         }
 
         if(c == 'f' || c == 'F'){
@@ -177,7 +181,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             type = 'f32';
             kind = 'hex';
           } else {
-            make('f32',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+            error('Bad hexdecimal or hexdecimal floating point number.',make('f32',str + c ));
           }
         } else if(c == 'l' || c == 'L') {
           if(hexfp){
@@ -187,10 +191,10 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             type = 'f64';
             kind = 'hex';
           } else {
-            make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+            error('Bad hexdecimal or hexdecimal floating point number.',make('hex',str + c ));
           }
         } else if(hexfp) {
-          make('hex',str + c ).error('Bad hexdecimal or hexdecimal floating point number.');
+          error('Bad hexdecimal or hexdecimal floating point number.',make('hex',str + c ));
         }
 
         c = source[i];
@@ -210,7 +214,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           c = source[i];
         } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B');
         
-        (str.charAt(str.length - 1) != 'b') && make('binary',str+c).error('Invalid binary literal format.');
+        (str.charAt(str.length - 1) != 'b') && error('Invalid binary literal format.',make('binary',str+c));
         result.push(make('int',str,{kind:'binary'}));
       }  else {
         // 数リテラル
@@ -264,7 +268,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             c = source[i];
           }
           if (c < '0' || c > '9') {
-            make(type, str).error("Bad exponent");
+            error("Bad exponent",make(type, str));
           }
           do {
             ++i;
@@ -292,7 +296,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           str += c;
           ++i;
           ++posx;
-          make('number', str).error("Bad number");
+          error("Bad number",make('number', str));
         } 
 
         // Convert the string value to a number. If it is finite, then it is a good
@@ -319,12 +323,12 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
       while (true) {
         c = source[i];
         if (c < ' ') {
-          make('string', str).error(
+          error(
             (c === '\n' || c === '\r' || c === '')
               ? "Unterminated string."
               : "Control character in string.",
             make('', str)
-          );
+            ,make('string', str));
         }
 
         // Look for the closing quote.
@@ -339,7 +343,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++i;
           ++posx;
           if (i >= length) {
-            make('string', str).error("Unterminated string");
+            error("Unterminated string",make('string', str));
           }
           c = source[i];
           switch (c) {
@@ -361,11 +365,11 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             break;
           case 'u':
             if (i >= length) {
-              make('string', str).error("Unterminated string");
+              error("Unterminated string",make('string', str));
             }
             c = parseInt(source.substr(i + 1, 4), 16);
             if (!isFinite(c) || c < 0) {
-              make('string', str).error("Unterminated string");
+              error("Unterminated string",make('string', str));
             }
             c = String.fromCharCode(c);
             i += 4;
