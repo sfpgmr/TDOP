@@ -100,12 +100,12 @@ import fs from 'fs';
 // `;
 const testSrc = 
 `export i32 main(){
-  i32 a = 0;
+  i32 a = 0,b = 0;
 
   for(i32 c = 0;c < 4;++c) {
-    ++a;
+    b = c + (++a);
   }
-  return a;// 4
+  return b;// 4
 }`;
 const tokens = tokenize(testSrc);
 
@@ -126,7 +126,7 @@ fs.writeFileSync('./ast.json', json, 'utf8');
 console.log('パース完了');
 
 const module = generateCode(ast);
-//module.optimize();
+module.optimize();
 
 
 fs.writeFileSync('out.wat',module.emitText(),'utf8');

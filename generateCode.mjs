@@ -15,7 +15,7 @@ export default function generateCode(ast) {
   //module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
   let localVars;
   let varIndex = 0;
-  let postOps = [];
+  let postOpcodes = [];
   let blockId = 0;
   let currentBrakePoint;
   //module.addMemoryImport('test','test','a');
@@ -25,7 +25,6 @@ export default function generateCode(ast) {
   
   function generate(stmts) {
     const result = [];
-    postOps.length = 0;
     if(stmts instanceof Array){
       stmts.forEach((stmt) => {
         const r = generate_(stmt);
@@ -34,10 +33,18 @@ export default function generateCode(ast) {
         } else if (r) {
           result.push(r);
         }
-        postOps.length && result.push(...postOps);
+        if(postOpcodes.length > 0){
+          result.push(...postOpcodes);
+          postOpcodes.length = 0;
+        } 
       });
     } else {
-      return generate_(stmts);
+      let ops = generate_(stmts);
+      ops instanceof Array ? result.push(...ops):result.push(ops);
+      if(postOpcodes.length > 0){
+        result.push(...postOpcodes);
+        postOpcodes.length = 0;
+      } 
     }
     return result;
   }
@@ -109,6 +116,7 @@ export default function generateCode(ast) {
     }
   }
 
+  // 変数定義
   function define_(d,vars = localVars){
     switch (d.nodeType) {
     case 'binary':
@@ -139,6 +147,7 @@ export default function generateCode(ast) {
     }
   }
 
+  // 変数定義
   function define(statement,result = []) {
     statement.first.forEach(d => {
       result.push(define_(d));
@@ -147,6 +156,7 @@ export default function generateCode(ast) {
   }
 
 
+  // 式
   function expression(e) {
     switch (e.nodeType) {
     case 'literal':
@@ -179,7 +189,7 @@ export default function generateCode(ast) {
     }
     error('Bad Type',e);
   }
-
+  
   function binary(e) {
     const left = e.first,right = e.second;
     switch (e.value) {
@@ -245,7 +255,14 @@ export default function generateCode(ast) {
 
   function setValue(n,v){
     return (n.global || !n.scope) ? module.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+  }
 
+  function teeValue(n,v){
+    return (n.global || !n.scope) ? module.getGlobal.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+  }
+
+  function getValue(n){
+    return (n.global || !n.scope) ? module.getGlobal(n.value,n.type) : module.getLocal(n.varIndex,n.type);
   }
 
   function binOp(name,left,right,sign = false){
@@ -448,8 +465,9 @@ export default function generateCode(ast) {
     }
   }
 
+  // 代入
   function assignment(left,right) {
-    return setValue(left,expression(right));
+    return module.block(null,[setValue(left,expression(right)),getValue(left)]);
   }
 
 
@@ -487,21 +505,15 @@ export default function generateCode(ast) {
     return module.if(condition,thenStatemnts,elseStatements);
   }
 
-  function whileStatement(s){
-    const bid = 'while' + (blockId++).toString(10);
-    currentBrakePoint = bid; 
-    const lid = 'loop' + (blockId++).toString(10);
-    let stmt = generate(s.second);
-    stmt = stmt instanceof Array ? stmt : [stmt];
+  function not_(c){
+    let condition = expression(c);
     
-    let condition = expression(s.first);
-    
-    let type = module[s.first.type];
+    let type = module[c.type];
     if(type){
       if(type.eqz){
         condition = type.eqz(condition);
       } else {
-        switch(s.first.type){
+        switch(c.type){
         case 'f32':
           condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
           break;
@@ -509,23 +521,33 @@ export default function generateCode(ast) {
           condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
           break;
         default:
-          error('Bad.Type',s.first);
+          error('Bad.Type',c);
         }
       }
     } else {
-      switch(s.first.type){
+      switch(c){
       case 'u32':
       case 'u64':
         {
-          type = module['i' + s.first.type.slice(-2)];
+          type = module['i' + c.type.slice(-2)];
           condition = type.eqz(condition);
         }
         break;
       default:
-        error('Bad Type',s.first);
+        error('Bad Type',c);
       }
     }
+    return condition;  
+  }
 
+  function whileStatement(s){
+    const bid = 'while' + (blockId++).toString(10);
+    currentBrakePoint = bid; 
+    const lid = 'loop' + (blockId++).toString(10);
+    let stmt = generate(s.second);
+    stmt = stmt instanceof Array ? stmt : [stmt];
+    
+    let condition = not_(s.first);
     return module.block(bid,[
       module.loop(lid,module.block(null,[
         module.br_if(bid,condition),
@@ -541,38 +563,8 @@ export default function generateCode(ast) {
     let stmt = generate(s.second);
     stmt = stmt instanceof Array ? stmt : [stmt];
     
-    let condition = expression(s.first);
+    let condition = not_(s.first);
     
-    let type = module[s.first.type];
-    if(type){
-      if(type.eqz){
-        condition = type.eqz(condition);
-      } else {
-        switch(s.first.type){
-        case 'f32':
-          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
-          break;
-        case 'f64':
-          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
-          break;
-        default:
-          error('Bad.Type',s.first);
-        }
-      }
-    } else {
-      switch(s.first.type){
-      case 'u32':
-      case 'u64':
-        {
-          type = module['i' + s.first.type.slice(-2)];
-          condition = type.eqz(condition);
-        }
-        break;
-      default:
-        error('Bad Type',s.first);
-      }
-    }
-
     return module.block(bid,[
       module.loop(lid,module.block(null,[
         ...stmt,
@@ -582,49 +574,19 @@ export default function generateCode(ast) {
   }
 
   function forStatement(s){
-    debugger;
+
     const bid = 'for' + (blockId++).toString(10);
     currentBrakePoint = bid; 
     const lid = 'loop' + (blockId++).toString(10);
 
     let initStmt = generate(s.first);
-    let condition = generate(s.second);
+    let condition = not_(s.second);
     let conditionAfter = expression(s.third);
     let stmt = generate(s.fourth);
 
     initStmt = initStmt instanceof Array ? initStmt : [initStmt]; 
     conditionAfter = conditionAfter instanceof Array ? conditionAfter : [conditionAfter];
     stmt = stmt instanceof Array ? stmt : [stmt];
-
-    let type = module[s.second.type];
-    if(type){
-      if(type.eqz){
-        condition = type.eqz(condition);
-      } else {
-        switch(s.first.type){
-        case 'f32':
-          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
-          break;
-        case 'f64':
-          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
-          break;
-        default:
-          error('Bad.Type',s.second);
-        }
-      }
-    } else {
-      switch(s.second.type){
-      case 'u32':
-      case 'u64':
-        {
-          type = module['i' + s.second.type.slice(-2)];
-          condition = type.eqz(condition);
-        }
-        break;
-      default:
-        error('Bad Type',s.second);
-      }
-    }
 
     return module.block(bid,[
       ...initStmt,
@@ -649,12 +611,12 @@ export default function generateCode(ast) {
   }
 
   function postInc(s){
-    postOps.push(inc(s.first));
+    postOpcodes.push(inc(s.first));
     return name(s.first);
   }
 
   function postDec(s){
-    postOps.push(dec(s.first));
+    postOpcodes.push(dec(s.first));
     return name(s.first);
   }
   
