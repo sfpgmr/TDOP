@@ -120,14 +120,14 @@ const json = JSON.stringify(ast,
     return value;
   } 
   , 2);
-
+debugger;
 
 fs.writeFileSync('./ast.json', json, 'utf8');
 console.log('パース完了');
 
+
 const module = generateCode(ast);
 module.optimize();
-
 
 fs.writeFileSync('out.wat',module.emitText(),'utf8');
 const compiled = module.emitBinary();

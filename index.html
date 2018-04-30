@@ -1,89 +1,84 @@
 <!DOCTYPE HTML>
 <html lang="ja">
+
 <head>
-<meta http-equiv="content-language" content="ja">
-<meta charset="UTF-8">
-<meta name="keywords" content="JavaScript,wasm">
-<meta name="description" content="オレオレ言語を作る">
-<meta name="author" content="SFPGMR">
+    <meta http-equiv="content-language" content="ja">
+    <meta charset="UTF-8">
+    <meta name="keywords" content="JavaScript,wasm">
+    <meta name="description" content="オレオレ言語を作る">
+    <meta name="author" content="SFPGMR">
     <title>オレオレ言語を作る</title>
     <style>
-    textarea{
-        display:block;
-        border:1px solid black;
-        background: white;
-        color:black;
-        width:95%;
-        height:200px;
-    } 
+        textarea {
+            display: block;
+            border: 1px solid black;
+            background: white;
+            color: black;
+            width: 95%;
+            height: 200px;
+        }
     </style>
 </head>
 
 <body>
-<h1>オレオレ言語を作る</h1>
-<h2>デモページ</h2>
-<textarea id="INPUT"></textarea>
-<input id="PARSE" value=parse type=button>
-<pre id=OUTPUT></pre>
-<script type="module">
+    <h1>オレオレ言語を作る</h1>
+    <h2>デモページ</h2>
+    <textarea id="INPUT"></textarea>
+    <input id="PARSE" value=parse type=button>
+    <pre id=OUTPUT></pre>
+    <script type="module">
 
-import tokenize from './tokens.mjs';
-import make_parse from './parse.mjs';
+        import tokenize from './tokens.mjs';
+        import make_parse from './parse.mjs';
 
-/*jslint evil: true */
+        const src = `
+export i32 main(){
+  i32 a = 0,b = 0;
 
-/*members create, error, message, name, prototype, stringify, toSource,
-    toString, write
-*/
-
-/*global JSON, make_parse, parse, source, tree */
-
-// Make a new object that inherits members from an existing object.
-
-if (typeof Object.create !== 'function') {
-    Object.create = function (o) {
-        function F() {}
-        F.prototype = o;
-        return new F();
-    };
+  for(i32 c = 0;c < 4;++c) {
+    b = c + (++a);
+  }
+  return b;// 4
 }
+`;
 
-// Transform a token object into an exception object and throw it.
+        document.getElementById('INPUT').value = src;
+        window.addEventListener('load', () => {
+            const parse = make_parse();
 
-Object.prototype.error = function (message, t) {
-    t = t || this;
-    t.name = "SyntaxError";
-    t.message = message;
-    throw t;
-};
+            function go(source) {
+                let string, ast;
+                try {
+                    ast = parse(tokenize(source));
+                    string = JSON.stringify(ast,
+                        (key, value) => {
+                            if (key == 'parent') return undefined;
+                            return value;
+                        }
+                        , 2);
 
+                } catch (e) {
+                    string = JSON.stringify(e, ['name', 'message', 'from', 'to', 'key',
+                        'value', 'arity', 'first', 'second', 'third', 'fourth'], 4);
+                }
+                document.getElementById('OUTPUT').innerHTML = string
+                    .replace(/&/g, '&amp;')
+                    .replace(/[<]/g, '&lt;');
+            }
 
-(function () {
-    var parse = make_parse();
+            go(src);
 
-    function go(source) {
-        var string, tree;
-        try {
-            tree = parse(tokenize(source));
-            string = JSON.stringify(tree, ['key', 'name', 'message',
-                'value', 'arity', 'first', 'second', 'third', 'fourth'], 4);
-        } catch (e) {
-            string = JSON.stringify(e, ['name', 'message', 'from', 'to', 'key',
-                    'value', 'arity', 'first', 'second', 'third', 'fourth'], 4);
-        }
-        document.getElementById('OUTPUT').innerHTML = string
-            .replace(/&/g, '&amp;')
-            .replace(/[<]/g, '&lt;');
-    }
+            document.getElementById('PARSE').onclick = function (e) {
+                go(document.getElementById('INPUT').value);
+            };
 
-    go("var a = 1;");
+        });
 
-    document.getElementById('PARSE').onclick = function (e) {
-        go(document.getElementById('INPUT').value);
-    };
-}());
+        (function () {
+        }());
 
-</script>
-</pre>
+    </script>
+    </pre>
 </body>
+
 </html>

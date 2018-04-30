@@ -107,7 +107,6 @@ export default function generateCode(ast) {
         paramTypes.push(binaryen[p.type]);
       });
     }
-   
     const statements = generate(funcNode.second);
     const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type],paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
@@ -190,6 +189,7 @@ export default function generateCode(ast) {
     error('Bad Type',e);
   }
   
+
   function binary(e) {
     const left = e.first,right = e.second;
     switch (e.value) {
@@ -467,7 +467,7 @@ export default function generateCode(ast) {
 
   // 代入
   function assignment(left,right) {
-    return module.block(null,[setValue(left,expression(right)),getValue(left)]);
+    return setValue(left,expression(right));
   }
 
 
