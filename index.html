@@ -2,30 +2,30 @@
 <html lang="ja">
 
 <head>
-    <meta http-equiv="content-language" content="ja">
     <meta charset="UTF-8">
-    <meta name="keywords" content="JavaScript,wasm">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">    <meta name="keywords" content="JavaScript,wasm">
     <meta name="description" content="オレオレ言語を作る">
     <meta name="author" content="SFPGMR">
     <title>オレオレ言語を作る</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
     <style>
-        textarea {
-            display: block;
-            border: 1px solid black;
-            background: white;
-            color: black;
-            width: 95%;
-            height: 200px;
-        }
+    #OUTPUT {
+        max-height:200px;
+        overflow-y: auto;
+    }
     </style>
 </head>
 
-<body>
-    <h1>オレオレ言語を作る</h1>
-    <h2>デモページ</h2>
-    <textarea id="INPUT"></textarea>
-    <input id="PARSE" value=parse type=button>
-    <pre id=OUTPUT></pre>
+<body class="siimple-content siimple-content--medium">
+    <div class="siimple-box siimple-box--blue">
+            <h1 class="siimple-box-title">オレオレ言語を作る</h1>
+            <h2 class-"siimple-box-subtitle">デモページ</h2>
+    </div>
+    <h3><label class="siimple-label">Input Source Code </label></h3>
+    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="10" ></textarea>
+    <button id="PARSE" value="parse" type="button" class="siimple-btn siimple-btn--blue">Parse</button>
+    <h2><label class="siimple-label">AST</label></h2>
+    <pre id=OUTPUT class="siimple-box"></pre>
     <script type="module">
 
         import tokenize from './tokens.mjs';
@@ -74,11 +74,8 @@ export i32 main(){
 
         });
 
-        (function () {
-        }());
 
     </script>
-    </pre>
 </body>
 
 </html>
