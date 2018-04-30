@@ -114,7 +114,14 @@ export i32 main(){
                         .replace(/[<]/g, '&lt;');
 
                 } catch (e) {
-                    info.innerHTML = (e.stack).replace(/&/g, '&amp;')
+                    string = e.stack ? e.stack : JSON.stringify(e,
+                        (key, value) => {
+                            if (key == 'parent') return undefined;
+                            return value;
+                        }
+                        , 2);
+                                       
+                    info.innerHTML = string.replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
                     ;
                     info.className = 'siimple-alert siimple-alert--red';
