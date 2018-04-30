@@ -3,40 +3,56 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">    <meta name="keywords" content="JavaScript,wasm">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="keywords" content="JavaScript,wasm">
     <meta name="description" content="オレオレ言語を作る">
     <meta name="author" content="SFPGMR">
     <title>オレオレ言語を作る</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
     <style>
-    #OUTPUT {
-        max-height:200px;
-        overflow-y: auto;
-    }
+        .OUTPUT {
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
 <body class="siimple-content siimple-content--medium">
     <div class="siimple-box siimple-box--blue">
-            <h1 class="siimple-box-title">オレオレ言語を作る</h1>
-            <p class-"siimple-box-detail">レポジトリ：<a  href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
+        <h1 class="siimple-box-title">オレオレ言語を作る</h1>
+        <p class- "siimple-box-detail">レポジトリ：
+            <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
     </div>
-    <h3><label class="siimple-label">Input Source Code </label></h3>
-    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="10" ></textarea>
+    <h3>
+        <label class="siimple-label">Input Source Code </label>
+    </h3>
+    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="10"></textarea>
     <button id="PARSE" value="parse" type="button" class="siimple-btn siimple-btn--blue">Parse</button>
-    <h2><label class="siimple-label">Output(AST)</label></h2>
-    <pre id=OUTPUT class="siimple-box"></pre>
+    <h2>
+        <label class="siimple-label">Output(AST)</label>
+    </h2>
+    <pre id=OUTPUT class="siimple-box OUTPUT"></pre>
+    <h2>
+        <label class="siimple-label">Output(wat)</label>
+    </h2>
+    <pre id=OUTPUT2 class="siimple-box OUTPUT"></pre>
+    <h2>
+        <label class="siimple-label">Output</label>
+    </h2>
+    <pre id=OUTPUT3 class="siimple-box OUTPUT"></pre>
     <script type="module">
 
         import tokenize from './tokens.mjs';
         import make_parse from './parse.mjs';
+        import generateCode from './generateCode.mjs';
+
 
         const src = `
 export i32 main(){
-  i32 a = 0,b = 0;
+  i32 b = 0;
 
   for(i32 c = 0;c < 4;++c) {
-    b = c + (++a);
+    b = b + 1;
   }
   return b;// 4
 }
@@ -46,8 +62,9 @@ export i32 main(){
         window.addEventListener('load', () => {
             const parse = make_parse();
 
-            function go(source) {
+            async function go(source) {
                 let string, ast;
+                let error = false;
                 try {
                     ast = parse(tokenize(source));
                     string = JSON.stringify(ast,
@@ -56,14 +73,34 @@ export i32 main(){
                             return value;
                         }
                         , 2);
+                    document.getElementById('OUTPUT').innerHTML = string
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+                    const module = generateCode(ast);
+                    module.optimize();
+                    const wat = module.emitText();
+                    document.getElementById('OUTPUT2').innerHTML = wat
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+
+                    const compiled = module.emitBinary();
+
+                    const mod = await WebAssembly.compile(compiled);
+                    const instance = await WebAssembly.instantiate(mod);
+                    const result = instance.exports.main().toString(10);
+                    document.getElementById('OUTPUT3').innerHTML = result
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
 
                 } catch (e) {
-                    string = JSON.stringify(e, ['name', 'message', 'from', 'to', 'key',
-                        'value', 'arity', 'first', 'second', 'third', 'fourth'], 4);
+                    string = JSON.stringify(e,
+                        (key, value) => {
+                            if (key == 'parent') return undefined;
+                            return value;
+                        }
+                        , 2);
                 }
-                document.getElementById('OUTPUT').innerHTML = string
-                    .replace(/&/g, '&amp;')
-                    .replace(/[<]/g, '&lt;');
+
             }
 
             go(src);

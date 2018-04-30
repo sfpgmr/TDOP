@@ -1,4 +1,4 @@
-import binaryen from 'binaryen.js';
+import binaryen from './binaryen.mjs';
 
 function error (message, t = this) {
   t.name = 'Compiler Error';
