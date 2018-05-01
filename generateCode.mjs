@@ -1,4 +1,4 @@
-import binaryen from './binaryen.mjs';
+import binaryen_ from './binaryen-wasm.mjs';
 
 function error (message, t = this) {
   t.name = 'Compiler Error';
@@ -6,8 +6,9 @@ function error (message, t = this) {
   throw t;
 }
 
-export default function generateCode(ast) {
+export default async function generateCode(ast) {
   // Create a module with a single function
+  const binaryen = await binaryen_();
   const module = new binaryen.Module();
   //  const exp = new binaryen.Expression();
 
