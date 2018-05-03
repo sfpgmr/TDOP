@@ -7,8 +7,19 @@ function error (message, t = this) {
 }
 
 export default async function generateCode(ast) {
-  // Create a module with a single function
-  const binaryen = await binaryen_();
+  let binaryen;
+  await new Promise((resolve,reject)=>{
+    binaryen = binaryen_({onRuntimeInitialized:m=>{
+     resolve();
+    }});
+  });
+  // debugger;
+  // const binaryen = await new Promise(
+  //   (resolve,reject)=>{
+  //     b.then(function(bin) {
+  //       resolve(bin);
+  //     });
+  //   });
   const module = new binaryen.Module();
   //  const exp = new binaryen.Expression();
 
