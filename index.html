@@ -10,9 +10,19 @@
     <title>オレオレ言語を作る</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
     <style>
-        .OUTPUT {
-            max-height: 200px;
+        .OUTPUT:hover {
+            cursor:pointer;
+        }
+
+        .OUTPUT-SHRINK {
+            max-height: 150px;
             overflow-y: auto;
+        }
+
+
+        pre {
+            white-space: pre-wrap ;
+            word-break: break-all;
         }
     </style>
     <script type="text/javascript">
@@ -39,25 +49,25 @@
     <h3>
         <label class="siimple-label">Input Source Code </label>
     </h3>
-    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="10"></textarea>
+    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="20" title="ソースコードを編集します。"></textarea>
     <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">Compile</button>
     <pre id="info"></pre>
     <h2>
         <label class="siimple-label">Output(AST)</label>
     </h2>
-    <pre id=OUTPUT class="siimple-box OUTPUT"></pre>
+    <pre id=OUTPUT class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <h2>
         <label class="siimple-label">Output(wat)</label>
     </h2>
-    <pre id=OUTPUT2 class="siimple-box OUTPUT"></pre>
+    <pre id=OUTPUT2 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <h2>
         <label class="siimple-label">Output</label>
     </h2>
-    <pre id=OUTPUT3 class="siimple-box OUTPUT"></pre>
+    <pre id=OUTPUT3 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <h2>
         <label class="siimple-label">Source Code URL</label>
     </h2>
-    <pre id=OUTPUT4 class="siimple-box OUTPUT"></pre>
+    <pre id=OUTPUT4 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <script type="module">
 
         import tokenize from './tokens.mjs';
@@ -109,7 +119,7 @@ export i32 main(){
             if(srcData){
                 try {
                     srcData = srcData.substr(1);
-                input.value = b64DecodeUnicode(srcData);
+                    input.value = b64DecodeUnicode(srcData);
                 } catch (e){
                     input.value = src;
                 }
@@ -169,7 +179,14 @@ export i32 main(){
 
             }
 
-            go(src);
+            go(input.value);
+
+            document.querySelectorAll('.OUTPUT').forEach(e=>{
+                e.addEventListener('click',()=>{
+                    e.classList.contains('OUTPUT-SHRINK') ? e.classList.remove('OUTPUT-SHRINK') : e.classList.add('OUTPUT-SHRINK');
+                });
+                e.title = 'clickで全体表示<->縮小表示';
+            });
 
             document.getElementById('Compile').onclick = function (e) {
                 go(document.getElementById('INPUT').value);
