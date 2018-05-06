@@ -145,7 +145,7 @@ export i32 main(){
                         .replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
                     const module = await generateCode(ast);
-                    module.optimize();
+                    //module.optimize();
                     const wat = module.emitText();
                     output2.innerHTML = wat
                         .replace(/&/g, '&amp;')

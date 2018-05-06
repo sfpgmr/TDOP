@@ -2,7 +2,8 @@
   "name": "sgl2",
   "version": "0.1.0",
   "description": "TDOP, Top Down Operator Precedence",
-  "main": "index.js",
+  "main": "index.mjs",
+  "types": "index.d.ts",
   "scripts": {
     "test": "node --experimental-modules index.mjs"
   },
@@ -20,7 +21,5 @@
     "url": "https://github.com/sfpgmr/TDOP/issues"
   },
   "homepage": "https://github.com/sfpgmr/TDOP#readme",
-  "dependencies": {
-    "binaryen": "^45.0.0"
-  }
+  "dependencies": {}
 }

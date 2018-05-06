@@ -8,6 +8,7 @@ function error (message, t = this) {
 
 export default async function generateCode(ast) {
   let binaryen;
+  
   await new Promise((resolve,reject)=>{
     binaryen = binaryen_({onRuntimeInitialized:m=>{
      resolve();
@@ -203,83 +204,95 @@ export default async function generateCode(ast) {
   
 
   function binary(e) {
-    const left = e.first,right = e.second;
     switch (e.value) {
     // 代入
     case '=':
-      return assignment(left,right);
+      return assignment(e);
     case '+':
-      return binOp('add',left,right);
+      return binOp('add',e);
     case '-':
-      return binOp('sub',left,right);
+      return binOp('sub',e);
     case '*':
-      return binOp('mul',left,right);
+      return binOp('mul',e);
     case '%':
-      return binOp('rem',left,right,true);
+      return binOp('rem',e,true);
     case '/':
-      return binOp('div',left,right,true);
+      return binOp('div',e,true);
     case '+=':
-      return setValue(left,binOp('add',left,right));
+      return setValue(e.first,binOp('add',e),e);
     case '-=':
-      return setValue(left,binOp('sub',left,right));
+      return setValue(e.first,binOp('sub',e),e);
     case '*=':
-      return setValue(left,binOp('mul',left,right));
+      return setValue(e.first,binOp('mul',e),e);
     case '/=':
-      return setValue(left,binOp('div',left,right,true));
+      return setValue(e.first,binOp('div',e,true),e);
     case '%=':
-      return setValue(left,binOp('rem',left,right,true));
+      return setValue(e.first,binOp('rem',e,true),e);
     // 比較
     case '==':
-      return binOp('eq',left,right);
+      return binOp('eq',e);
     case '>':
-      return binOp('gt',left,right,true);
+      return binOp('gt',e,true);
     case '>=':
-      return binOp('ge',left,right,true);
+      return binOp('ge',e,true);
     case '<':
-      return binOp('lt',left,right,true);
+      return binOp('lt',e,true);
     case '<=':
-      return binOp('le',left,right,true);
+      return binOp('le',e,true);
     case '!=':
-      return binOp('ne',left,right);
+      return binOp('ne',e);
     // 論理
     case '&&':
-      return logicalAnd(left,right);
+      return logicalAnd(e);
     case '||':
-      return logicalOr(left,right);
+      return logicalOr(e);
     // ビット演算
     case '^':
-      return binOp('xor',left,right);
+      return binOp('xor',e);
     case '&':
-      return binOp('and',left,right);
+      return binOp('and',e);
     case '|':
-      return binOp('or',left,right);
+      return binOp('or',e);
     case '<<<':
-      return binOp('shl',left,right);
+      return binOp('shl',e);
     case '>>>':
-      return binOp('shr',left,right,true);
+      return binOp('shr',e,true);
     case '<<':
-      return binOp('rotl',left,right);
+      return binOp('rotl',e);
     case '>>':
-      return binOp('rotr',left,right);
+      return binOp('rotr',e);
     }
     error('Bad Binary Operator',e);
   }
 
-  function setValue(n,v){
-    return (n.global || !n.scope) ? module.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+  function setValue(n,v,e)
+  {
+    !e && (e = n); 
+    if(e.rvalue){
+      if(n.global || !n.scope) {
+        return module.block(null,[
+          module.setGlobal(n.value,v),
+          module.getGlobal(n.value,n.type)
+        ]);
+      } else {
+        return module.teeLocal(n.varIndex,v);
+      }
+    } else {
+      return (n.global || !n.scope) ? module.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+    }
   }
 
-  function teeValue(n,v){
-    return (n.global || !n.scope) ? module.getGlobal.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
-  }
-
-  function getValue(n){
+  function getValue(e){
+    const n = e.first; 
     return (n.global || !n.scope) ? module.getGlobal(n.value,n.type) : module.getLocal(n.varIndex,n.type);
   }
+  
 
-  function binOp(name,left,right,sign = false){
+  function binOp(name,e,sign = false){
     //debugger;
+    const left = e.first,right = e.second;
     const t =  module[left.type];
+
     if(t){
       switch(left.type){
       case 'i32':
@@ -324,7 +337,8 @@ export default async function generateCode(ast) {
     }
   }
 
-  function logicalAnd(left,right){
+  function logicalAnd(e){
+    const left = e.first,right = e.second;
     const t = module[left.type];
     if(t){
       return t.and(t.ne(expression(left),t.const(0,0)),t.ne(expression(right),t.const(0,0)));
@@ -342,7 +356,8 @@ export default async function generateCode(ast) {
     }
   }
 
-  function logicalOr(left,right){
+  function logicalOr(e){
+    const left = e.first,right = e.second;
     const t = module[left.type];
     if(t){
       return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
@@ -478,7 +493,8 @@ export default async function generateCode(ast) {
   }
 
   // 代入
-  function assignment(left,right) {
+  function assignment(e) {
+    const left = e.first,right = e.second;
     return setValue(left,expression(right));
   }
 

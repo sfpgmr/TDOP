@@ -31,7 +31,8 @@ export default function make_parse() {
     return s;  
   }
   
-  function itself() {
+  function itself(rvalue = true) {
+    this.rvalue = rvalue;
     return this;
   }
   
@@ -170,16 +171,17 @@ export default function make_parse() {
     return token;
   }
 
-  function expression(rbp) {
+  function expression(rbp,rvalue = true) {
     //debugger;
     let left;
     let t = token;
+    
     advance();
-    left = t.nud();
+    left = t.nud(rvalue);
     while (rbp < token.lbp) {
       t = token;
       advance();
-      left = t.led(left);
+      left = t.led(left,rvalue);
       !t.type && (t.type = left.type);
     }
     return left;
@@ -187,22 +189,24 @@ export default function make_parse() {
 
   function statement() {
     const n = token;
+    n.rvalue = false;
     let v;
 
     // ステートメント
     if (n.std) {
       advance();
       scope.reserve(n);
-      return n.std();
+      return n.std(false);
     }
 
     // 変数定義
     if(n.dvd){
-      return n.dvd();
+      return n.dvd(false);
     }
 
     // 式
-    v = expression(0);
+    v = expression(0,false);
+    
     // if (!v.assignment && v.id !== '(' && v.nodeType !== 'unary') {
     //   v.error('Bad expression statement.');
     // }
@@ -283,9 +287,10 @@ export default function make_parse() {
     constructor({id,value,bp}){
       super({id:id,value:value?value:id,bp:bp});
     }
-    nud(){
+    nud(rvalue = true){
       scope.reserve(this);
       this.value = symbol_table.get(this.id).value;
+      this.rvalue = rvalue;
       this.nodeType = 'literal';
       return this;
     }
@@ -308,9 +313,13 @@ export default function make_parse() {
       super({id:id,bp:bp});
       (typeof led === 'function')  && (this.led = led);
     }
-    led(left){
+    led(left,rvalue = true){
       this.first = left;
+      this.rvalue = rvalue;
+      this.first.rvalue =rvalue;
       this.second = expression(this.lbp);
+      this.second.rvalue = true;
+
       !this.type  && (this.type = left.type);
       // if(this.first.type != this.second.type){
       //   this.error('type unmatched.');
@@ -337,9 +346,11 @@ export default function make_parse() {
       super({id:id,bp:bp});
       (typeof led === 'function')  && (this.led = led);
     }
-    led(left){
+    led(left,rvalue = true){
       this.first = left;
-      this.second = expression(this.lbp - 1);
+      this.rvalue = this.first.rvalue = rvalue;
+      this.second = expression(this.lbp - 1,true);
+      this.second.rvalue = true;
       !this.type && (this.type = left.type);
       this.nodeType = 'binary';
       return this;
@@ -362,12 +373,15 @@ export default function make_parse() {
     constructor({id}){
       super({id:id,bp:10});
     }
-    led(left){
+    led(left,rvalue =true){
       if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
         error('Bad lvalue.',left);
       }
       this.first = left;
-      this.second = expression(this.lbp - 1);
+      this.rvalue = this.first.rvalue = rvalue;
+      this.second = expression(this.lbp - 1,true);
+      this.second.rvalue = true;
+
       !this.type && (this.type = left.type);
       this.assignment = true;
       this.nodeType = 'binary';
@@ -394,9 +408,10 @@ export default function make_parse() {
       super({id:id});
       if(typeof nud === 'function' ) this.nud = nud;
     }
-    nud(){
+    nud(rvalue = true){
       scope.reserve(this);
       this.first = expression(70);
+      this.rvalue = this.first.rvalue = rvalue;
       !this.type && (this.type = this.first.type);
       this.nodeType = 'unary';
       return this;
@@ -415,8 +430,9 @@ export default function make_parse() {
     // return s;
   }
 
-  function suffix(id,led = function(left){
+  function suffix(id,led = function(left,rvalue = true){
     this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
     !this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
@@ -473,12 +489,14 @@ export default function make_parse() {
           const t = token;
           t.type = this.type;
           scope.define(t);
+          t.rvalue = false;
           advance();
           
           if (token.id === '=') {
             const n = token;
             advance('=');
             n.first = t;
+            n.rvalue = n.first.rvalue = false;
             //debugger;
             n.second = expression(0);
             n.second.type = this.type;
@@ -516,6 +534,7 @@ export default function make_parse() {
         t = token;
         advance('=');
         t.first = n;
+        t.rvalue = t.first.rvalue = false;
         //debugger;
         t.second = expression(0);
         t.second.type = this.type;
@@ -533,6 +552,7 @@ export default function make_parse() {
       advance(',');
       n = token;
       n.type = this.type;
+      n.rvalue = false;
       scope.define(n);
       advance();
     }
@@ -583,9 +603,11 @@ export default function make_parse() {
   assignment('+=');
   assignment('-=');
 
-  infix('?', 20, function (left) {
+  infix('?', 20, function (left,rvalue = true) {
     this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
     this.second = expression(0);
+    this.second.rvalue = true;
     advance(':');
     this.third = expression(0);
     this.nodeType = 'ternary';
@@ -593,12 +615,13 @@ export default function make_parse() {
     return this;
   });
 
-  infix(':', 20, function (left) {
+  infix(':', 20, function (left,rvalue = true) {
     this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
     advance();
     !this.type && (this.type = left.type);
     this.second = token.name;
-
+    this.second.rvalue = true;
   });
 
   infixr('&&', 30);
@@ -617,8 +640,9 @@ export default function make_parse() {
   infix('*', 60);
   infix('/', 60);
 
-  infix('.', 80, function (left) {
+  infix('.', 80, function (left,rvalue = true) {
     this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
     if (token.nodeType !== 'name') {
       error('Expected a property name.',token);
     }
@@ -630,20 +654,24 @@ export default function make_parse() {
     return this;
   });
 
-  infix('[', 80, function (left) {
+  infix('[', 80, function (left,rvalue = true) {
     this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
     this.second = expression(0);
+    this.second.rvalue = true;
     this.nodeType = 'binary';
     advance(']');
     return this;
   });
 
-  infix('(', 80, function (left) {
+  infix('(', 80, function (left,rvalue = true) {
     var a = [];
     if (left.id === '.' || left.id === '[') {
       this.nodeType = 'ternary';
       this.first = left.first;
+      this.rvalue = this.first.rvalue = rvalue;
       this.second = left.second;
+      this.second.rvalue = true;
       this.third = a;
     } else {
       this.nodeType = 'binary';
@@ -654,7 +682,9 @@ export default function make_parse() {
         }
       }
       this.first = left;
+      this.rvalue = this.first.rvalue = rvalue;
       this.second = a;
+      this.second.rvalue = true;
       if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&
                 left.nodeType !== 'name' && left.id !== '(' &&
                 left.id !== '&&' && left.id !== '||' && left.id !== '?') {
@@ -685,13 +715,14 @@ export default function make_parse() {
   prefix('-');
   //prefix('typeof');
 
-  prefix('(', function () {
+  prefix('(', function (rvalue = true) {
     const e = expression(0);
+    this.rvalue = rvalue;
     advance(')');
     return e;
   });
 
-  prefix('[', function () {
+  prefix('[', function (rvalue = true) {
     const a = [];
     if (token.id !== ']') {
       while (true) {
@@ -743,6 +774,7 @@ export default function make_parse() {
     advance('}');
     this.nodeType = 'block';
     this.first = a;
+    this.rvalue = false;
 
     return this;
   });
