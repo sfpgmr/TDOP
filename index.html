@@ -50,7 +50,10 @@
         <label class="siimple-label">Input Source Code </label>
     </h3>
     <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="20" title="ソースコードを編集します。"></textarea>
-    <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">Compile</button>
+    <div>
+        <input type="checkbox" name="optimize" id="optimize" />optimize
+        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">Compile</button>
+</div>
     <pre id="info"></pre>
     <h2>
         <label class="siimple-label">Output</label>
@@ -115,6 +118,7 @@ export i32 main(){
             const output3 = document.getElementById('OUTPUT3');
             const output4 = document.getElementById('OUTPUT4');
             const info = document.getElementById('info');
+            const optimize = document.getElementById("optimize");
             let srcData = location.search.substr(0,65536);
             if(srcData){
                 try {
@@ -145,7 +149,7 @@ export i32 main(){
                         .replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
                     const module = await generateCode(ast);
-                    //module.optimize();
+                    optimize.checked && module.optimize();
                     const wat = module.emitText();
                     output2.innerHTML = wat
                         .replace(/&/g, '&amp;')
