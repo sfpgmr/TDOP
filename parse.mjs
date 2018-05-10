@@ -854,6 +854,19 @@ export default function make_parse() {
     return this;
   });
   
+  stmt("type",function(){
+    switch(token.id){
+      case '{':
+      // t
+      break;
+      case 'extends':
+      break;
+      case '=':
+      break;
+     }
+    
+
+  });
 
   return function (t) {
     tokens = t;

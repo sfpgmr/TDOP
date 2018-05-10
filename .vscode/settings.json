@@ -1,7 +1,7 @@
 {
     "editor.wordWrap": "on",
     "editor.tabSize": 2,
-    "editor.fontSize": 12,
+    "editor.fontSize": 16,
     "editor.insertSpaces":true,
     "files.associations": {
       "*.tag":"html",
