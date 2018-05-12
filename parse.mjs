@@ -855,8 +855,11 @@ export default function make_parse() {
   });
   
   stmt("type",function(){
+    this.first = token;
+    advance();
     switch(token.id){
       case '{':
+      
       // t
       break;
       case 'extends':

@@ -99,14 +99,18 @@ import fs from 'fs';
 // }
 // `;
 const testSrc = 
-`export i32 main(){
-  i32 a = 0,b = 0;
+`
+type Foo {
+public:
+  i32 a = 0;
+  i32 b = 0;
+};
 
-  for(i32 c = 0;c < 4;++c) {
-    b = c + (++a);
-  }
-  return b;// 4
+export i32 main(){
+  Foo foo;
+  return foo.a * foo.b;
 }`;
+
 const tokens = tokenize(testSrc);
 
 fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');

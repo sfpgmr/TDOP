@@ -6,6 +6,7 @@ function error (message, t = this) {
   throw t;
 }
 
+
 export default async function generateCode(ast) {
   let binaryen;
   
@@ -99,7 +100,7 @@ export default async function generateCode(ast) {
   function functionStatement(funcNode) {
     // 関数本体
     const wasmStatement = [];
-
+    
     // ローカル変数テーブル
     localVars = [];
     varIndex = 0;

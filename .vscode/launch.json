@@ -9,7 +9,7 @@
       "type": "node",
       "request": "launch",
       "name": "プログラムの起動",
-      "program": "${workspaceFolder}\\index.mjs",
+      "program": "${workspaceFolder}/index.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

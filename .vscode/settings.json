@@ -6,5 +6,6 @@
     "files.associations": {
       "*.tag":"html",
       "*.css": "postcss"
-    }
+    },
+    "editor.minimap.enabled":false
 }

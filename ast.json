@@ -41,6 +41,7 @@
           "line": 2,
           "pos": 7,
           "sign": true,
+          "rvalue": false,
           "first": [
             {
               "id": "=",
@@ -65,8 +66,10 @@
                 "scope": {
                   "def": {},
                   "typedef": {}
-                }
+                },
+                "rvalue": false
               },
+              "rvalue": false,
               "second": {
                 "id": "(literal)",
                 "value": "0",
@@ -75,7 +78,8 @@
                 "pos": 13,
                 "nodeType": "literal",
                 "sign": false,
-                "type": "i32"
+                "type": "i32",
+                "rvalue": true
               }
             },
             {
@@ -95,6 +99,7 @@
                 "nodeType": "name",
                 "sign": true,
                 "type": "i32",
+                "rvalue": false,
                 "reserved": false,
                 "led": null,
                 "std": null,
@@ -103,6 +108,7 @@
                   "typedef": {}
                 }
               },
+              "rvalue": false,
               "second": {
                 "id": "(literal)",
                 "value": "0",
@@ -111,7 +117,8 @@
                 "pos": 19,
                 "nodeType": "literal",
                 "sign": false,
-                "type": "i32"
+                "type": "i32",
+                "rvalue": true
               }
             }
           ]
@@ -124,6 +131,7 @@
           "pos": 7,
           "nodeType": "statement",
           "sign": true,
+          "rvalue": false,
           "reserved": true,
           "first": {
             "id": "i32",
@@ -142,6 +150,7 @@
             "line": 4,
             "pos": 11,
             "sign": true,
+            "rvalue": false,
             "first": [
               {
                 "id": "=",
@@ -166,8 +175,10 @@
                   "scope": {
                     "def": {},
                     "typedef": {}
-                  }
+                  },
+                  "rvalue": false
                 },
+                "rvalue": false,
                 "second": {
                   "id": "(literal)",
                   "value": "0",
@@ -176,7 +187,8 @@
                   "pos": 17,
                   "nodeType": "literal",
                   "sign": false,
-                  "type": "i32"
+                  "type": "i32",
+                  "rvalue": true
                 }
               }
             ]
@@ -204,8 +216,10 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "rvalue": false
             },
+            "rvalue": false,
             "second": {
               "id": "(literal)",
               "value": "4",
@@ -214,7 +228,8 @@
               "pos": 23,
               "nodeType": "literal",
               "sign": false,
-              "type": "i32"
+              "type": "i32",
+              "rvalue": true
             },
             "type": "i32"
           },
@@ -241,8 +256,10 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "rvalue": true
             },
+            "rvalue": true,
             "type": "i32"
           },
           "fourth": {
@@ -271,6 +288,7 @@
                   "nodeType": "name",
                   "sign": true,
                   "type": "i32",
+                  "rvalue": false,
                   "reserved": false,
                   "led": null,
                   "std": null,
@@ -279,6 +297,7 @@
                     "typedef": {}
                   }
                 },
+                "rvalue": false,
                 "second": {
                   "id": "+",
                   "value": "+",
@@ -302,8 +321,10 @@
                     "scope": {
                       "def": {},
                       "typedef": {}
-                    }
+                    },
+                    "rvalue": true
                   },
+                  "rvalue": true,
                   "second": {
                     "id": "++",
                     "value": "++",
@@ -327,8 +348,10 @@
                       "scope": {
                         "def": {},
                         "typedef": {}
-                      }
+                      },
+                      "rvalue": true
                     },
+                    "rvalue": true,
                     "type": "i32"
                   },
                   "type": "i32"
@@ -336,7 +359,8 @@
                 "type": "i32",
                 "assignment": true
               }
-            ]
+            ],
+            "rvalue": false
           }
         },
         {
@@ -347,6 +371,7 @@
           "pos": 10,
           "nodeType": "statement",
           "sign": true,
+          "rvalue": false,
           "reserved": true,
           "first": {
             "id": "(name)",
@@ -357,6 +382,7 @@
             "nodeType": "name",
             "sign": true,
             "type": "i32",
+            "rvalue": true,
             "reserved": false,
             "led": null,
             "std": null,
