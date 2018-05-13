@@ -854,21 +854,55 @@ export default function make_parse() {
     return this;
   });
   
-  stmt("type",function(){
+  stmt('type',function(){
     this.first = token;
     advance();
     switch(token.id){
       case '{':
-      
-      // t
-      break;
-      case 'extends':
-      break;
-      case '=':
-      break;
-     }
-    
+        // クラス定義
+        this.nodeType = 'class';
+        advance();
+        const defs = [];
+        let access = 'public';// privateから始まる。
+        createScope();
 
+        while(token.id != "}")
+        {
+          switch(token.value){
+            case 'public':
+              access = 'public';
+              advance();
+              advance(':');
+              break;
+            case 'private':
+              access = 'private';
+              advance();
+              advance(':');
+              break;
+            case 'protected':
+              access = 'protected';
+              advance();
+              advance(':');
+              break;
+            default:
+              {
+                const def = defVar.bind(token)();
+                def.access = access;
+                defs.push(def);
+              }
+              break;
+          }
+        }
+        advance('}');
+        scope.pop();
+        this.second = defs;
+        const t = this.first.value;
+        // 型をスコープに登録
+        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});    
+        break;
+      case '=':
+        break;
+     }
   });
 
   return function (t) {
@@ -879,7 +913,7 @@ export default function make_parse() {
     //new Scope();
     //global = scope;
     scopeTop = createScope();
-    // ビルトイン変数
+    // ビルトイン 型
     ['u32','u64','i32','i64','f32','f64','void','string']
       .forEach(t=>{
         scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
