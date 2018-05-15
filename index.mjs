@@ -111,38 +111,42 @@ export i32 main(){
   return foo.a * foo.b;
 }`;
 
-const tokens = tokenize(testSrc);
+(async ()=>{
+  const tokens = tokenize(testSrc);
 
-fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
+  fs.writeFileSync('./tokens.json', JSON.stringify(tokens, null, 4), 'utf8');
+  
+  
+  const parse = make_parse();
+  const ast = parse(tokens);
+  const json = JSON.stringify(ast,
+    (key,value)=>{
+      if(key == 'parent' || key == 'detail')  return undefined;
+      return value;
+    } 
+    , 2);
+  debugger;
+  
+  fs.writeFileSync('./ast.json', json, 'utf8');
+  console.log('パース完了');
+  
+  
+  const module = await generateCode(ast);
+  module.optimize();
+  
+  fs.writeFileSync('out.wat',module.emitText(),'utf8');
+  const compiled = module.emitBinary();
+  fs.writeFileSync('out.wasm',compiled);
+  
+  console.log('コンパイル完了');
+  
+  // 実行
+  
+  //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
+  const bin = new WebAssembly.Module(compiled);
+  const inst = new WebAssembly.Instance(bin,{});
+  console.log(inst.exports.main());
+})();
 
 
-const parse = make_parse();
-const ast = parse(tokens);
-const json = JSON.stringify(ast,
-  (key,value)=>{
-    if(key == 'parent' || key == 'detail')  return undefined;
-    return value;
-  } 
-  , 2);
-debugger;
-
-fs.writeFileSync('./ast.json', json, 'utf8');
-console.log('パース完了');
-
-
-const module = generateCode(ast);
-module.optimize();
-
-fs.writeFileSync('out.wat',module.emitText(),'utf8');
-const compiled = module.emitBinary();
-fs.writeFileSync('out.wasm',compiled);
-
-console.log('コンパイル完了');
-
-// 実行
-
-//const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
-const bin = new WebAssembly.Module(compiled);
-const inst = new WebAssembly.Instance(bin,{});
-console.log(inst.exports.main());
 

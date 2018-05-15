@@ -10,7 +10,7 @@ function error (message, t = this) {
 
 export default async function generateCode(ast) {
   let binaryen;
-  
+  debugger;
   await new Promise((resolve,reject)=>{
     binaryen = binaryen_({onRuntimeInitialized:m=>{
      resolve();
