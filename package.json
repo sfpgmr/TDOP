@@ -21,5 +21,7 @@
     "url": "https://github.com/sfpgmr/TDOP/issues"
   },
   "homepage": "https://github.com/sfpgmr/TDOP#readme",
-  "dependencies": {}
+  "dependencies": {
+    "binaryen": "^47.0.0"
+  }
 }

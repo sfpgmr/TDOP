@@ -1,4 +1,5 @@
 import binaryen_ from './binaryen-wasm.mjs';
+//import binaryen from 'binaryen';
 
 function error (message, t = this) {
   t.name = 'Compiler Error';
