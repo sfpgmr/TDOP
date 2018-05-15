@@ -898,8 +898,8 @@ export default function make_parse() {
         this.second = defs;
         const t = this.first.value;
         // 型をスコープに登録
-        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});    
-        break;
+        scope.define({id:t,value:t,type:t,nodeType:'define',detail:this,typedef:true,dvd:defVar,userType:true});
+        return this;   
       case '=':
         break;
      }
@@ -916,7 +916,7 @@ export default function make_parse() {
     // ビルトイン 型
     ['u32','u64','i32','i64','f32','f64','void','string']
       .forEach(t=>{
-        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar});
+        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar,userType:false});
       });
     advance();
     const s = statements();

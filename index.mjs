@@ -104,7 +104,7 @@ type Foo {
 public:
   i32 a = 0;
   i32 b = 0;
-};
+}
 
 export i32 main(){
   Foo foo;
@@ -120,7 +120,7 @@ const parse = make_parse();
 const ast = parse(tokens);
 const json = JSON.stringify(ast,
   (key,value)=>{
-    if(key == 'parent')  return undefined;
+    if(key == 'parent' || key == 'detail')  return undefined;
     return value;
   } 
   , 2);
