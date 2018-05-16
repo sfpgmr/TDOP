@@ -14,7 +14,7 @@ export default async function generateCode(ast) {
   await new Promise((resolve,reject)=>{
     binaryen = binaryen_({onRuntimeInitialized:m=>{
      resolve();
-    }});
+    },'ENVIRONMENT':'NODE'});
   });
   // debugger;
   // const binaryen = await new Promise(
