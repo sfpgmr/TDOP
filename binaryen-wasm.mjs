@@ -1,7 +1,25 @@
 var Binaryen = function(Binaryen) {
   Binaryen = Binaryen || {};
-  var Module = Binaryen;
 
+// The Module object: Our interface to the outside world. We import
+// and export values on it. There are various ways Module can be used:
+// 1. Not defined. We create it here
+// 2. A function parameter, function(Module) { ..generated code.. }
+// 3. pre-run appended it, var Module = {}; ..generated code..
+// 4. External script tag defines var Module.
+// We need to check if Module already exists (e.g. case 3 above).
+// Substitution will be replaced with actual code on later stage of the build,
+// this way Closure Compiler will not mangle it (e.g. case 4. above).
+// Note that if you want to run closure, and also to use Module
+// after the generated code, you will need to define   var Module = {};
+// before the code. Then that object will be used in the code, and you
+// can continue to use Module afterwards as well.
+// if (!Module)` is crucial for Closure Compiler here as it will otherwise replace every `Module` occurrence with a string
+var Module;
+if (!Module) Module = typeof Binaryen !== 'undefined' ? Binaryen : {};
+
+// --pre-jses are emitted after the Module integration code, so that they can
+// refer to Module (if they choose; they can also define Module)
 
   var old = Module['onRuntimeInitialized'];
 Module['onRuntimeInitialized'] = function(){
@@ -9,23 +27,7 @@ Module['onRuntimeInitialized'] = function(){
   old && old();
 };
 
-// The Module object: Our interface to the outside world. We import
-// and export values on it, and do the work to get that through
-// closure compiler if necessary. There are various ways Module can be used:
-// 1. Not defined. We create it here
-// 2. A function parameter, function(Module) { ..generated code.. }
-// 3. pre-run appended it, var Module = {}; ..generated code..
-// 4. External script tag defines var Module.
-// We need to do an eval in order to handle the closure compiler
-// case, where this code here is minified but Module was defined
-// elsewhere (e.g. case 4 above). We also need to check if Module
-// already exists (e.g. case 3 above).
-// Note that if you want to run closure, and also to use Module
-// after the generated code, you will need to define   var Module = {};
-// before the code. Then that object will be used in the code, and you
-// can continue to use Module afterwards as well.
-var Module;
-if (!Module) Module = eval('(function() { try { return Binaryen || {} } catch(e) { return {} } })()');
+
 
 // Sometimes an existing Module object exists with properties
 // meant to overwrite the default module functionality. Here
@@ -33,11 +35,20 @@ if (!Module) Module = eval('(function() { try { return Binaryen || {} } catch(e)
 // the current environment's defaults to avoid having to be so
 // defensive during initialization.
 var moduleOverrides = {};
-for (var key in Module) {
+var key;
+for (key in Module) {
   if (Module.hasOwnProperty(key)) {
     moduleOverrides[key] = Module[key];
   }
 }
+
+Module['arguments'] = [];
+Module['thisProgram'] = './this.program';
+Module['quit'] = function(status, toThrow) {
+  throw toThrow;
+};
+Module['preRun'] = [];
+Module['postRun'] = [];
 
 // The environment setup code below is customized to use Module.
 // *** Environment setup code ***
@@ -61,7 +72,7 @@ if (Module['ENVIRONMENT']) {
   } else if (Module['ENVIRONMENT'] === 'SHELL') {
     ENVIRONMENT_IS_SHELL = true;
   } else {
-    throw new Error('The provided Module[\'ENVIRONMENT\'] value is not valid. It must be one of: WEB|WORKER|NODE|SHELL.');
+    throw new Error('Module[\'ENVIRONMENT\'] value is not valid. must be one of: WEB|WORKER|NODE|SHELL.');
   }
 } else {
   ENVIRONMENT_IS_WEB = typeof window === 'object';
@@ -74,17 +85,15 @@ if (Module['ENVIRONMENT']) {
 if (ENVIRONMENT_IS_NODE) {
   // Expose functionality in the same simple way that the shells work
   // Note that we pollute the global namespace here, otherwise we break in node
-  if (!Module['print']) Module['print'] = console.log;
-  if (!Module['printErr']) Module['printErr'] = console.warn;
-
   var nodeFS;
   var nodePath;
 
   Module['read'] = function shell_read(filename, binary) {
-    if (!nodeFS) nodeFS = require('fs');
-    if (!nodePath) nodePath = require('path');
-    filename = nodePath['normalize'](filename);
-    var ret = nodeFS['readFileSync'](filename);
+    var ret;
+      if (!nodeFS) nodeFS = require('fs');
+      if (!nodePath) nodePath = require('path');
+      filename = nodePath['normalize'](filename);
+      ret = nodeFS['readFileSync'](filename);
     return binary ? ret : ret.toString();
   };
 
@@ -97,23 +106,13 @@ if (ENVIRONMENT_IS_NODE) {
     return ret;
   };
 
-  Module['load'] = function load(f) {
-    globalEval(read(f));
-  };
-
-  if (!Module['thisProgram']) {
-    if (process['argv'].length > 1) {
-      Module['thisProgram'] = process['argv'][1].replace(/\\/g, '/');
-    } else {
-      Module['thisProgram'] = 'unknown-program';
-    }
+  if (process['argv'].length > 1) {
+    Module['thisProgram'] = process['argv'][1].replace(/\\/g, '/');
   }
 
   Module['arguments'] = process['argv'].slice(2);
 
-  if (typeof module !== 'undefined') {
-    module['exports'] = Module;
-  }
+  // MODULARIZE will export the module in the proper place outside, we don't need to export here
 
   process['on']('uncaughtException', function(ex) {
     // suppress ExitStatus exceptions from showing an error
@@ -121,24 +120,28 @@ if (ENVIRONMENT_IS_NODE) {
       throw ex;
     }
   });
+  // Currently node will swallow unhandled rejections, but this behavior is
+  // deprecated, and in the future it will exit with error status.
+  process['on']('unhandledRejection', function(reason, p) {
+    Module['printErr']('node.js exiting due to unhandled promise rejection');
+    process['exit'](1);
+  });
 
   Module['inspect'] = function () { return '[Emscripten Module object]'; };
 }
 else if (ENVIRONMENT_IS_SHELL) {
-  if (!Module['print']) Module['print'] = print;
-  if (typeof printErr != 'undefined') Module['printErr'] = printErr; // not present in v8 or older sm
-
   if (typeof read != 'undefined') {
-    Module['read'] = read;
-  } else {
-    Module['read'] = function shell_read() { throw 'no read() available' };
+    Module['read'] = function shell_read(f) {
+      return read(f);
+    };
   }
 
   Module['readBinary'] = function readBinary(f) {
+    var data;
     if (typeof readbuffer === 'function') {
       return new Uint8Array(readbuffer(f));
     }
-    var data = read(f, 'binary');
+    data = read(f, 'binary');
     assert(typeof data === 'object');
     return data;
   };
@@ -154,24 +157,22 @@ else if (ENVIRONMENT_IS_SHELL) {
       quit(status);
     }
   }
-
-  eval("if (typeof gc === 'function' && gc.toString().indexOf('[native code]') > 0) var gc = undefined"); // wipe out the SpiderMonkey shell 'gc' function, which can confuse closure (uses it as a minified name, and it is then initted to a non-falsey value unexpectedly)
 }
 else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   Module['read'] = function shell_read(url) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, false);
-    xhr.send(null);
-    return xhr.responseText;
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, false);
+      xhr.send(null);
+      return xhr.responseText;
   };
 
   if (ENVIRONMENT_IS_WORKER) {
     Module['readBinary'] = function readBinary(url) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, false);
-      xhr.responseType = 'arraybuffer';
-      xhr.send(null);
-      return xhr.response;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, false);
+        xhr.responseType = 'arraybuffer';
+        xhr.send(null);
+        return new Uint8Array(xhr.response);
     };
   }
 
@@ -182,73 +183,26 @@ else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     xhr.onload = function xhr_onload() {
       if (xhr.status == 200 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
         onload(xhr.response);
-      } else {
-        onerror();
+        return;
       }
+      onerror();
     };
     xhr.onerror = onerror;
     xhr.send(null);
   };
 
-  if (typeof arguments != 'undefined') {
-    Module['arguments'] = arguments;
-  }
-
-  if (typeof console !== 'undefined') {
-    if (!Module['print']) Module['print'] = function shell_print(x) {
-      console.log(x);
-    };
-    if (!Module['printErr']) Module['printErr'] = function shell_printErr(x) {
-      console.warn(x);
-    };
-  } else {
-    // Probably a worker, and without console.log. We can do very little here...
-    var TRY_USE_DUMP = false;
-    if (!Module['print']) Module['print'] = (TRY_USE_DUMP && (typeof(dump) !== "undefined") ? (function(x) {
-      dump(x);
-    }) : (function(x) {
-      // self.postMessage(x); // enable this if you want stdout to be sent as messages
-    }));
-  }
-
-  if (ENVIRONMENT_IS_WORKER) {
-    Module['load'] = importScripts;
-  }
-
-  if (typeof Module['setWindowTitle'] === 'undefined') {
-    Module['setWindowTitle'] = function(title) { document.title = title };
-  }
+  Module['setWindowTitle'] = function(title) { document.title = title };
 }
 else {
-  // Unreachable because SHELL is dependant on the others
-  throw 'Unknown runtime environment. Where are we?';
+  // Unreachable because SHELL is dependent on the others
+  throw new Error('unknown runtime environment');
 }
 
-function globalEval(x) {
-  eval.call(null, x);
-}
-if (!Module['load'] && Module['read']) {
-  Module['load'] = function load(f) {
-    globalEval(Module['read'](f));
-  };
-}
-if (!Module['print']) {
-  Module['print'] = function(){};
-}
-if (!Module['printErr']) {
-  Module['printErr'] = Module['print'];
-}
-if (!Module['arguments']) {
-  Module['arguments'] = [];
-}
-if (!Module['thisProgram']) {
-  Module['thisProgram'] = './this.program';
-}
-if (!Module['quit']) {
-  Module['quit'] = function(status, toThrow) {
-    throw toThrow;
-  }
-}
+// console.log is checked first, as 'print' on the web will open a print dialogue
+// printErr is preferable to console.warn (works better in shells)
+// bind(console) is necessary to fix IE/Edge closed dev tools panel behavior.
+Module['print'] = typeof console !== 'undefined' ? console.log.bind(console) : (typeof print !== 'undefined' ? print : null);
+Module['printErr'] = typeof printErr !== 'undefined' ? printErr : ((typeof console !== 'undefined' && console.warn.bind(console)) || Module['print']);
 
 // *** Environment setup code ***
 
@@ -256,12 +210,8 @@ if (!Module['quit']) {
 Module.print = Module['print'];
 Module.printErr = Module['printErr'];
 
-// Callbacks
-Module['preRun'] = [];
-Module['postRun'] = [];
-
 // Merge back in the overrides
-for (var key in moduleOverrides) {
+for (key in moduleOverrides) {
   if (moduleOverrides.hasOwnProperty(key)) {
     Module[key] = moduleOverrides[key];
   }
@@ -274,6 +224,167 @@ moduleOverrides = undefined;
 
 // {{PREAMBLE_ADDITIONS}}
 
+var STACK_ALIGN = 16;
+
+// stack management, and other functionality that is provided by the compiled code,
+// should not be used before it is ready
+stackSave = stackRestore = stackAlloc = setTempRet0 = getTempRet0 = function() {
+  abort('cannot use the stack before compiled code is ready to run, and has provided stack access');
+};
+
+function staticAlloc(size) {
+  assert(!staticSealed);
+  var ret = STATICTOP;
+  STATICTOP = (STATICTOP + size + 15) & -16;
+  return ret;
+}
+
+function dynamicAlloc(size) {
+  assert(DYNAMICTOP_PTR);
+  var ret = HEAP32[DYNAMICTOP_PTR>>2];
+  var end = (ret + size + 15) & -16;
+  HEAP32[DYNAMICTOP_PTR>>2] = end;
+  if (end >= TOTAL_MEMORY) {
+    var success = enlargeMemory();
+    if (!success) {
+      HEAP32[DYNAMICTOP_PTR>>2] = ret;
+      return 0;
+    }
+  }
+  return ret;
+}
+
+function alignMemory(size, factor) {
+  if (!factor) factor = STACK_ALIGN; // stack alignment (16-byte) by default
+  var ret = size = Math.ceil(size / factor) * factor;
+  return ret;
+}
+
+function getNativeTypeSize(type) {
+  switch (type) {
+    case 'i1': case 'i8': return 1;
+    case 'i16': return 2;
+    case 'i32': return 4;
+    case 'i64': return 8;
+    case 'float': return 4;
+    case 'double': return 8;
+    default: {
+      if (type[type.length-1] === '*') {
+        return 4; // A pointer
+      } else if (type[0] === 'i') {
+        var bits = parseInt(type.substr(1));
+        assert(bits % 8 === 0);
+        return bits / 8;
+      } else {
+        return 0;
+      }
+    }
+  }
+}
+
+function warnOnce(text) {
+  if (!warnOnce.shown) warnOnce.shown = {};
+  if (!warnOnce.shown[text]) {
+    warnOnce.shown[text] = 1;
+    Module.printErr(text);
+  }
+}
+
+
+
+var jsCallStartIndex = 1;
+var functionPointers = new Array(0);
+
+// 'sig' parameter is only used on LLVM wasm backend
+function addFunction(func, sig) {
+  if (typeof sig === 'undefined') {
+    Module.printErr('Warning: addFunction: Provide a wasm function signature ' +
+                    'string as a second argument');
+  }
+  var base = 0;
+  for (var i = base; i < base + 0; i++) {
+    if (!functionPointers[i]) {
+      functionPointers[i] = func;
+      return jsCallStartIndex + i;
+    }
+  }
+  throw 'Finished up all reserved function pointers. Use a higher value for RESERVED_FUNCTION_POINTERS.';
+}
+
+function removeFunction(index) {
+  functionPointers[index-jsCallStartIndex] = null;
+}
+
+var funcWrappers = {};
+
+function getFuncWrapper(func, sig) {
+  if (!func) return; // on null pointer, return undefined
+  assert(sig);
+  if (!funcWrappers[sig]) {
+    funcWrappers[sig] = {};
+  }
+  var sigCache = funcWrappers[sig];
+  if (!sigCache[func]) {
+    // optimize away arguments usage in common cases
+    if (sig.length === 1) {
+      sigCache[func] = function dynCall_wrapper() {
+        return dynCall(sig, func);
+      };
+    } else if (sig.length === 2) {
+      sigCache[func] = function dynCall_wrapper(arg) {
+        return dynCall(sig, func, [arg]);
+      };
+    } else {
+      // general case
+      sigCache[func] = function dynCall_wrapper() {
+        return dynCall(sig, func, Array.prototype.slice.call(arguments));
+      };
+    }
+  }
+  return sigCache[func];
+}
+
+
+function makeBigInt(low, high, unsigned) {
+  return unsigned ? ((+((low>>>0)))+((+((high>>>0)))*4294967296.0)) : ((+((low>>>0)))+((+((high|0)))*4294967296.0));
+}
+
+function dynCall(sig, ptr, args) {
+  if (args && args.length) {
+    assert(args.length == sig.length-1);
+    assert(('dynCall_' + sig) in Module, 'bad function pointer type - no table for sig \'' + sig + '\'');
+    return Module['dynCall_' + sig].apply(null, [ptr].concat(args));
+  } else {
+    assert(sig.length == 1);
+    assert(('dynCall_' + sig) in Module, 'bad function pointer type - no table for sig \'' + sig + '\'');
+    return Module['dynCall_' + sig].call(null, ptr);
+  }
+}
+
+
+function getCompilerSetting(name) {
+  throw 'You must build with -s RETAIN_COMPILER_SETTINGS=1 for getCompilerSetting or emscripten_get_compiler_setting to work';
+}
+
+var Runtime = {
+  // FIXME backwards compatibility layer for ports. Support some Runtime.*
+  //       for now, fix it there, then remove it from here. That way we
+  //       can minimize any period of breakage.
+  dynCall: dynCall, // for SDL2 port
+  // helpful errors
+  getTempRet0: function() { abort('getTempRet0() is now a top-level function, after removing the Runtime object. Remove "Runtime."') },
+  staticAlloc: function() { abort('staticAlloc() is now a top-level function, after removing the Runtime object. Remove "Runtime."') },
+  stackAlloc: function() { abort('stackAlloc() is now a top-level function, after removing the Runtime object. Remove "Runtime."') },
+};
+
+// The address globals begin at. Very low in memory, for code size and optimization opportunities.
+// Above 0 is static memory, starting with globals.
+// Then the stack.
+// Then 'dynamic' memory for sbrk.
+var GLOBAL_BASE = 1024;
+
+
+
 // === Preamble library stuff ===
 
 // Documentation for the public APIs defined in this file must be updated in:
@@ -283,143 +394,6 @@ moduleOverrides = undefined;
 // You can also build docs locally as HTML or other formats in site/
 // An online HTML version (which may be of a different version of Emscripten)
 //    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
-
-//========================================
-// Runtime code shared with compiler
-//========================================
-
-var Runtime = {
-  setTempRet0: function (value) {
-    tempRet0 = value;
-    return value;
-  },
-  getTempRet0: function () {
-    return tempRet0;
-  },
-  stackSave: function () {
-    return STACKTOP;
-  },
-  stackRestore: function (stackTop) {
-    STACKTOP = stackTop;
-  },
-  getNativeTypeSize: function (type) {
-    switch (type) {
-      case 'i1': case 'i8': return 1;
-      case 'i16': return 2;
-      case 'i32': return 4;
-      case 'i64': return 8;
-      case 'float': return 4;
-      case 'double': return 8;
-      default: {
-        if (type[type.length-1] === '*') {
-          return Runtime.QUANTUM_SIZE; // A pointer
-        } else if (type[0] === 'i') {
-          var bits = parseInt(type.substr(1));
-          assert(bits % 8 === 0);
-          return bits/8;
-        } else {
-          return 0;
-        }
-      }
-    }
-  },
-  getNativeFieldSize: function (type) {
-    return Math.max(Runtime.getNativeTypeSize(type), Runtime.QUANTUM_SIZE);
-  },
-  STACK_ALIGN: 16,
-  prepVararg: function (ptr, type) {
-    if (type === 'double' || type === 'i64') {
-      // move so the load is aligned
-      if (ptr & 7) {
-        assert((ptr & 7) === 4);
-        ptr += 4;
-      }
-    } else {
-      assert((ptr & 3) === 0);
-    }
-    return ptr;
-  },
-  getAlignSize: function (type, size, vararg) {
-    // we align i64s and doubles on 64-bit boundaries, unlike x86
-    if (!vararg && (type == 'i64' || type == 'double')) return 8;
-    if (!type) return Math.min(size, 8); // align structures internally to 64 bits
-    return Math.min(size || (type ? Runtime.getNativeFieldSize(type) : 0), Runtime.QUANTUM_SIZE);
-  },
-  dynCall: function (sig, ptr, args) {
-    if (args && args.length) {
-      assert(args.length == sig.length-1);
-      assert(('dynCall_' + sig) in Module, 'bad function pointer type - no table for sig \'' + sig + '\'');
-      return Module['dynCall_' + sig].apply(null, [ptr].concat(args));
-    } else {
-      assert(sig.length == 1);
-      assert(('dynCall_' + sig) in Module, 'bad function pointer type - no table for sig \'' + sig + '\'');
-      return Module['dynCall_' + sig].call(null, ptr);
-    }
-  },
-  functionPointers: [],
-  addFunction: function (func) {
-    for (var i = 0; i < Runtime.functionPointers.length; i++) {
-      if (!Runtime.functionPointers[i]) {
-        Runtime.functionPointers[i] = func;
-        return 2*(1 + i);
-      }
-    }
-    throw 'Finished up all reserved function pointers. Use a higher value for RESERVED_FUNCTION_POINTERS.';
-  },
-  removeFunction: function (index) {
-    Runtime.functionPointers[(index-2)/2] = null;
-  },
-  warnOnce: function (text) {
-    if (!Runtime.warnOnce.shown) Runtime.warnOnce.shown = {};
-    if (!Runtime.warnOnce.shown[text]) {
-      Runtime.warnOnce.shown[text] = 1;
-      Module.printErr(text);
-    }
-  },
-  funcWrappers: {},
-  getFuncWrapper: function (func, sig) {
-    assert(sig);
-    if (!Runtime.funcWrappers[sig]) {
-      Runtime.funcWrappers[sig] = {};
-    }
-    var sigCache = Runtime.funcWrappers[sig];
-    if (!sigCache[func]) {
-      // optimize away arguments usage in common cases
-      if (sig.length === 1) {
-        sigCache[func] = function dynCall_wrapper() {
-          return Runtime.dynCall(sig, func);
-        };
-      } else if (sig.length === 2) {
-        sigCache[func] = function dynCall_wrapper(arg) {
-          return Runtime.dynCall(sig, func, [arg]);
-        };
-      } else {
-        // general case
-        sigCache[func] = function dynCall_wrapper() {
-          return Runtime.dynCall(sig, func, Array.prototype.slice.call(arguments));
-        };
-      }
-    }
-    return sigCache[func];
-  },
-  getCompilerSetting: function (name) {
-    throw 'You must build with -s RETAIN_COMPILER_SETTINGS=1 for Runtime.getCompilerSetting or emscripten_get_compiler_setting to work';
-  },
-  stackAlloc: function (size) { var ret = STACKTOP;STACKTOP = (STACKTOP + size)|0;STACKTOP = (((STACKTOP)+15)&-16);(assert((((STACKTOP|0) < (STACK_MAX|0))|0))|0); return ret; },
-  staticAlloc: function (size) { var ret = STATICTOP;STATICTOP = (STATICTOP + (assert(!staticSealed),size))|0;STATICTOP = (((STATICTOP)+15)&-16); return ret; },
-  dynamicAlloc: function (size) { assert(DYNAMICTOP_PTR);var ret = HEAP32[DYNAMICTOP_PTR>>2];var end = (((ret + size + 15)|0) & -16);HEAP32[DYNAMICTOP_PTR>>2] = end;if (end >= TOTAL_MEMORY) {var success = enlargeMemory();if (!success) {HEAP32[DYNAMICTOP_PTR>>2] = ret;return 0;}}return ret;},
-  alignMemory: function (size,quantum) { var ret = size = Math.ceil((size)/(quantum ? quantum : 16))*(quantum ? quantum : 16); return ret; },
-  makeBigInt: function (low,high,unsigned) { var ret = (unsigned ? ((+((low>>>0)))+((+((high>>>0)))*4294967296.0)) : ((+((low>>>0)))+((+((high|0)))*4294967296.0))); return ret; },
-  GLOBAL_BASE: 1024,
-  QUANTUM_SIZE: 4,
-  __dummy__: 0
-}
-
-
-
-Module["Runtime"] = Runtime;
-Runtime['addFunction'] = Runtime.addFunction;
-Runtime['removeFunction'] = Runtime.removeFunction;
 
 
 
@@ -442,152 +416,83 @@ var globalScope = this;
 // Returns the C function with a specified identifier (for C++, you need to do manual name mangling)
 function getCFunc(ident) {
   var func = Module['_' + ident]; // closure exported function
-  if (!func) {
-    try { func = eval('_' + ident); } catch(e) {}
-  }
-  assert(func, 'Cannot call unknown function ' + ident + ' (perhaps LLVM optimizations or closure removed it?)');
+  assert(func, 'Cannot call unknown function ' + ident + ', make sure it is exported');
   return func;
 }
 
-var cwrap, ccall;
-(function(){
-  var JSfuncs = {
-    // Helpers for cwrap -- it can't refer to Runtime directly because it might
-    // be renamed by closure, instead it calls JSfuncs['stackSave'].body to find
-    // out what the minified function name is.
-    'stackSave': function() {
-      Runtime.stackSave()
-    },
-    'stackRestore': function() {
-      Runtime.stackRestore()
-    },
-    // type conversion from js to c
-    'arrayToC' : function(arr) {
-      var ret = Runtime.stackAlloc(arr.length);
-      writeArrayToMemory(arr, ret);
-      return ret;
-    },
-    'stringToC' : function(str) {
-      var ret = 0;
-      if (str !== null && str !== undefined && str !== 0) { // null string
-        // at most 4 bytes per UTF-8 code point, +1 for the trailing '\0'
-        var len = (str.length << 2) + 1;
-        ret = Runtime.stackAlloc(len);
-        stringToUTF8(str, ret, len);
-      }
-      return ret;
-    }
-  };
-  // For fast lookup of conversion functions
-  var toC = {'string' : JSfuncs['stringToC'], 'array' : JSfuncs['arrayToC']};
-
-  // C calling interface.
-  ccall = function ccallFunc(ident, returnType, argTypes, args, opts) {
-    var func = getCFunc(ident);
-    var cArgs = [];
-    var stack = 0;
-    assert(returnType !== 'array', 'Return type should not be "array".');
-    if (args) {
-      for (var i = 0; i < args.length; i++) {
-        var converter = toC[argTypes[i]];
-        if (converter) {
-          if (stack === 0) stack = Runtime.stackSave();
-          cArgs[i] = converter(args[i]);
-        } else {
-          cArgs[i] = args[i];
-        }
-      }
-    }
-    var ret = func.apply(null, cArgs);
-    if ((!opts || !opts.async) && typeof EmterpreterAsync === 'object') {
-      assert(!EmterpreterAsync.state, 'cannot start async op with normal JS calling ccall');
-    }
-    if (opts && opts.async) assert(!returnType, 'async ccalls cannot return values');
-    if (returnType === 'string') ret = Pointer_stringify(ret);
-    if (stack !== 0) {
-      if (opts && opts.async) {
-        EmterpreterAsync.asyncFinalizers.push(function() {
-          Runtime.stackRestore(stack);
-        });
-        return;
-      }
-      Runtime.stackRestore(stack);
+var JSfuncs = {
+  // Helpers for cwrap -- it can't refer to Runtime directly because it might
+  // be renamed by closure, instead it calls JSfuncs['stackSave'].body to find
+  // out what the minified function name is.
+  'stackSave': function() {
+    stackSave()
+  },
+  'stackRestore': function() {
+    stackRestore()
+  },
+  // type conversion from js to c
+  'arrayToC' : function(arr) {
+    var ret = stackAlloc(arr.length);
+    writeArrayToMemory(arr, ret);
+    return ret;
+  },
+  'stringToC' : function(str) {
+    var ret = 0;
+    if (str !== null && str !== undefined && str !== 0) { // null string
+      // at most 4 bytes per UTF-8 code point, +1 for the trailing '\0'
+      var len = (str.length << 2) + 1;
+      ret = stackAlloc(len);
+      stringToUTF8(str, ret, len);
     }
     return ret;
   }
+};
 
-  var sourceRegex = /^function\s*[a-zA-Z$_0-9]*\s*\(([^)]*)\)\s*{\s*([^*]*?)[\s;]*(?:return\s*(.*?)[;\s]*)?}$/;
-  function parseJSFunc(jsfunc) {
-    // Match the body and the return value of a javascript function source
-    var parsed = jsfunc.toString().match(sourceRegex).slice(1);
-    return {arguments : parsed[0], body : parsed[1], returnValue: parsed[2]}
-  }
+// For fast lookup of conversion functions
+var toC = {
+  'string': JSfuncs['stringToC'], 'array': JSfuncs['arrayToC']
+};
 
-  // sources of useful functions. we create this lazily as it can trigger a source decompression on this entire file
-  var JSsource = null;
-  function ensureJSsource() {
-    if (!JSsource) {
-      JSsource = {};
-      for (var fun in JSfuncs) {
-        if (JSfuncs.hasOwnProperty(fun)) {
-          // Elements of toCsource are arrays of three items:
-          // the code, and the return value
-          JSsource[fun] = parseJSFunc(JSfuncs[fun]);
-        }
+// C calling interface.
+function ccall (ident, returnType, argTypes, args, opts) {
+  var func = getCFunc(ident);
+  var cArgs = [];
+  var stack = 0;
+  assert(returnType !== 'array', 'Return type should not be "array".');
+  if (args) {
+    for (var i = 0; i < args.length; i++) {
+      var converter = toC[argTypes[i]];
+      if (converter) {
+        if (stack === 0) stack = stackSave();
+        cArgs[i] = converter(args[i]);
+      } else {
+        cArgs[i] = args[i];
       }
     }
   }
+  var ret = func.apply(null, cArgs);
+  if (returnType === 'string') ret = Pointer_stringify(ret);
+  else if (returnType === 'boolean') ret = Boolean(ret);
+  if (stack !== 0) {
+    stackRestore(stack);
+  }
+  return ret;
+}
 
-  cwrap = function cwrap(ident, returnType, argTypes) {
-    argTypes = argTypes || [];
-    var cfunc = getCFunc(ident);
-    // When the function takes numbers and returns a number, we can just return
-    // the original function
-    var numericArgs = argTypes.every(function(type){ return type === 'number'});
-    var numericRet = (returnType !== 'string');
-    if ( numericRet && numericArgs) {
-      return cfunc;
-    }
-    // Creation of the arguments list (["$1","$2",...,"$nargs"])
-    var argNames = argTypes.map(function(x,i){return '$'+i});
-    var funcstr = "(function(" + argNames.join(',') + ") {";
-    var nargs = argTypes.length;
-    if (!numericArgs) {
-      // Generate the code needed to convert the arguments from javascript
-      // values to pointers
-      ensureJSsource();
-      funcstr += 'var stack = ' + JSsource['stackSave'].body + ';';
-      for (var i = 0; i < nargs; i++) {
-        var arg = argNames[i], type = argTypes[i];
-        if (type === 'number') continue;
-        var convertCode = JSsource[type + 'ToC']; // [code, return]
-        funcstr += 'var ' + convertCode.arguments + ' = ' + arg + ';';
-        funcstr += convertCode.body + ';';
-        funcstr += arg + '=(' + convertCode.returnValue + ');';
-      }
-    }
-
-    // When the code is compressed, the name of cfunc is not literally 'cfunc' anymore
-    var cfuncname = parseJSFunc(function(){return cfunc}).returnValue;
-    // Call the function
-    funcstr += 'var ret = ' + cfuncname + '(' + argNames.join(',') + ');';
-    if (!numericRet) { // Return type can only by 'string' or 'number'
-      // Convert the result to a string
-      var strgfy = parseJSFunc(function(){return Pointer_stringify}).returnValue;
-      funcstr += 'ret = ' + strgfy + '(ret);';
-    }
-    funcstr += "if (typeof EmterpreterAsync === 'object') { assert(!EmterpreterAsync.state, 'cannot start async op with normal JS calling cwrap') }";
-    if (!numericArgs) {
-      // If we had a stack, restore it
-      ensureJSsource();
-      funcstr += JSsource['stackRestore'].body.replace('()', '(stack)') + ';';
-    }
-    funcstr += 'return ret})';
-    return eval(funcstr);
-  };
-})();
-Module["ccall"] = ccall;
-Module["cwrap"] = cwrap;
+function cwrap (ident, returnType, argTypes) {
+  argTypes = argTypes || [];
+  var cfunc = getCFunc(ident);
+  // When the function takes numbers and returns a number, we can just return
+  // the original function
+  var numericArgs = argTypes.every(function(type){ return type === 'number'});
+  var numericRet = returnType !== 'string';
+  if (numericRet && numericArgs) {
+    return cfunc;
+  }
+  return function() {
+    return ccall(ident, returnType, argTypes, arguments);
+  }
+}
 
 /** @type {function(number, number, string, boolean=)} */
 function setValue(ptr, value, type, noSafe) {
@@ -604,7 +509,6 @@ function setValue(ptr, value, type, noSafe) {
       default: abort('invalid type for setValue: ' + type);
     }
 }
-Module["setValue"] = setValue;
 
 /** @type {function(number, string, boolean=)} */
 function getValue(ptr, type, noSafe) {
@@ -618,22 +522,16 @@ function getValue(ptr, type, noSafe) {
       case 'i64': return HEAP32[((ptr)>>2)];
       case 'float': return HEAPF32[((ptr)>>2)];
       case 'double': return HEAPF64[((ptr)>>3)];
-      default: abort('invalid type for setValue: ' + type);
+      default: abort('invalid type for getValue: ' + type);
     }
   return null;
 }
-Module["getValue"] = getValue;
 
 var ALLOC_NORMAL = 0; // Tries to use _malloc()
 var ALLOC_STACK = 1; // Lives for the duration of the current function call
 var ALLOC_STATIC = 2; // Cannot be freed
 var ALLOC_DYNAMIC = 3; // Cannot be freed except through sbrk
 var ALLOC_NONE = 4; // Do not allocate
-Module["ALLOC_NORMAL"] = ALLOC_NORMAL;
-Module["ALLOC_STACK"] = ALLOC_STACK;
-Module["ALLOC_STATIC"] = ALLOC_STATIC;
-Module["ALLOC_DYNAMIC"] = ALLOC_DYNAMIC;
-Module["ALLOC_NONE"] = ALLOC_NONE;
 
 // allocate(): This is for internal use. You can use it yourself as well, but the interface
 //             is a little tricky (see docs right below). The reason is that it is optimized
@@ -665,11 +563,12 @@ function allocate(slab, types, allocator, ptr) {
   if (allocator == ALLOC_NONE) {
     ret = ptr;
   } else {
-    ret = [typeof _malloc === 'function' ? _malloc : Runtime.staticAlloc, Runtime.stackAlloc, Runtime.staticAlloc, Runtime.dynamicAlloc][allocator === undefined ? ALLOC_STATIC : allocator](Math.max(size, singleType ? 1 : types.length));
+    ret = [typeof _malloc === 'function' ? _malloc : staticAlloc, stackAlloc, staticAlloc, dynamicAlloc][allocator === undefined ? ALLOC_STATIC : allocator](Math.max(size, singleType ? 1 : types.length));
   }
 
   if (zeroinit) {
-    var ptr = ret, stop;
+    var stop;
+    ptr = ret;
     assert((ret & 3) == 0);
     stop = ret + (size & ~3);
     for (; ptr < stop; ptr += 4) {
@@ -695,10 +594,6 @@ function allocate(slab, types, allocator, ptr) {
   while (i < size) {
     var curr = slab[i];
 
-    if (typeof curr === 'function') {
-      curr = Runtime.getFunctionIndex(curr);
-    }
-
     type = singleType || types[i];
     if (type === 0) {
       i++;
@@ -712,7 +607,7 @@ function allocate(slab, types, allocator, ptr) {
 
     // no need to look up size unless type changes, so cache it
     if (previousType !== type) {
-      typeSize = Runtime.getNativeTypeSize(type);
+      typeSize = getNativeTypeSize(type);
       previousType = type;
     }
     i += typeSize;
@@ -720,15 +615,13 @@ function allocate(slab, types, allocator, ptr) {
 
   return ret;
 }
-Module["allocate"] = allocate;
 
 // Allocate memory during any stage of startup - static memory early on, dynamic memory later, malloc when ready
 function getMemory(size) {
-  if (!staticSealed) return Runtime.staticAlloc(size);
-  if (!runtimeInitialized) return Runtime.dynamicAlloc(size);
+  if (!staticSealed) return staticAlloc(size);
+  if (!runtimeInitialized) return dynamicAlloc(size);
   return _malloc(size);
 }
-Module["getMemory"] = getMemory;
 
 /** @type {function(number, number=)} */
 function Pointer_stringify(ptr, length) {
@@ -761,9 +654,8 @@ function Pointer_stringify(ptr, length) {
     }
     return ret;
   }
-  return Module['UTF8ToString'](ptr);
+  return UTF8ToString(ptr);
 }
-Module["Pointer_stringify"] = Pointer_stringify;
 
 // Given a pointer 'ptr' to a null-terminated ASCII-encoded string in the emscripten HEAP, returns
 // a copy of that string as a Javascript String object.
@@ -776,7 +668,6 @@ function AsciiToString(ptr) {
     str += String.fromCharCode(ch);
   }
 }
-Module["AsciiToString"] = AsciiToString;
 
 // Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
 // null-terminated and encoded in ASCII form. The copy will require at most str.length+1 bytes of space in the HEAP.
@@ -784,7 +675,6 @@ Module["AsciiToString"] = AsciiToString;
 function stringToAscii(str, outPtr) {
   return writeAsciiToMemory(str, outPtr, false);
 }
-Module["stringToAscii"] = stringToAscii;
 
 // Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the given array that contains uint8 values, returns
 // a copy of that string as a Javascript String object.
@@ -835,7 +725,6 @@ function UTF8ArrayToString(u8Array, idx) {
     }
   }
 }
-Module["UTF8ArrayToString"] = UTF8ArrayToString;
 
 // Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the emscripten HEAP, returns
 // a copy of that string as a Javascript String object.
@@ -843,7 +732,6 @@ Module["UTF8ArrayToString"] = UTF8ArrayToString;
 function UTF8ToString(ptr) {
   return UTF8ArrayToString(HEAPU8,ptr);
 }
-Module["UTF8ToString"] = UTF8ToString;
 
 // Copies the given Javascript String object 'str' to the given byte array at address 'outIdx',
 // encoded in UTF8 form and null-terminated. The copy will require at most str.length*4+1 bytes of space in the HEAP.
@@ -908,7 +796,6 @@ function stringToUTF8Array(str, outU8Array, outIdx, maxBytesToWrite) {
   outU8Array[outIdx] = 0;
   return outIdx - startIdx;
 }
-Module["stringToUTF8Array"] = stringToUTF8Array;
 
 // Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
 // null-terminated and encoded in UTF8 form. The copy will require at most str.length*4+1 bytes of space in the HEAP.
@@ -919,7 +806,6 @@ function stringToUTF8(str, outPtr, maxBytesToWrite) {
   assert(typeof maxBytesToWrite == 'number', 'stringToUTF8(str, outPtr, maxBytesToWrite) is missing the third parameter that specifies the length of the output buffer!');
   return stringToUTF8Array(str, HEAPU8,outPtr, maxBytesToWrite);
 }
-Module["stringToUTF8"] = stringToUTF8;
 
 // Returns the number of bytes the given Javascript string takes if encoded as a UTF8 byte array, EXCLUDING the null terminator byte.
 
@@ -946,7 +832,6 @@ function lengthBytesUTF8(str) {
   }
   return len;
 }
-Module["lengthBytesUTF8"] = lengthBytesUTF8;
 
 // Given a pointer 'ptr' to a null-terminated UTF16LE-encoded string in the emscripten HEAP, returns
 // a copy of that string as a Javascript String object.
@@ -976,7 +861,6 @@ function UTF16ToString(ptr) {
     }
   }
 }
-
 
 // Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
 // null-terminated and encoded in UTF16 form. The copy will require at most str.length*4+2 bytes of space in the HEAP.
@@ -1011,13 +895,11 @@ function stringToUTF16(str, outPtr, maxBytesToWrite) {
   return outPtr - startPtr;
 }
 
-
 // Returns the number of bytes the given Javascript string takes if encoded as a UTF16 byte array, EXCLUDING the null terminator byte.
 
 function lengthBytesUTF16(str) {
   return str.length*2;
 }
-
 
 function UTF32ToString(ptr) {
   assert(ptr % 4 == 0, 'Pointer passed to UTF32ToString must be aligned to four bytes!');
@@ -1039,7 +921,6 @@ function UTF32ToString(ptr) {
     }
   }
 }
-
 
 // Copies the given Javascript String object 'str' to the emscripten HEAP at address 'outPtr',
 // null-terminated and encoded in UTF32 form. The copy will require at most str.length*4+4 bytes of space in the HEAP.
@@ -1079,7 +960,6 @@ function stringToUTF32(str, outPtr, maxBytesToWrite) {
   return outPtr - startPtr;
 }
 
-
 // Returns the number of bytes the given Javascript string takes if encoded as a UTF16 byte array, EXCLUDING the null terminator byte.
 
 function lengthBytesUTF32(str) {
@@ -1095,33 +975,46 @@ function lengthBytesUTF32(str) {
   return len;
 }
 
+// Allocate heap space for a JS string, and write it there.
+// It is the responsibility of the caller to free() that memory.
+function allocateUTF8(str) {
+  var size = lengthBytesUTF8(str) + 1;
+  var ret = _malloc(size);
+  if (ret) stringToUTF8Array(str, HEAP8, ret, size);
+  return ret;
+}
+
+// Allocate stack space for a JS string, and write it there.
+function allocateUTF8OnStack(str) {
+  var size = lengthBytesUTF8(str) + 1;
+  var ret = stackAlloc(size);
+  stringToUTF8Array(str, HEAP8, ret, size);
+  return ret;
+}
 
 function demangle(func) {
   var __cxa_demangle_func = Module['___cxa_demangle'] || Module['__cxa_demangle'];
-  if (__cxa_demangle_func) {
-    try {
-      var s =
-        func.substr(1);
-      var len = lengthBytesUTF8(s)+1;
-      var buf = _malloc(len);
-      stringToUTF8(s, buf, len);
-      var status = _malloc(4);
-      var ret = __cxa_demangle_func(buf, 0, 0, status);
-      if (getValue(status, 'i32') === 0 && ret) {
-        return Pointer_stringify(ret);
-      }
-      // otherwise, libcxxabi failed
-    } catch(e) {
-      // ignore problems here
-    } finally {
-      if (buf) _free(buf);
-      if (status) _free(status);
-      if (ret) _free(ret);
+  assert(__cxa_demangle_func);
+  try {
+    var s =
+      func.substr(1);
+    var len = lengthBytesUTF8(s)+1;
+    var buf = _malloc(len);
+    stringToUTF8(s, buf, len);
+    var status = _malloc(4);
+    var ret = __cxa_demangle_func(buf, 0, 0, status);
+    if (HEAP32[((status)>>2)] === 0 && ret) {
+      return Pointer_stringify(ret);
     }
-    // failure when using libcxxabi, don't demangle
-    return func;
+    // otherwise, libcxxabi failed
+  } catch(e) {
+    // ignore problems here
+  } finally {
+    if (buf) _free(buf);
+    if (status) _free(status);
+    if (ret) _free(ret);
   }
-  Runtime.warnOnce('warning: build with  -s DEMANGLE_SUPPORT=1  to link in libcxxabi demangling');
+  // failure when using libcxxabi, don't demangle
   return func;
 }
 
@@ -1157,7 +1050,6 @@ function stackTrace() {
   if (Module['extraStackTrace']) js += '\n' + Module['extraStackTrace']();
   return demangleAll(js);
 }
-Module["stackTrace"] = stackTrace;
 
 // Memory management
 
@@ -1232,7 +1124,7 @@ function checkStackCookie() {
 }
 
 function abortStackOverflow(allocSize) {
-  abort('Stack overflow! Attempted to allocate ' + allocSize + ' bytes on the stack, but stack has only ' + (STACK_MAX - Module['asm'].stackSave() + allocSize) + ' bytes available!');
+  abort('Stack overflow! Attempted to allocate ' + allocSize + ' bytes on the stack, but stack has only ' + (STACK_MAX - stackSave() + allocSize) + ' bytes available!');
 }
 
 function abortOnCannotGrowMemory() {
@@ -1290,6 +1182,8 @@ function enlargeMemory() {
     if (replacement) {
       Module.printErr('Expected to get back a buffer of size ' + TOTAL_MEMORY + ' bytes, but instead got back a buffer of size ' + replacement.byteLength);
     }
+    // restore the state to before this call, we failed
+    TOTAL_MEMORY = OLD_TOTAL_MEMORY;
     return false;
   }
 
@@ -1297,8 +1191,6 @@ function enlargeMemory() {
 
   updateGlobalBuffer(replacement);
   updateGlobalBufferViews();
-
-  Module.printErr('enlarged memory arrays from ' + OLD_TOTAL_MEMORY + ' to ' + TOTAL_MEMORY + ', took ' + (Date.now() - start) + ' ms (has ArrayBuffer.transfer? ' + (!!ArrayBuffer.transfer) + ')');
 
   if (!Module["usingWasm"]) {
     Module.printErr('Warning: Enlarging memory arrays, this is not fast! ' + [OLD_TOTAL_MEMORY, TOTAL_MEMORY]);
@@ -1342,6 +1234,7 @@ if (Module['buffer']) {
     buffer = new ArrayBuffer(TOTAL_MEMORY);
   }
   assert(buffer.byteLength === TOTAL_MEMORY);
+  Module['buffer'] = buffer;
 }
 updateGlobalBufferViews();
 
@@ -1354,17 +1247,6 @@ function getTotalMemory() {
   HEAP32[0] = 0x63736d65; /* 'emsc' */
 HEAP16[1] = 0x6373;
 if (HEAPU8[2] !== 0x73 || HEAPU8[3] !== 0x63) throw 'Runtime error: expected the system to be little-endian!';
-
-Module['HEAP'] = HEAP;
-Module['buffer'] = buffer;
-Module['HEAP8'] = HEAP8;
-Module['HEAP16'] = HEAP16;
-Module['HEAP32'] = HEAP32;
-Module['HEAPU8'] = HEAPU8;
-Module['HEAPU16'] = HEAPU16;
-Module['HEAPU32'] = HEAPU32;
-Module['HEAPF32'] = HEAPF32;
-Module['HEAPF64'] = HEAPF64;
 
 function callRuntimeCallbacks(callbacks) {
   while(callbacks.length > 0) {
@@ -1440,53 +1322,22 @@ function postRun() {
 function addOnPreRun(cb) {
   __ATPRERUN__.unshift(cb);
 }
-Module["addOnPreRun"] = addOnPreRun;
 
 function addOnInit(cb) {
   __ATINIT__.unshift(cb);
 }
-Module["addOnInit"] = addOnInit;
 
 function addOnPreMain(cb) {
   __ATMAIN__.unshift(cb);
 }
-Module["addOnPreMain"] = addOnPreMain;
 
 function addOnExit(cb) {
   __ATEXIT__.unshift(cb);
 }
-Module["addOnExit"] = addOnExit;
 
 function addOnPostRun(cb) {
   __ATPOSTRUN__.unshift(cb);
 }
-Module["addOnPostRun"] = addOnPostRun;
-
-// Tools
-
-/** @type {function(string, boolean=, number=)} */
-function intArrayFromString(stringy, dontAddNull, length) {
-  var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
-  var u8array = new Array(len);
-  var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
-  if (dontAddNull) u8array.length = numBytesWritten;
-  return u8array;
-}
-Module["intArrayFromString"] = intArrayFromString;
-
-function intArrayToString(array) {
-  var ret = [];
-  for (var i = 0; i < array.length; i++) {
-    var chr = array[i];
-    if (chr > 0xFF) {
-      assert(false, 'Character code ' + chr + ' (' + String.fromCharCode(chr) + ')  at offset ' + i + ' not in 0x00-0xFF.');
-      chr &= 0xFF;
-    }
-    ret.push(String.fromCharCode(chr));
-  }
-  return ret.join('');
-}
-Module["intArrayToString"] = intArrayToString;
 
 // Deprecated: This function should not be called because it is unsafe and does not provide
 // a maximum length limit of how many bytes it is allowed to write. Prefer calling the
@@ -1494,7 +1345,7 @@ Module["intArrayToString"] = intArrayToString;
 // to be secure from out of bounds writes.
 /** @deprecated */
 function writeStringToMemory(string, buffer, dontAddNull) {
-  Runtime.warnOnce('writeStringToMemory is deprecated and should not be called! Use stringToUTF8() instead!');
+  warnOnce('writeStringToMemory is deprecated and should not be called! Use stringToUTF8() instead!');
 
   var /** @type {number} */ lastChar, /** @type {number} */ end;
   if (dontAddNull) {
@@ -1507,13 +1358,11 @@ function writeStringToMemory(string, buffer, dontAddNull) {
   stringToUTF8(string, buffer, Infinity);
   if (dontAddNull) HEAP8[end] = lastChar; // Restore the value under the null character.
 }
-Module["writeStringToMemory"] = writeStringToMemory;
 
 function writeArrayToMemory(array, buffer) {
   assert(array.length >= 0, 'writeArrayToMemory array must have a length (should be an array or typed array)')
   HEAP8.set(array, buffer);
 }
-Module["writeArrayToMemory"] = writeArrayToMemory;
 
 function writeAsciiToMemory(str, buffer, dontAddNull) {
   for (var i = 0; i < str.length; ++i) {
@@ -1523,7 +1372,6 @@ function writeAsciiToMemory(str, buffer, dontAddNull) {
   // Null-terminate the pointer to the HEAP.
   if (!dontAddNull) HEAP8[((buffer)>>0)]=0;
 }
-Module["writeAsciiToMemory"] = writeAsciiToMemory;
 
 function unSign(value, bits, ignore) {
   if (value >= 0) {
@@ -1546,36 +1394,7 @@ function reSign(value, bits, ignore) {
   return value;
 }
 
-
-// check for imul support, and also for correctness ( https://bugs.webkit.org/show_bug.cgi?id=126345 )
-if (!Math['imul'] || Math['imul'](0xffffffff, 5) !== -5) Math['imul'] = function imul(a, b) {
-  var ah  = a >>> 16;
-  var al = a & 0xffff;
-  var bh  = b >>> 16;
-  var bl = b & 0xffff;
-  return (al*bl + ((ah*bl + al*bh) << 16))|0;
-};
-Math.imul = Math['imul'];
-
-if (!Math['fround']) {
-  var froundBuffer = new Float32Array(1);
-  Math['fround'] = function(x) { froundBuffer[0] = x; return froundBuffer[0] };
-}
-Math.fround = Math['fround'];
-
-if (!Math['clz32']) Math['clz32'] = function(x) {
-  x = x >>> 0;
-  for (var i = 0; i < 32; i++) {
-    if (x & (1 << (31 - i))) return i;
-  }
-  return 32;
-};
-Math.clz32 = Math['clz32']
-
-if (!Math['trunc']) Math['trunc'] = function(x) {
-  return x < 0 ? Math.ceil(x) : Math.floor(x);
-};
-Math.trunc = Math['trunc'];
+assert(Math['imul'] && Math['fround'] && Math['clz32'] && Math['trunc'], 'this is a legacy browser, build with LEGACY_VM_SUPPORT');
 
 var Math_abs = Math.abs;
 var Math_cos = Math.cos;
@@ -1595,6 +1414,7 @@ var Math_imul = Math.imul;
 var Math_fround = Math.fround;
 var Math_round = Math.round;
 var Math_min = Math.min;
+var Math_max = Math.max;
 var Math_clz32 = Math.clz32;
 var Math_trunc = Math.trunc;
 
@@ -1652,7 +1472,6 @@ function addRunDependency(id) {
     Module.printErr('warning: run dependency added without ID');
   }
 }
-Module["addRunDependency"] = addRunDependency;
 
 function removeRunDependency(id) {
   runDependencies--;
@@ -1677,7 +1496,6 @@ function removeRunDependency(id) {
     }
   }
 }
-Module["removeRunDependency"] = removeRunDependency;
 
 Module["preloadedImages"] = {}; // maps url to image data
 Module["preloadedAudios"] = {}; // maps url to audio data
@@ -1690,87 +1508,72 @@ var memoryInitializer = null;
 
 
 
-function integrateWasmJS(Module) {
+
+// Prefix of data URIs emitted by SINGLE_FILE and related options.
+var dataURIPrefix = 'data:application/octet-stream;base64,';
+
+// Indicates whether filename is a base64 data URI.
+function isDataURI(filename) {
+  return String.prototype.startsWith ?
+      filename.startsWith(dataURIPrefix) :
+      filename.indexOf(dataURIPrefix) === 0;
+}
+
+
+
+
+function integrateWasmJS() {
   // wasm.js has several methods for creating the compiled code module here:
   //  * 'native-wasm' : use native WebAssembly support in the browser
   //  * 'interpret-s-expr': load s-expression code from a .wast and interpret
   //  * 'interpret-binary': load binary wasm and interpret
   //  * 'interpret-asm2wasm': load asm.js code, translate to wasm, and interpret
   //  * 'asmjs': no wasm, just load the asm.js code and use that (good for testing)
-  // The method can be set at compile time (BINARYEN_METHOD), or runtime by setting Module['wasmJSMethod'].
+  // The method is set at compile time (BINARYEN_METHOD)
   // The method can be a comma-separated list, in which case, we will try the
   // options one by one. Some of them can fail gracefully, and then we can try
   // the next.
 
   // inputs
 
-  var method = Module['wasmJSMethod'] || 'native-wasm';
-  Module['wasmJSMethod'] = method;
+  var method = 'native-wasm';
 
-  var wasmTextFile = Module['wasmTextFile'] || 'binaryen-wasm.wast';
-  var wasmBinaryFile = Module['wasmBinaryFile'] || 'binaryen-wasm.wasm';
-  var asmjsCodeFile = Module['asmjsCodeFile'] || 'binaryen-wasm.asm.js';
+  var wasmTextFile = 'binaryen-wasm.wast';
+  var wasmBinaryFile = 'binaryen-wasm.wasm';
+  var asmjsCodeFile = 'binaryen-wasm.temp.asm.js';
 
   if (typeof Module['locateFile'] === 'function') {
-    wasmTextFile = Module['locateFile'](wasmTextFile);
-    wasmBinaryFile = Module['locateFile'](wasmBinaryFile);
-    asmjsCodeFile = Module['locateFile'](asmjsCodeFile);
+    if (!isDataURI(wasmTextFile)) {
+      wasmTextFile = Module['locateFile'](wasmTextFile);
+    }
+    if (!isDataURI(wasmBinaryFile)) {
+      wasmBinaryFile = Module['locateFile'](wasmBinaryFile);
+    }
+    if (!isDataURI(asmjsCodeFile)) {
+      asmjsCodeFile = Module['locateFile'](asmjsCodeFile);
+    }
   }
 
   // utilities
 
   var wasmPageSize = 64*1024;
 
-  var asm2wasmImports = { // special asm2wasm imports
-    "f64-rem": function(x, y) {
-      return x % y;
-    },
-    "f64-to-int": function(x) {
-      return x | 0;
-    },
-    "i32s-div": function(x, y) {
-      return ((x | 0) / (y | 0)) | 0;
-    },
-    "i32u-div": function(x, y) {
-      return ((x >>> 0) / (y >>> 0)) >>> 0;
-    },
-    "i32s-rem": function(x, y) {
-      return ((x | 0) % (y | 0)) | 0;
-    },
-    "i32u-rem": function(x, y) {
-      return ((x >>> 0) % (y >>> 0)) >>> 0;
-    },
-    "debugger": function() {
-      debugger;
-    },
-  };
-
   var info = {
     'global': null,
     'env': null,
-    'asm2wasm': asm2wasmImports,
+    'asm2wasm': { // special asm2wasm imports
+      "f64-rem": function(x, y) {
+        return x % y;
+      },
+      "debugger": function() {
+        debugger;
+      }
+    },
     'parent': Module // Module inside wasm-js.cpp refers to wasm-js.cpp; this allows access to the outside program.
   };
 
   var exports = null;
 
-  function lookupImport(mod, base) {
-    var lookup = info;
-    if (mod.indexOf('.') < 0) {
-      lookup = (lookup || {})[mod];
-    } else {
-      var parts = mod.split('.');
-      lookup = (lookup || {})[parts[0]];
-      lookup = (lookup || {})[parts[1]];
-    }
-    if (base) {
-      lookup = (lookup || {})[base];
-    }
-    if (lookup === undefined) {
-      abort('bad lookupImport to (' + mod + ').' + base);
-    }
-    return lookup;
-  }
 
   function mergeMemory(newBuffer) {
     // The wasm instance creates its memory. But static init code might have written to
@@ -1784,56 +1587,43 @@ function integrateWasmJS(Module) {
     var oldView = new Int8Array(oldBuffer);
     var newView = new Int8Array(newBuffer);
 
-    // If we have a mem init file, do not trample it
-    if (!memoryInitializer) {
-      oldView.set(newView.subarray(Module['STATIC_BASE'], Module['STATIC_BASE'] + Module['STATIC_BUMP']), Module['STATIC_BASE']);
-    }
 
     newView.set(oldView);
     updateGlobalBuffer(newBuffer);
     updateGlobalBufferViews();
   }
 
-  var WasmTypes = {
-    none: 0,
-    i32: 1,
-    i64: 2,
-    f32: 3,
-    f64: 4
-  };
-
   function fixImports(imports) {
-    if (!0) return imports;
-    var ret = {};
-    for (var i in imports) {
-      var fixed = i;
-      if (fixed[0] == '_') fixed = fixed.substr(1);
-      ret[fixed] = imports[i];
-    }
-    return ret;
+    return imports;
   }
 
   function getBinary() {
-    var binary;
-    if (Module['wasmBinary']) {
-      binary = Module['wasmBinary'];
-      binary = new Uint8Array(binary);
-    } else if (Module['readBinary']) {
-      binary = Module['readBinary'](wasmBinaryFile);
-    } else {
-      throw "on the web, we need the wasm binary to be preloaded and set on Module['wasmBinary']. emcc.py will do that for you when generating HTML (but not JS)";
+    try {
+      if (Module['wasmBinary']) {
+        return new Uint8Array(Module['wasmBinary']);
+      }
+      if (Module['readBinary']) {
+        return Module['readBinary'](wasmBinaryFile);
+      } else {
+        throw "on the web, we need the wasm binary to be preloaded and set on Module['wasmBinary']. emcc.py will do that for you when generating HTML (but not JS)";
+      }
     }
-    return binary;
+    catch (err) {
+      abort(err);
+    }
   }
 
   function getBinaryPromise() {
     // if we don't have the binary yet, and have the Fetch api, use that
-    if (!Module['wasmBinary'] && typeof fetch === 'function') {
-      return fetch(wasmBinaryFile).then(function(response) {
+    // in some environments, like Electron's render process, Fetch api may be present, but have a different context than expected, let's only use it on the Web
+    if (!Module['wasmBinary'] && (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) && typeof fetch === 'function') {
+      return fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function(response) {
         if (!response['ok']) {
           throw "failed to load wasm binary file at '" + wasmBinaryFile + "'";
         }
-        return response['arrayBuffer']()
+        return response['arrayBuffer']();
+      }).catch(function () {
+        return getBinary();
       });
     }
     // Otherwise, getBinary should be able to get it synchronously
@@ -1844,23 +1634,6 @@ function integrateWasmJS(Module) {
 
   // do-method functions
 
-  function doJustAsm(global, env, providedBuffer) {
-    // if no Module.asm, or it's the method handler helper (see below), then apply
-    // the asmjs
-    if (typeof Module['asm'] !== 'function' || Module['asm'] === methodHandler) {
-      if (!Module['asmPreload']) {
-        // you can load the .asm.js file before this, to avoid this sync xhr and eval
-        eval(Module['read'](asmjsCodeFile)); // set Module.asm
-      } else {
-        Module['asm'] = Module['asmPreload'];
-      }
-    }
-    if (typeof Module['asm'] !== 'function') {
-      Module['printErr']('asm evalling did not set the module properly');
-      return false;
-    }
-    return Module['asm'](global, env, providedBuffer);
-  }
 
   function doNativeWasm(global, env, providedBuffer) {
     if (typeof WebAssembly !== 'object') {
@@ -1878,19 +1651,18 @@ function integrateWasmJS(Module) {
       'NaN': NaN,
       'Infinity': Infinity
     };
-    info['global.Math'] = global.Math;
+    info['global.Math'] = Math;
     info['env'] = env;
     // handle a generated wasm instance, receiving its exports and
     // performing other necessary setup
-    function receiveInstance(instance) {
+    function receiveInstance(instance, module) {
       exports = instance.exports;
       if (exports.memory) mergeMemory(exports.memory);
       Module['asm'] = exports;
       Module["usingWasm"] = true;
       removeRunDependency('wasm-instantiate');
     }
-
-    addRunDependency('wasm-instantiate'); // we can't run yet
+    addRunDependency('wasm-instantiate');
 
     // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
     // to manually instantiate the Wasm module themselves. This allows pages to run the instantiation parallel
@@ -1904,94 +1676,60 @@ function integrateWasmJS(Module) {
       }
     }
 
-    getBinaryPromise().then(function(binary) {
-      return WebAssembly.instantiate(binary, info)
-    }).then(function(output) {
+    // Async compilation can be confusing when an error on the page overwrites Module
+    // (for example, if the order of elements is wrong, and the one defining Module is
+    // later), so we save Module and check it later.
+    var trueModule = Module;
+    function receiveInstantiatedSource(output) {
+      // 'output' is a WebAssemblyInstantiatedSource object which has both the module and instance.
       // receiveInstance() will swap in the exports (to Module.asm) so they can be called
-      receiveInstance(output['instance']);
-    }).catch(function(reason) {
-      Module['printErr']('failed to asynchronously prepare wasm: ' + reason);
-      Module['quit'](1, reason);
-    });
+      assert(Module === trueModule, 'the Module object should not be replaced during async compilation - perhaps the order of HTML elements is wrong?');
+      trueModule = null;
+      receiveInstance(output['instance'], output['module']);
+    }
+    function instantiateArrayBuffer(receiver) {
+      getBinaryPromise().then(function(binary) {
+        return WebAssembly.instantiate(binary, info);
+      }).then(receiver).catch(function(reason) {
+        Module['printErr']('failed to asynchronously prepare wasm: ' + reason);
+        abort(reason);
+      });
+    }
+    // Prefer streaming instantiation if available.
+    if (!Module['wasmBinary'] &&
+        typeof WebAssembly.instantiateStreaming === 'function' &&
+        !isDataURI(wasmBinaryFile) &&
+        typeof fetch === 'function') {
+      WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
+        .then(receiveInstantiatedSource)
+        .catch(function(reason) {
+          // We expect the most common failure cause to be a bad MIME type for the binary,
+          // in which case falling back to ArrayBuffer instantiation should work.
+          Module['printErr']('wasm streaming compile failed: ' + reason);
+          Module['printErr']('falling back to ArrayBuffer instantiation');
+          instantiateArrayBuffer(receiveInstantiatedSource);
+        });
+    } else {
+      instantiateArrayBuffer(receiveInstantiatedSource);
+    }
     return {}; // no exports yet; we'll fill them in later
   }
 
-  function doWasmPolyfill(global, env, providedBuffer, method) {
-    if (typeof WasmJS !== 'function') {
-      Module['printErr']('WasmJS not detected - polyfill not bundled?');
-      return false;
-    }
-
-    // Use wasm.js to polyfill and execute code in a wasm interpreter.
-    var wasmJS = WasmJS({});
-
-    // XXX don't be confused. Module here is in the outside program. wasmJS is the inner wasm-js.cpp.
-    wasmJS['outside'] = Module; // Inside wasm-js.cpp, Module['outside'] reaches the outside module.
-
-    // Information for the instance of the module.
-    wasmJS['info'] = info;
-
-    wasmJS['lookupImport'] = lookupImport;
-
-    assert(providedBuffer === Module['buffer']); // we should not even need to pass it as a 3rd arg for wasm, but that's the asm.js way.
-
-    info.global = global;
-    info.env = env;
-
-    // polyfill interpreter expects an ArrayBuffer
-    assert(providedBuffer === Module['buffer']);
-    env['memory'] = providedBuffer;
-    assert(env['memory'] instanceof ArrayBuffer);
-
-    wasmJS['providedTotalMemory'] = Module['buffer'].byteLength;
-
-    // Prepare to generate wasm, using either asm2wasm or s-exprs
-    var code;
-    if (method === 'interpret-binary') {
-      code = getBinary();
-    } else {
-      code = Module['read'](method == 'interpret-asm2wasm' ? asmjsCodeFile : wasmTextFile);
-    }
-    var temp;
-    if (method == 'interpret-asm2wasm') {
-      temp = wasmJS['_malloc'](code.length + 1);
-      wasmJS['writeAsciiToMemory'](code, temp);
-      wasmJS['_load_asm2wasm'](temp);
-    } else if (method === 'interpret-s-expr') {
-      temp = wasmJS['_malloc'](code.length + 1);
-      wasmJS['writeAsciiToMemory'](code, temp);
-      wasmJS['_load_s_expr2wasm'](temp);
-    } else if (method === 'interpret-binary') {
-      temp = wasmJS['_malloc'](code.length);
-      wasmJS['HEAPU8'].set(code, temp);
-      wasmJS['_load_binary2wasm'](temp, code.length);
-    } else {
-      throw 'what? ' + method;
-    }
-    wasmJS['_free'](temp);
-
-    wasmJS['_instantiate'](temp);
-
-    if (Module['newBuffer']) {
-      mergeMemory(Module['newBuffer']);
-      Module['newBuffer'] = null;
-    }
-
-    exports = wasmJS['asmExports'];
-
-    return exports;
-  }
 
   // We may have a preloaded value in Module.asm, save it
   Module['asmPreload'] = Module['asm'];
 
   // Memory growth integration code
-  Module['reallocBuffer'] = function(size) {
+
+  var asmjsReallocBuffer = Module['reallocBuffer'];
+
+  var wasmReallocBuffer = function(size) {
     var PAGE_MULTIPLE = Module["usingWasm"] ? WASM_PAGE_SIZE : ASMJS_PAGE_SIZE; // In wasm, heap size must be a multiple of 64KB. In asm.js, they need to be multiples of 16MB.
     size = alignUp(size, PAGE_MULTIPLE); // round up to wasm page size
     var old = Module['buffer'];
     var oldSize = old.byteLength;
     if (Module["usingWasm"]) {
+      // native wasm support
       try {
         var result = Module['wasmMemory'].grow((size - oldSize) / wasmPageSize); // .grow() takes a delta compared to the previous size
         if (result !== (-1 | 0)) {
@@ -2004,19 +1742,25 @@ function integrateWasmJS(Module) {
         console.error('Module.reallocBuffer: Attempted to grow from ' + oldSize  + ' bytes to ' + size + ' bytes, but got error: ' + e);
         return null;
       }
-    } else {
-      exports['__growWasmMemory']((size - oldSize) / wasmPageSize); // tiny wasm method that just does grow_memory
-      // in interpreter, we replace Module.buffer if we allocate
-      return Module['buffer'] !== old ? Module['buffer'] : null; // if it was reallocated, it changed
     }
   };
+
+  Module['reallocBuffer'] = function(size) {
+    if (finalMethod === 'asmjs') {
+      return asmjsReallocBuffer(size);
+    } else {
+      return wasmReallocBuffer(size);
+    }
+  };
+
+  // we may try more than one; this is the final one, that worked and we are using
+  var finalMethod = '';
 
   // Provide an "asm.js function" for the application, called to "link" the asm.js module. We instantiate
   // the wasm module at that time, and it receives imports and provides exports and so forth, the app
   // doesn't need to care that it is wasm or olyfilled wasm or asm.js.
 
   Module['asm'] = function(global, env, providedBuffer) {
-    global = fixImports(global);
     env = fixImports(env);
 
     // import table
@@ -2046,24 +1790,9 @@ function integrateWasmJS(Module) {
     // try the methods. each should return the exports if it succeeded
 
     var exports;
-    var methods = method.split(',');
+    exports = doNativeWasm(global, env, providedBuffer);
 
-    for (var i = 0; i < methods.length; i++) {
-      var curr = methods[i];
-
-
-      if (curr === 'native-wasm') {
-        if (exports = doNativeWasm(global, env, providedBuffer)) break;
-      } else if (curr === 'asmjs') {
-        if (exports = doJustAsm(global, env, providedBuffer)) break;
-      } else if (curr === 'interpret-asm2wasm' || curr === 'interpret-s-expr' || curr === 'interpret-binary') {
-        if (exports = doWasmPolyfill(global, env, providedBuffer, curr)) break;
-      } else {
-        throw 'bad method: ' + curr;
-      }
-    }
-
-    if (!exports) throw 'no binaryen method succeeded. consider enabling more options, like interpreting, if you want that: https://github.com/kripken/emscripten/wiki/WebAssembly#binaryen-methods';
+    if (!exports) abort('no binaryen method succeeded. consider enabling more options, like interpreting, if you want that: https://github.com/kripken/emscripten/wiki/WebAssembly#binaryen-methods');
 
 
     return exports;
@@ -2072,7 +1801,7 @@ function integrateWasmJS(Module) {
   var methodHandler = Module['asm']; // note our method handler, as we may modify Module['asm'] later
 }
 
-integrateWasmJS(Module);
+integrateWasmJS();
 
 // === Body ===
 
@@ -2081,18 +1810,19 @@ var ASM_CONSTS = [];
 
 
 
-STATIC_BASE = Runtime.GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 106864;
-/* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__I_000101() } }, { func: function() { __GLOBAL__sub_I_binaryen_c_cpp() } }, { func: function() { __GLOBAL__sub_I_shared_constants_cpp() } }, { func: function() { __GLOBAL__sub_I_optimizer_shared_cpp() } }, { func: function() { __GLOBAL__sub_I_parser_cpp() } }, { func: function() { __GLOBAL__sub_I_simple_ast_cpp() } }, { func: function() { __GLOBAL__sub_I_I64ToI32Lowering_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentLocals_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentMemory_cpp() } }, { func: function() { __GLOBAL__sub_I_LegalizeJSInterface_cpp() } }, { func: function() { __GLOBAL__sub_I_LogExecution_cpp() } }, { func: function() { __GLOBAL__sub_I_Metrics_cpp() } }, { func: function() { __GLOBAL__sub_I_OptimizeInstructions_cpp() } }, { func: function() { __GLOBAL__sub_I_pass_cpp() } }, { func: function() { __GLOBAL__sub_I_Precompute_cpp() } }, { func: function() { __GLOBAL__sub_I_RelooperJumpThreading_cpp() } }, { func: function() { __GLOBAL__sub_I_SafeHeap_cpp() } }, { func: function() { __GLOBAL__sub_I_SSAify_cpp() } }, { func: function() { __GLOBAL__sub_I_TrapMode_cpp() } }, { func: function() { __GLOBAL__sub_I_path_cpp() } }, { func: function() { __GLOBAL__sub_I_threads_cpp() } }, { func: function() { __GLOBAL__sub_I_wasm_emscripten_cpp() } }, { func: function() { __GLOBAL__sub_I_wasm_cpp() } }, { func: function() { __GLOBAL__sub_I_iostream_cpp() } });
+STATIC_BASE = GLOBAL_BASE;
 
-
-memoryInitializer = Module["wasmJSMethod"].indexOf("asmjs") >= 0 || Module["wasmJSMethod"].indexOf("interpret-asm2wasm") >= 0 ? "binaryen-wasm.js.mem" : null;
+STATICTOP = STATIC_BASE + 106896;
+/* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__I_000101() } }, { func: function() { __GLOBAL__sub_I_pass_cpp() } }, { func: function() { __GLOBAL__sub_I_iostream_cpp() } }, { func: function() { __GLOBAL__sub_I_wasm_cpp() } }, { func: function() { __GLOBAL__sub_I_wasm_emscripten_cpp() } }, { func: function() { __GLOBAL__sub_I_threads_cpp() } }, { func: function() { __GLOBAL__sub_I_path_cpp() } }, { func: function() { __GLOBAL__sub_I_TrapMode_cpp() } }, { func: function() { __GLOBAL__sub_I_SSAify_cpp() } }, { func: function() { __GLOBAL__sub_I_SafeHeap_cpp() } }, { func: function() { __GLOBAL__sub_I_RelooperJumpThreading_cpp() } }, { func: function() { __GLOBAL__sub_I_Precompute_cpp() } }, { func: function() { __GLOBAL__sub_I_binaryen_c_cpp() } }, { func: function() { __GLOBAL__sub_I_OptimizeInstructions_cpp() } }, { func: function() { __GLOBAL__sub_I_Metrics_cpp() } }, { func: function() { __GLOBAL__sub_I_LogExecution_cpp() } }, { func: function() { __GLOBAL__sub_I_LegalizeJSInterface_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentMemory_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentLocals_cpp() } }, { func: function() { __GLOBAL__sub_I_I64ToI32Lowering_cpp() } }, { func: function() { __GLOBAL__sub_I_simple_ast_cpp() } }, { func: function() { __GLOBAL__sub_I_parser_cpp() } }, { func: function() { __GLOBAL__sub_I_optimizer_shared_cpp() } }, { func: function() { __GLOBAL__sub_I_shared_constants_cpp() } });
 
 
 
 
-var STATIC_BUMP = 106864;
+
+
+
+var STATIC_BUMP = 106896;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -2136,60 +1866,27 @@ function copyTempDouble(ptr) {
 // {{PRE_LIBRARY}}
 
 
-  
-  function _atexit(func, arg) {
-      __ATEXIT__.unshift({ func: func, arg: arg });
-    }function ___cxa_atexit() {
-  return _atexit.apply(null, arguments)
+  function __ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE() {
+  Module['printErr']('missing function: _ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE'); abort(-1);
   }
 
-  
-  function _emscripten_get_now() { abort() }
-  
-  function _emscripten_get_now_is_monotonic() {
-      // return whether emscripten_get_now is guaranteed monotonic; the Date.now
-      // implementation is not :(
-      return ENVIRONMENT_IS_NODE || (typeof dateNow !== 'undefined') ||
-          ((ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) && self['performance'] && self['performance']['now']);
-    }
-  
-  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};
-  
-  function ___setErrNo(value) {
-      if (Module['___errno_location']) HEAP32[((Module['___errno_location']())>>2)]=value;
-      else Module.printErr('failed to set errno from JS');
-      return value;
-    }function _clock_gettime(clk_id, tp) {
-      // int clock_gettime(clockid_t clk_id, struct timespec *tp);
-      var now;
-      if (clk_id === 0) {
-        now = Date.now();
-      } else if (clk_id === 1 && _emscripten_get_now_is_monotonic()) {
-        now = _emscripten_get_now();
-      } else {
-        ___setErrNo(ERRNO_CODES.EINVAL);
-        return -1;
-      }
-      HEAP32[((tp)>>2)]=(now/1000)|0; // seconds
-      HEAP32[(((tp)+(4))>>2)]=((now % 1000)*1000*1000)|0; // nanoseconds
-      return 0;
-    }
-
-  function ___assert_fail(condition, filename, line, func) {
-      ABORT = true;
-      throw 'Assertion failed: ' + Pointer_stringify(condition) + ', at: ' + [filename ? Pointer_stringify(filename) : 'unknown filename', line, func ? Pointer_stringify(func) : 'unknown function'] + ' at ' + stackTrace();
-    }
-
-  
   function __ZSt18uncaught_exceptionv() { // std::uncaught_exception()
       return !!__ZSt18uncaught_exceptionv.uncaught_exception;
     }
-  
-  
+
+  function ___assert_fail(condition, filename, line, func) {
+      abort('Assertion failed: ' + Pointer_stringify(condition) + ', at: ' + [filename ? Pointer_stringify(filename) : 'unknown filename', line, func ? Pointer_stringify(func) : 'unknown function']);
+    }
+
+  function ___cxa_allocate_exception(size) {
+      return _malloc(size);
+    }
+
   
   var EXCEPTIONS={last:0,caught:[],infos:{},deAdjust:function (adjusted) {
         if (!adjusted || EXCEPTIONS.infos[adjusted]) return adjusted;
-        for (var ptr in EXCEPTIONS.infos) {
+        for (var key in EXCEPTIONS.infos) {
+          var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
           var info = EXCEPTIONS.infos[ptr];
           if (info.adjusted === adjusted) {
             return ptr;
@@ -2219,7 +1916,76 @@ function copyTempDouble(ptr) {
         if (!ptr) return;
         var info = EXCEPTIONS.infos[ptr];
         info.refcount = 0;
-      }};
+      }};function ___cxa_begin_catch(ptr) {
+      var info = EXCEPTIONS.infos[ptr];
+      if (info && !info.caught) {
+        info.caught = true;
+        __ZSt18uncaught_exceptionv.uncaught_exception--;
+      }
+      if (info) info.rethrown = false;
+      EXCEPTIONS.caught.push(ptr);
+      EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ptr));
+      return ptr;
+    }
+
+  
+  function ___cxa_free_exception(ptr) {
+      try {
+        return _free(ptr);
+      } catch(e) { // XXX FIXME
+        Module.printErr('exception during cxa_free_exception: ' + e);
+      }
+    }function ___cxa_end_catch() {
+      // Clear state flag.
+      Module['setThrew'](0);
+      // Call destructor if one is registered then clear it.
+      var ptr = EXCEPTIONS.caught.pop();
+      if (ptr) {
+        EXCEPTIONS.decRef(EXCEPTIONS.deAdjust(ptr));
+        EXCEPTIONS.last = 0; // XXX in decRef?
+      }
+    }
+
+  function ___cxa_find_matching_catch_2() {
+          return ___cxa_find_matching_catch.apply(null, arguments);
+        }
+
+  function ___cxa_find_matching_catch_3() {
+          return ___cxa_find_matching_catch.apply(null, arguments);
+        }
+
+  function ___cxa_find_matching_catch_4() {
+          return ___cxa_find_matching_catch.apply(null, arguments);
+        }
+
+
+  function ___cxa_pure_virtual() {
+      ABORT = true;
+      throw 'Pure virtual function called!';
+    }
+
+  function ___cxa_rethrow() {
+      var ptr = EXCEPTIONS.caught.pop();
+      ptr = EXCEPTIONS.deAdjust(ptr);
+      if (!EXCEPTIONS.infos[ptr].rethrown) {
+        // Only pop if the corresponding push was through rethrow_primary_exception
+        EXCEPTIONS.caught.push(ptr)
+        EXCEPTIONS.infos[ptr].rethrown = true;
+      }
+      EXCEPTIONS.last = ptr;
+      throw ptr;
+    }
+
+  
+  function _atexit(func, arg) {
+      warnOnce('atexit() called, but NO_EXIT_RUNTIME is set, so atexits() will not be called. set NO_EXIT_RUNTIME to 0 (see the FAQ)');
+      __ATEXIT__.unshift({ func: func, arg: arg });
+    }function ___cxa_thread_atexit() {
+  return _atexit.apply(null, arguments)
+  }
+
+  
+  
   function ___resumeException(ptr) {
       if (!EXCEPTIONS.last) { EXCEPTIONS.last = ptr; }
       throw ptr;
@@ -2227,13 +1993,13 @@ function copyTempDouble(ptr) {
       var thrown = EXCEPTIONS.last;
       if (!thrown) {
         // just pass through the null ptr
-        return ((Runtime.setTempRet0(0),0)|0);
+        return ((setTempRet0(0),0)|0);
       }
       var info = EXCEPTIONS.infos[thrown];
       var throwntype = info.type;
       if (!throwntype) {
         // just pass through the thrown ptr
-        return ((Runtime.setTempRet0(0),thrown)|0);
+        return ((setTempRet0(0),thrown)|0);
       }
       var typeArray = Array.prototype.slice.call(arguments);
   
@@ -2250,14 +2016,14 @@ function copyTempDouble(ptr) {
         if (typeArray[i] && Module['___cxa_can_catch'](typeArray[i], throwntype, thrown)) {
           thrown = HEAP32[((thrown)>>2)]; // undo indirection
           info.adjusted = thrown;
-          return ((Runtime.setTempRet0(typeArray[i]),thrown)|0);
+          return ((setTempRet0(typeArray[i]),thrown)|0);
         }
       }
       // Shouldn't happen unless we have bogus data in typeArray
       // or encounter a type for which emscripten doesn't have suitable
       // typeinfo defined. Best-efforts match just in case.
       thrown = HEAP32[((thrown)>>2)]; // undo indirection
-      return ((Runtime.setTempRet0(throwntype),thrown)|0);
+      return ((setTempRet0(throwntype),thrown)|0);
     }function ___cxa_throw(ptr, type, destructor) {
       EXCEPTIONS.infos[ptr] = {
         ptr: ptr,
@@ -2277,90 +2043,23 @@ function copyTempDouble(ptr) {
       throw ptr;
     }
 
-   
-  Module["_memset"] = _memset;
-
-  function ___cxa_thread_atexit() {
-  Module['printErr']('missing function: __cxa_thread_atexit'); abort(-1);
-  }
-
-   
-  Module["_pthread_mutex_lock"] = _pthread_mutex_lock;
-
-  function _pthread_cond_signal() { return 0; }
-
-  function _abort() {
-      Module['abort']();
-    }
-
-  function _pthread_cond_destroy() { return 0; }
-
-  
-  
-  function _free() {
-  }
-  Module["_free"] = _free;function ___cxa_free_exception(ptr) {
-      try {
-        return _free(ptr);
-      } catch(e) { // XXX FIXME
-        Module.printErr('exception during cxa_free_exception: ' + e);
-      }
-    }function ___cxa_end_catch() {
-      // Clear state flag.
-      Module['setThrew'](0);
-      // Call destructor if one is registered then clear it.
-      var ptr = EXCEPTIONS.caught.pop();
-      if (ptr) {
-        EXCEPTIONS.decRef(EXCEPTIONS.deAdjust(ptr));
-        EXCEPTIONS.last = 0; // XXX in decRef?
-      }
-    }
-
-
-  function _pthread_once(ptr, func) {
-      if (!_pthread_once.seen) _pthread_once.seen = {};
-      if (ptr in _pthread_once.seen) return;
-      Module['dynCall_v'](func);
-      _pthread_once.seen[ptr] = 1;
+  function ___gxx_personality_v0() {
     }
 
   function ___lock() {}
 
-  function ___unlock() {}
-
   
-  var PTHREAD_SPECIFIC={};function _pthread_getspecific(key) {
-      return PTHREAD_SPECIFIC[key] || 0;
-    }
-
+  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};
   
-  var PTHREAD_SPECIFIC_NEXT_KEY=1;function _pthread_key_create(key, destructor) {
-      if (key == 0) {
-        return ERRNO_CODES.EINVAL;
-      }
-      HEAP32[((key)>>2)]=PTHREAD_SPECIFIC_NEXT_KEY;
-      // values start at 0
-      PTHREAD_SPECIFIC[PTHREAD_SPECIFIC_NEXT_KEY] = 0;
-      PTHREAD_SPECIFIC_NEXT_KEY++;
-      return 0;
+  function ___setErrNo(value) {
+      if (Module['___errno_location']) HEAP32[((Module['___errno_location']())>>2)]=value;
+      else Module.printErr('failed to set errno from JS');
+      return value;
+    }function ___map_file(pathname, size) {
+      ___setErrNo(ERRNO_CODES.EPERM);
+      return -1;
     }
 
-  
-  function __exit(status) {
-      // void _exit(int status);
-      // http://pubs.opengroup.org/onlinepubs/000095399/functions/exit.html
-      Module['exit'](status);
-    }function _exit(status) {
-      __exit(status);
-    }
-
-  function _pthread_setspecific(key, value) {
-      if (!(key in PTHREAD_SPECIFIC)) {
-        return ERRNO_CODES.EINVAL;
-      }
-      PTHREAD_SPECIFIC[key] = value;
-      return 0;
-    }
 
   
   
@@ -2387,7 +2086,7 @@ function copyTempDouble(ptr) {
         }
         // if the path is allowed to go above the root, restore leading ..s
         if (allowAboveRoot) {
-          for (; up--; up) {
+          for (; up; up--) {
             parts.unshift('..');
           }
         }
@@ -3072,26 +2771,30 @@ function copyTempDouble(ptr) {
         IDBFS.getDB(mount.mountpoint, function(err, db) {
           if (err) return callback(err);
   
-          var transaction = db.transaction([IDBFS.DB_STORE_NAME], 'readonly');
-          transaction.onerror = function(e) {
-            callback(this.error);
-            e.preventDefault();
-          };
+          try {
+            var transaction = db.transaction([IDBFS.DB_STORE_NAME], 'readonly');
+            transaction.onerror = function(e) {
+              callback(this.error);
+              e.preventDefault();
+            };
   
-          var store = transaction.objectStore(IDBFS.DB_STORE_NAME);
-          var index = store.index('timestamp');
+            var store = transaction.objectStore(IDBFS.DB_STORE_NAME);
+            var index = store.index('timestamp');
   
-          index.openKeyCursor().onsuccess = function(event) {
-            var cursor = event.target.result;
+            index.openKeyCursor().onsuccess = function(event) {
+              var cursor = event.target.result;
   
-            if (!cursor) {
-              return callback(null, { type: 'remote', db: db, entries: entries });
-            }
+              if (!cursor) {
+                return callback(null, { type: 'remote', db: db, entries: entries });
+              }
   
-            entries[cursor.primaryKey] = { timestamp: cursor.key };
+              entries[cursor.primaryKey] = { timestamp: cursor.key };
   
-            cursor.continue();
-          };
+              cursor.continue();
+            };
+          } catch (e) {
+            return callback(e);
+          }
         });
       },loadLocalEntry:function (path, callback) {
         var stat, node;
@@ -3119,7 +2822,7 @@ function copyTempDouble(ptr) {
           if (FS.isDir(entry.mode)) {
             FS.mkdir(path, entry.mode);
           } else if (FS.isFile(entry.mode)) {
-            FS.writeFile(path, entry.contents, { encoding: 'binary', canOwn: true });
+            FS.writeFile(path, entry.contents, { canOwn: true });
           } else {
             return callback(new Error('node type not supported'));
           }
@@ -3247,6 +2950,26 @@ function copyTempDouble(ptr) {
   
   var NODEFS={isWindows:false,staticInit:function () {
         NODEFS.isWindows = !!process.platform.match(/^win/);
+        var flags = process["binding"]("constants");
+        // Node.js 4 compatibility: it has no namespaces for constants
+        if (flags["fs"]) {
+          flags = flags["fs"];
+        }
+        NODEFS.flagsForNodeMap = {
+          "1024": flags["O_APPEND"],
+          "64": flags["O_CREAT"],
+          "128": flags["O_EXCL"],
+          "0": flags["O_RDONLY"],
+          "2": flags["O_RDWR"],
+          "4096": flags["O_SYNC"],
+          "512": flags["O_TRUNC"],
+          "1": flags["O_WRONLY"]
+        };
+      },bufferFrom:function (arrayBuffer) {
+        // Node.js < 4.5 compatibility: Buffer.from does not support ArrayBuffer
+        // Buffer.from before 4.5 was just a method inherited from Uint8Array
+        // Buffer.alloc has been added with Buffer.from together, so check it instead
+        return Buffer.alloc ? Buffer.from(arrayBuffer) : new Buffer(arrayBuffer);
       },mount:function (mount) {
         assert(ENVIRONMENT_IS_NODE);
         return NODEFS.createNode(null, '/', NODEFS.getMode(mount.opts.root), 0);
@@ -3263,9 +2986,9 @@ function copyTempDouble(ptr) {
         try {
           stat = fs.lstatSync(path);
           if (NODEFS.isWindows) {
-            // On Windows, directories return permission bits 'rw-rw-rw-', even though they have 'rwxrwxrwx', so
-            // propagate write bits to execute bits.
-            stat.mode = stat.mode | ((stat.mode & 146) >> 1);
+            // Node.js on Windows never represents permission bit 'x', so
+            // propagate read bits to execute bits
+            stat.mode = stat.mode | ((stat.mode & 292) >> 2);
           }
         } catch (e) {
           if (!e.code) throw e;
@@ -3281,13 +3004,21 @@ function copyTempDouble(ptr) {
         parts.push(node.mount.opts.root);
         parts.reverse();
         return PATH.join.apply(null, parts);
-      },flagsToPermissionStringMap:{0:"r",1:"r+",2:"r+",64:"r",65:"r+",66:"r+",129:"rx+",193:"rx+",514:"w+",577:"w",578:"w+",705:"wx",706:"wx+",1024:"a",1025:"a",1026:"a+",1089:"a",1090:"a+",1153:"ax",1154:"ax+",1217:"ax",1218:"ax+",4096:"rs",4098:"rs+"},flagsToPermissionString:function (flags) {
+      },flagsForNode:function (flags) {
         flags &= ~0x200000 /*O_PATH*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
         flags &= ~0x800 /*O_NONBLOCK*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
         flags &= ~0x8000 /*O_LARGEFILE*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
         flags &= ~0x80000 /*O_CLOEXEC*/; // Some applications may pass it; it makes no sense for a single process.
-        if (flags in NODEFS.flagsToPermissionStringMap) {
-          return NODEFS.flagsToPermissionStringMap[flags];
+        var newFlags = 0;
+        for (var k in NODEFS.flagsForNodeMap) {
+          if (flags & k) {
+            newFlags |= NODEFS.flagsForNodeMap[k];
+            flags ^= k;
+          }
+        }
+  
+        if (!flags) {
+          return newFlags;
         } else {
           throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
         }
@@ -3416,7 +3147,7 @@ function copyTempDouble(ptr) {
           var path = NODEFS.realPath(stream.node);
           try {
             if (FS.isFile(stream.node.mode)) {
-              stream.nfd = fs.openSync(path, NODEFS.flagsToPermissionString(stream.flags));
+              stream.nfd = fs.openSync(path, NODEFS.flagsForNode(stream.flags));
             }
           } catch (e) {
             if (!e.code) throw e;
@@ -3432,31 +3163,19 @@ function copyTempDouble(ptr) {
             throw new FS.ErrnoError(ERRNO_CODES[e.code]);
           }
         },read:function (stream, buffer, offset, length, position) {
-          if (length === 0) return 0; // node errors on 0 length reads
-          // FIXME this is terrible.
-          var nbuffer = new Buffer(length);
-          var res;
+          // Node.js < 6 compatibility: node errors on 0 length reads
+          if (length === 0) return 0;
           try {
-            res = fs.readSync(stream.nfd, nbuffer, 0, length, position);
+            return fs.readSync(stream.nfd, NODEFS.bufferFrom(buffer.buffer), offset, length, position);
           } catch (e) {
             throw new FS.ErrnoError(ERRNO_CODES[e.code]);
           }
-          if (res > 0) {
-            for (var i = 0; i < res; i++) {
-              buffer[offset + i] = nbuffer[i];
-            }
-          }
-          return res;
         },write:function (stream, buffer, offset, length, position) {
-          // FIXME this is terrible.
-          var nbuffer = new Buffer(buffer.subarray(offset, offset + length));
-          var res;
           try {
-            res = fs.writeSync(stream.nfd, nbuffer, 0, length, position);
+            return fs.writeSync(stream.nfd, NODEFS.bufferFrom(buffer.buffer), offset, length, position);
           } catch (e) {
             throw new FS.ErrnoError(ERRNO_CODES[e.code]);
           }
-          return res;
         },llseek:function (stream, offset, whence) {
           var position = offset;
           if (whence === 1) {  // SEEK_CUR.
@@ -3613,7 +3332,7 @@ function copyTempDouble(ptr) {
   
   var _stdout=STATICTOP; STATICTOP += 16;;
   
-  var _stderr=STATICTOP; STATICTOP += 16;;var FS={root:null,mounts:[],devices:[null],streams:[],nextInode:1,nameTable:null,currentPath:"/",initialized:false,ignorePermissions:true,trackingDelegate:{},tracking:{openFlags:{READ:1,WRITE:2}},ErrnoError:null,genericErrors:{},filesystems:null,syncFSRequests:0,handleFSError:function (e) {
+  var _stderr=STATICTOP; STATICTOP += 16;;var FS={root:null,mounts:[],devices:{},streams:[],nextInode:1,nameTable:null,currentPath:"/",initialized:false,ignorePermissions:true,trackingDelegate:{},tracking:{openFlags:{READ:1,WRITE:2}},ErrnoError:null,genericErrors:{},filesystems:null,syncFSRequests:0,handleFSError:function (e) {
         if (!(e instanceof FS.ErrnoError)) throw e + ' : ' + stackTrace();
         return ___setErrNo(e.errno);
       },lookupPath:function (path, opts) {
@@ -4544,10 +4263,9 @@ function copyTempDouble(ptr) {
         if (!stream.stream_ops.read) {
           throw new FS.ErrnoError(ERRNO_CODES.EINVAL);
         }
-        var seeking = true;
-        if (typeof position === 'undefined') {
+        var seeking = typeof position !== 'undefined';
+        if (!seeking) {
           position = stream.position;
-          seeking = false;
         } else if (!stream.seekable) {
           throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
         }
@@ -4571,10 +4289,9 @@ function copyTempDouble(ptr) {
           // seek to the end before writing in append mode
           FS.llseek(stream, 0, 2);
         }
-        var seeking = true;
-        if (typeof position === 'undefined') {
+        var seeking = typeof position !== 'undefined';
+        if (!seeking) {
           position = stream.position;
-          seeking = false;
         } else if (!stream.seekable) {
           throw new FS.ErrnoError(ERRNO_CODES.ESPIPE);
         }
@@ -4593,7 +4310,7 @@ function copyTempDouble(ptr) {
         if ((stream.flags & 2097155) === 0) {
           throw new FS.ErrnoError(ERRNO_CODES.EBADF);
         }
-        if (!FS.isFile(stream.node.mode) && !FS.isDir(node.mode)) {
+        if (!FS.isFile(stream.node.mode) && !FS.isDir(stream.node.mode)) {
           throw new FS.ErrnoError(ERRNO_CODES.ENODEV);
         }
         if (!stream.stream_ops.allocate) {
@@ -4644,17 +4361,15 @@ function copyTempDouble(ptr) {
       },writeFile:function (path, data, opts) {
         opts = opts || {};
         opts.flags = opts.flags || 'w';
-        opts.encoding = opts.encoding || 'utf8';
-        if (opts.encoding !== 'utf8' && opts.encoding !== 'binary') {
-          throw new Error('Invalid encoding type "' + opts.encoding + '"');
-        }
         var stream = FS.open(path, opts.flags, opts.mode);
-        if (opts.encoding === 'utf8') {
+        if (typeof data === 'string') {
           var buf = new Uint8Array(lengthBytesUTF8(data)+1);
           var actualNumBytes = stringToUTF8Array(data, buf, 0, buf.length);
-          FS.write(stream, buf, 0, actualNumBytes, 0, opts.canOwn);
-        } else if (opts.encoding === 'binary') {
-          FS.write(stream, data, 0, data.length, 0, opts.canOwn);
+          FS.write(stream, buf, 0, actualNumBytes, undefined, opts.canOwn);
+        } else if (ArrayBuffer.isView(data)) {
+          FS.write(stream, data, 0, data.byteLength, undefined, opts.canOwn);
+        } else {
+          throw new Error('Unsupported data type');
         }
         FS.close(stream);
       },cwd:function () {
@@ -4700,7 +4415,7 @@ function copyTempDouble(ptr) {
           random_device = function() { crypto.getRandomValues(randomBuffer); return randomBuffer[0]; };
         } else if (ENVIRONMENT_IS_NODE) {
           // for nodejs
-          random_device = function() { return require('crypto').randomBytes(1)[0]; };
+          random_device = function() { return require('crypto')['randomBytes'](1)[0]; };
         } else {
           // default for ES5 platforms
           random_device = function() { return (Math.random()*256)|0; };
@@ -4786,6 +4501,8 @@ function copyTempDouble(ptr) {
           };
           this.setErrno(errno);
           this.message = ERRNO_MESSAGES[errno];
+          // Node.js compatibility: assigning on this.stack fails on Node 4 (but fixed on Node 8)
+          if (this.stack) Object.defineProperty(this, "stack", { value: (new Error).stack, writable: true });
           if (this.stack) this.stack = demangleAll(this.stack);
         };
         FS.ErrnoError.prototype = new Error();
@@ -5417,22 +5134,15 @@ function copyTempDouble(ptr) {
         return low;
       },getZero:function () {
         assert(SYSCALLS.get() === 0);
-      }};function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
+      }};function ___syscall140(which, varargs) {SYSCALLS.varargs = varargs;
   try {
-   // munmap
-      var addr = SYSCALLS.get(), len = SYSCALLS.get();
-      // TODO: support unmmap'ing parts of allocations
-      var info = SYSCALLS.mappings[addr];
-      if (!info) return 0;
-      if (len === info.len) {
-        var stream = FS.getStream(info.fd);
-        SYSCALLS.doMsync(addr, stream, len, info.flags)
-        FS.munmap(stream);
-        SYSCALLS.mappings[addr] = null;
-        if (info.allocated) {
-          _free(info.malloc);
-        }
-      }
+   // llseek
+      var stream = SYSCALLS.getStreamFromFD(), offset_high = SYSCALLS.get(), offset_low = SYSCALLS.get(), result = SYSCALLS.get(), whence = SYSCALLS.get();
+      // NOTE: offset_high is unused - Emscripten's off_t is 32-bit
+      var offset = offset_low;
+      FS.llseek(stream, offset, whence);
+      HEAP32[((result)>>2)]=stream.position;
+      if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null; // reset readdir state
       return 0;
     } catch (e) {
     if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
@@ -5440,39 +5150,110 @@ function copyTempDouble(ptr) {
   }
   }
 
-  
-  
-  function _emscripten_memcpy_big(dest, src, num) {
-      HEAPU8.set(HEAPU8.subarray(src, src+num), dest);
-      return dest;
-    } 
-  Module["_memcpy"] = _memcpy; 
-  Module["_memmove"] = _memmove;
+  function ___syscall145(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // readv
+      var stream = SYSCALLS.getStreamFromFD(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
+      return SYSCALLS.doReadv(stream, iov, iovcnt);
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
 
-  
-  function _malloc(bytes) {
-      /* Over-allocate to make sure it is byte-aligned by 8.
-       * This will leak memory, but this is only the dummy
-       * implementation (replaced by dlmalloc normally) so
-       * not an issue.
-       */
-      var ptr = Runtime.dynamicAlloc(bytes + 8);
-      return (ptr+8) & 0xFFFFFFF8;
-    }
-  Module["_malloc"] = _malloc;function ___cxa_allocate_exception(size) {
-      return _malloc(size);
-    }
+  function ___syscall146(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // writev
+      var stream = SYSCALLS.getStreamFromFD(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
+      return SYSCALLS.doWritev(stream, iov, iovcnt);
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
+
+  function ___syscall221(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // fcntl64
+      var stream = SYSCALLS.getStreamFromFD(), cmd = SYSCALLS.get();
+      switch (cmd) {
+        case 0: {
+          var arg = SYSCALLS.get();
+          if (arg < 0) {
+            return -ERRNO_CODES.EINVAL;
+          }
+          var newStream;
+          newStream = FS.open(stream.path, stream.flags, 0, arg);
+          return newStream.fd;
+        }
+        case 1:
+        case 2:
+          return 0;  // FD_CLOEXEC makes no sense for a single process.
+        case 3:
+          return stream.flags;
+        case 4: {
+          var arg = SYSCALLS.get();
+          stream.flags |= arg;
+          return 0;
+        }
+        case 12:
+        case 12: {
+          var arg = SYSCALLS.get();
+          var offset = 0;
+          // We're always unlocked.
+          HEAP16[(((arg)+(offset))>>1)]=2;
+          return 0;
+        }
+        case 13:
+        case 14:
+        case 13:
+        case 14:
+          return 0; // Pretend that the locking is successful.
+        case 16:
+        case 8:
+          return -ERRNO_CODES.EINVAL; // These are for sockets. We don't have them fully implemented yet.
+        case 9:
+          // musl trusts getown return values, due to a bug where they must be, as they overlap with errors. just return -1 here, so fnctl() returns that, and we set errno ourselves.
+          ___setErrNo(ERRNO_CODES.EINVAL);
+          return -1;
+        default: {
+          return -ERRNO_CODES.EINVAL;
+        }
+      }
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
+
+  function ___syscall5(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // open
+      var pathname = SYSCALLS.getStr(), flags = SYSCALLS.get(), mode = SYSCALLS.get() // optional TODO
+      var stream = FS.open(pathname, flags, mode);
+      return stream.fd;
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
 
   function ___syscall54(which, varargs) {SYSCALLS.varargs = varargs;
   try {
    // ioctl
       var stream = SYSCALLS.getStreamFromFD(), op = SYSCALLS.get();
       switch (op) {
+        case 21509:
         case 21505: {
           if (!stream.tty) return -ERRNO_CODES.ENOTTY;
           return 0;
         }
-        case 21506: {
+        case 21510:
+        case 21511:
+        case 21512:
+        case 21506:
+        case 21507:
+        case 21508: {
           if (!stream.tty) return -ERRNO_CODES.ENOTTY;
           return 0; // no-op, not actually adjusting terminal settings
         }
@@ -5504,15 +5285,79 @@ function copyTempDouble(ptr) {
   }
   }
 
-  function ___cxa_pure_virtual() {
-      ABORT = true;
-      throw 'Pure virtual function called!';
+  function ___syscall6(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // close
+      var stream = SYSCALLS.getStreamFromFD();
+      FS.close(stream);
+      return 0;
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
+
+  function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // munmap
+      var addr = SYSCALLS.get(), len = SYSCALLS.get();
+      // TODO: support unmmap'ing parts of allocations
+      var info = SYSCALLS.mappings[addr];
+      if (!info) return 0;
+      if (len === info.len) {
+        var stream = FS.getStream(info.fd);
+        SYSCALLS.doMsync(addr, stream, len, info.flags)
+        FS.munmap(stream);
+        SYSCALLS.mappings[addr] = null;
+        if (info.allocated) {
+          _free(info.malloc);
+        }
+      }
+      return 0;
+    } catch (e) {
+    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
+    return -e.errno;
+  }
+  }
+
+  function ___unlock() {}
+
+  function _abort() {
+      Module['abort']();
     }
 
-  var _llvm_ctlz_i32=true;
+  
+  function _emscripten_get_now() { abort() }
+  
+  function _emscripten_get_now_is_monotonic() {
+      // return whether emscripten_get_now is guaranteed monotonic; the Date.now
+      // implementation is not :(
+      return ENVIRONMENT_IS_NODE || (typeof dateNow !== 'undefined') ||
+          ((ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) && self['performance'] && self['performance']['now']);
+    }function _clock_gettime(clk_id, tp) {
+      // int clock_gettime(clockid_t clk_id, struct timespec *tp);
+      var now;
+      if (clk_id === 0) {
+        now = Date.now();
+      } else if (clk_id === 1 && _emscripten_get_now_is_monotonic()) {
+        now = _emscripten_get_now();
+      } else {
+        ___setErrNo(ERRNO_CODES.EINVAL);
+        return -1;
+      }
+      HEAP32[((tp)>>2)]=(now/1000)|0; // seconds
+      HEAP32[(((tp)+(4))>>2)]=((now % 1000)*1000*1000)|0; // nanoseconds
+      return 0;
+    }
 
-   
-  Module["_pthread_cond_broadcast"] = _pthread_cond_broadcast;
+  
+  function __exit(status) {
+      // void _exit(int status);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/exit.html
+      Module['exit'](status);
+    }function _exit(status) {
+      __exit(status);
+    }
 
   
   
@@ -5533,12 +5378,11 @@ function copyTempDouble(ptr) {
         ENV['PATH'] = '/';
         ENV['PWD'] = '/';
         ENV['HOME'] = '/home/web_user';
-        ENV['LANG'] = 'C';
+        ENV['LANG'] = 'C.UTF-8';
         ENV['_'] = Module['thisProgram'];
         // Allocate memory.
-        poolPtr = allocate(TOTAL_ENV_SIZE, 'i8', ALLOC_STATIC);
-        envPtr = allocate(MAX_ENV_VALUES * 4,
-                          'i8*', ALLOC_STATIC);
+        poolPtr = staticAlloc(TOTAL_ENV_SIZE);
+        envPtr = staticAlloc(MAX_ENV_VALUES * 4);
         HEAP32[((envPtr)>>2)]=poolPtr;
         HEAP32[((_environ)>>2)]=envPtr;
       } else {
@@ -5577,61 +5421,94 @@ function copyTempDouble(ptr) {
       if (!ENV.hasOwnProperty(name)) return 0;
   
       if (_getenv.ret) _free(_getenv.ret);
-      _getenv.ret = allocate(intArrayFromString(ENV[name]), 'i8', ALLOC_NORMAL);
+      _getenv.ret = allocateUTF8(ENV[name]);
       return _getenv.ret;
     }
 
-  function ___cxa_find_matching_catch_4() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
+   
 
-  function ___map_file(pathname, size) {
-      ___setErrNo(ERRNO_CODES.EPERM);
-      return -1;
-    }
+  var _llvm_ceil_f64=Math_ceil;
 
-  function ___cxa_find_matching_catch_2() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-  function ___cxa_find_matching_catch_3() {
-          return ___cxa_find_matching_catch.apply(null, arguments);
-        }
-
-  function _pthread_join() {}
+  var _llvm_ctlz_i32=true;
 
   function _llvm_eh_typeid_for(type) {
       return type;
     }
 
-  function ___syscall5(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // open
-      var pathname = SYSCALLS.getStr(), flags = SYSCALLS.get(), mode = SYSCALLS.get() // optional TODO
-      var stream = FS.open(pathname, flags, mode);
-      return stream.fd;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
+  var _llvm_fabs_f64=Math_abs;
 
+  var _llvm_floor_f64=Math_floor;
 
-  function ___syscall6(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // close
-      var stream = SYSCALLS.getStreamFromFD();
-      FS.close(stream);
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
+  var _llvm_nacl_atomic_cmpxchg_i32=undefined;
 
+  function _llvm_trap() {
+      abort('trap!');
+    }
+
+  
+  function _emscripten_memcpy_big(dest, src, num) {
+      HEAPU8.set(HEAPU8.subarray(src, src+num), dest);
+      return dest;
+    } 
 
    
-  Module["_sbrk"] = _sbrk;
+
+   
+
+   
+
+  function _pthread_cond_destroy() { return 0; }
+
+  function _pthread_cond_signal() { return 0; }
+
+  function _pthread_cond_wait() { return 0; }
+
+  function _pthread_equal(x, y) { return x == y }
+
+  
+  var PTHREAD_SPECIFIC={};function _pthread_getspecific(key) {
+      return PTHREAD_SPECIFIC[key] || 0;
+    }
+
+  function _pthread_join() {}
+
+  
+  var PTHREAD_SPECIFIC_NEXT_KEY=1;function _pthread_key_create(key, destructor) {
+      if (key == 0) {
+        return ERRNO_CODES.EINVAL;
+      }
+      HEAP32[((key)>>2)]=PTHREAD_SPECIFIC_NEXT_KEY;
+      // values start at 0
+      PTHREAD_SPECIFIC[PTHREAD_SPECIFIC_NEXT_KEY] = 0;
+      PTHREAD_SPECIFIC_NEXT_KEY++;
+      return 0;
+    }
+
+  function _pthread_mutex_destroy() {}
+
+   
+
+   
+
+  function _pthread_once(ptr, func) {
+      if (!_pthread_once.seen) _pthread_once.seen = {};
+      if (ptr in _pthread_once.seen) return;
+      Module['dynCall_v'](func);
+      _pthread_once.seen[ptr] = 1;
+    }
+
+  function _pthread_setspecific(key, value) {
+      if (!(key in PTHREAD_SPECIFIC)) {
+        return ERRNO_CODES.EINVAL;
+      }
+      PTHREAD_SPECIFIC[key] = value;
+      return 0;
+    }
+
+  
+    
+
+   
 
   
   
@@ -5975,142 +5852,10 @@ function copyTempDouble(ptr) {
       return _strftime(s, maxsize, format, tm); // no locale support yet
     }
 
-  function ___cxa_begin_catch(ptr) {
-      var info = EXCEPTIONS.infos[ptr];
-      if (info && !info.caught) {
-        info.caught = true;
-        __ZSt18uncaught_exceptionv.uncaught_exception--;
-      }
-      if (info) info.rethrown = false;
-      EXCEPTIONS.caught.push(ptr);
-      EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ptr));
-      return ptr;
-    }
-
-  function ___gxx_personality_v0() {
-    }
-
-  function _pthread_mutex_destroy() {}
-
-  function _pthread_cond_wait() { return 0; }
-
-  function ___cxa_rethrow() {
-      var ptr = EXCEPTIONS.caught.pop();
-      if (!EXCEPTIONS.infos[ptr].rethrown) {
-        // Only pop if the corresponding push was through rethrow_primary_exception
-        EXCEPTIONS.caught.push(ptr)
-        EXCEPTIONS.infos[ptr].rethrown = true;
-      }
-      EXCEPTIONS.last = ptr;
-      throw ptr;
-    }
-
-   
-  Module["_pthread_mutex_unlock"] = _pthread_mutex_unlock;
-
-   
-  Module["_llvm_bswap_i32"] = _llvm_bswap_i32;
-
-  function ___syscall221(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // fcntl64
-      var stream = SYSCALLS.getStreamFromFD(), cmd = SYSCALLS.get();
-      switch (cmd) {
-        case 0: {
-          var arg = SYSCALLS.get();
-          if (arg < 0) {
-            return -ERRNO_CODES.EINVAL;
-          }
-          var newStream;
-          newStream = FS.open(stream.path, stream.flags, 0, arg);
-          return newStream.fd;
-        }
-        case 1:
-        case 2:
-          return 0;  // FD_CLOEXEC makes no sense for a single process.
-        case 3:
-          return stream.flags;
-        case 4: {
-          var arg = SYSCALLS.get();
-          stream.flags |= arg;
-          return 0;
-        }
-        case 12:
-        case 12: {
-          var arg = SYSCALLS.get();
-          var offset = 0;
-          // We're always unlocked.
-          HEAP16[(((arg)+(offset))>>1)]=2;
-          return 0;
-        }
-        case 13:
-        case 14:
-        case 13:
-        case 14:
-          return 0; // Pretend that the locking is successful.
-        case 16:
-        case 8:
-          return -ERRNO_CODES.EINVAL; // These are for sockets. We don't have them fully implemented yet.
-        case 9:
-          // musl trusts getown return values, due to a bug where they must be, as they overlap with errors. just return -1 here, so fnctl() returns that, and we set errno ourselves.
-          ___setErrNo(ERRNO_CODES.EINVAL);
-          return -1;
-        default: {
-          return -ERRNO_CODES.EINVAL;
-        }
-      }
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-
-  function ___syscall140(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // llseek
-      var stream = SYSCALLS.getStreamFromFD(), offset_high = SYSCALLS.get(), offset_low = SYSCALLS.get(), result = SYSCALLS.get(), whence = SYSCALLS.get();
-      // NOTE: offset_high is unused - Emscripten's off_t is 32-bit
-      var offset = offset_low;
-      FS.llseek(stream, offset, whence);
-      HEAP32[((result)>>2)]=stream.position;
-      if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null; // reset readdir state
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function ___syscall146(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // writev
-      var stream = SYSCALLS.getStreamFromFD(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
-      return SYSCALLS.doWritev(stream, iov, iovcnt);
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function __ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE() {
-  Module['printErr']('missing function: _ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE'); abort(-1);
-  }
-
-  var _llvm_nacl_atomic_cmpxchg_i32=undefined;
-
-  function ___syscall145(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // readv
-      var stream = SYSCALLS.getStreamFromFD(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
-      return SYSCALLS.doReadv(stream, iov, iovcnt);
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
   var ___dso_handle=STATICTOP; STATICTOP += 16;;
+FS.staticInit();__ATINIT__.unshift(function() { if (!Module["noFSInit"] && !FS.init.initialized) FS.init() });__ATMAIN__.push(function() { FS.ignorePermissions = false });__ATEXIT__.push(function() { FS.quit() });;
+__ATINIT__.unshift(function() { TTY.init() });__ATEXIT__.push(function() { TTY.shutdown() });;
+if (ENVIRONMENT_IS_NODE) { var fs = require("fs"); var NODEJS_PATH = require("path"); NODEFS.staticInit(); };
 if (ENVIRONMENT_IS_NODE) {
     _emscripten_get_now = function _emscripten_get_now_actual() {
       var t = process['hrtime']();
@@ -6125,17 +5870,14 @@ if (ENVIRONMENT_IS_NODE) {
   } else {
     _emscripten_get_now = Date.now;
   };
-FS.staticInit();__ATINIT__.unshift(function() { if (!Module["noFSInit"] && !FS.init.initialized) FS.init() });__ATMAIN__.push(function() { FS.ignorePermissions = false });__ATEXIT__.push(function() { FS.quit() });Module["FS_createFolder"] = FS.createFolder;Module["FS_createPath"] = FS.createPath;Module["FS_createDataFile"] = FS.createDataFile;Module["FS_createPreloadedFile"] = FS.createPreloadedFile;Module["FS_createLazyFile"] = FS.createLazyFile;Module["FS_createLink"] = FS.createLink;Module["FS_createDevice"] = FS.createDevice;Module["FS_unlink"] = FS.unlink;;
-__ATINIT__.unshift(function() { TTY.init() });__ATEXIT__.push(function() { TTY.shutdown() });;
-if (ENVIRONMENT_IS_NODE) { var fs = require("fs"); var NODEJS_PATH = require("path"); NODEFS.staticInit(); };
 ___buildEnvironment(ENV);;
-DYNAMICTOP_PTR = allocate(1, "i32", ALLOC_STATIC);
+DYNAMICTOP_PTR = staticAlloc(4);
 
-STACK_BASE = STACKTOP = Runtime.alignMemory(STATICTOP);
+STACK_BASE = STACKTOP = alignMemory(STATICTOP);
 
 STACK_MAX = STACK_BASE + TOTAL_STACK;
 
-DYNAMIC_BASE = Runtime.alignMemory(STACK_MAX);
+DYNAMIC_BASE = alignMemory(STACK_MAX);
 
 HEAP32[DYNAMICTOP_PTR>>2] = DYNAMIC_BASE;
 
@@ -6143,78 +5885,177 @@ staticSealed = true; // seal the static portion of memory
 
 assert(DYNAMIC_BASE < TOTAL_MEMORY, "TOTAL_MEMORY not big enough for stack");
 
+var ASSERTIONS = true;
 
-function nullFunc_iiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+/** @type {function(string, boolean=, number=)} */
+function intArrayFromString(stringy, dontAddNull, length) {
+  var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
+  var u8array = new Array(len);
+  var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
+  if (dontAddNull) u8array.length = numBytesWritten;
+  return u8array;
+}
+
+function intArrayToString(array) {
+  var ret = [];
+  for (var i = 0; i < array.length; i++) {
+    var chr = array[i];
+    if (chr > 0xFF) {
+      if (ASSERTIONS) {
+        assert(false, 'Character code ' + chr + ' (' + String.fromCharCode(chr) + ')  at offset ' + i + ' not in 0x00-0xFF.');
+      }
+      chr &= 0xFF;
+    }
+    ret.push(String.fromCharCode(chr));
+  }
+  return ret.join('');
+}
+
+
+
+function nullFunc_i(x) { Module["printErr"]("Invalid function pointer called with signature 'i'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_id(x) { Module["printErr"]("Invalid function pointer called with signature 'id'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_ii(x) { Module["printErr"]("Invalid function pointer called with signature 'ii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iid(x) { Module["printErr"]("Invalid function pointer called with signature 'iid'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iii(x) { Module["printErr"]("Invalid function pointer called with signature 'iii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiid(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiid'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_iiiiiid(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiid'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_viiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_iiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_vij(x) { Module["printErr"]("Invalid function pointer called with signature 'vij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_iiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iiiiij(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_iij(x) { Module["printErr"]("Invalid function pointer called with signature 'iij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_ji(x) { Module["printErr"]("Invalid function pointer called with signature 'ji'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_jii(x) { Module["printErr"]("Invalid function pointer called with signature 'jii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+
+function nullFunc_v(x) { Module["printErr"]("Invalid function pointer called with signature 'v'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_vi(x) { Module["printErr"]("Invalid function pointer called with signature 'vi'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_vii(x) { Module["printErr"]("Invalid function pointer called with signature 'vii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_iiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viii(x) { Module["printErr"]("Invalid function pointer called with signature 'viii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_ii(x) { Module["printErr"]("Invalid function pointer called with signature 'ii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_viijii(x) { Module["printErr"]("Invalid function pointer called with signature 'viijii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_id(x) { Module["printErr"]("Invalid function pointer called with signature 'id'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_jii(x) { Module["printErr"]("Invalid function pointer called with signature 'jii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_viiiiiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_viiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_iiiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iid(x) { Module["printErr"]("Invalid function pointer called with signature 'iid'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_ji(x) { Module["printErr"]("Invalid function pointer called with signature 'ji'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_viiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_iii(x) { Module["printErr"]("Invalid function pointer called with signature 'iii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iij(x) { Module["printErr"]("Invalid function pointer called with signature 'iij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_viiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_i(x) { Module["printErr"]("Invalid function pointer called with signature 'i'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiiiij(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_viii(x) { Module["printErr"]("Invalid function pointer called with signature 'viii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viiiiiiiiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiiiiiiiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 function nullFunc_viij(x) { Module["printErr"]("Invalid function pointer called with signature 'viij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_v(x) { Module["printErr"]("Invalid function pointer called with signature 'v'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_viijii(x) { Module["printErr"]("Invalid function pointer called with signature 'viijii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-function nullFunc_iiiiiiiii(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiiiiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_iiiiid(x) { Module["printErr"]("Invalid function pointer called with signature 'iiiiid'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
-
-function nullFunc_viiii(x) { Module["printErr"]("Invalid function pointer called with signature 'viiii'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
+function nullFunc_vij(x) { Module["printErr"]("Invalid function pointer called with signature 'vij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  Module["printErr"]("Build with ASSERTIONS=2 for more info.");abort(x) }
 
 Module['wasmTableSize'] = 176256;
 
 Module['wasmMaxTableSize'] = 176256;
 
-function invoke_iiiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
+function invoke_i(index) {
   try {
-    return Module["dynCall_iiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7);
+    return Module["dynCall_i"](index);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_id(index,a1) {
+  try {
+    return Module["dynCall_id"](index,a1);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_ii(index,a1) {
+  try {
+    return Module["dynCall_ii"](index,a1);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iid(index,a1,a2) {
+  try {
+    return Module["dynCall_iid"](index,a1,a2);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iii(index,a1,a2) {
+  try {
+    return Module["dynCall_iii"](index,a1,a2);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiii(index,a1,a2,a3) {
+  try {
+    return Module["dynCall_iiii"](index,a1,a2,a3);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiii(index,a1,a2,a3,a4) {
+  try {
+    return Module["dynCall_iiiii"](index,a1,a2,a3,a4);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiid(index,a1,a2,a3,a4,a5) {
+  try {
+    return Module["dynCall_iiiiid"](index,a1,a2,a3,a4,a5);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiii(index,a1,a2,a3,a4,a5) {
+  try {
+    return Module["dynCall_iiiiii"](index,a1,a2,a3,a4,a5);
   } catch(e) {
     if (typeof e !== 'number' && e !== 'longjmp') throw e;
     Module["setThrew"](1, 0);
@@ -6230,18 +6071,90 @@ function invoke_iiiiiid(index,a1,a2,a3,a4,a5,a6) {
   }
 }
 
-function invoke_viiiii(index,a1,a2,a3,a4,a5) {
+function invoke_iiiiiii(index,a1,a2,a3,a4,a5,a6) {
   try {
-    Module["dynCall_viiiii"](index,a1,a2,a3,a4,a5);
+    return Module["dynCall_iiiiiii"](index,a1,a2,a3,a4,a5,a6);
   } catch(e) {
     if (typeof e !== 'number' && e !== 'longjmp') throw e;
     Module["setThrew"](1, 0);
   }
 }
 
-function invoke_vij(index,a1,a2,a3) {
+function invoke_iiiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
   try {
-    Module["dynCall_vij"](index,a1,a2,a3);
+    return Module["dynCall_iiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8) {
+  try {
+    return Module["dynCall_iiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) {
+  try {
+    return Module["dynCall_iiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) {
+  try {
+    return Module["dynCall_iiiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iiiiij(index,a1,a2,a3,a4,a5,a6) {
+  try {
+    return Module["dynCall_iiiiij"](index,a1,a2,a3,a4,a5,a6);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_iij(index,a1,a2,a3) {
+  try {
+    return Module["dynCall_iij"](index,a1,a2,a3);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_ji(index,a1) {
+  try {
+    return Module["dynCall_ji"](index,a1);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_jii(index,a1,a2) {
+  try {
+    return Module["dynCall_jii"](index,a1,a2);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_v(index) {
+  try {
+    Module["dynCall_v"](index);
   } catch(e) {
     if (typeof e !== 'number' && e !== 'longjmp') throw e;
     Module["setThrew"](1, 0);
@@ -6266,225 +6179,9 @@ function invoke_vii(index,a1,a2) {
   }
 }
 
-function invoke_iiiiiii(index,a1,a2,a3,a4,a5,a6) {
-  try {
-    return Module["dynCall_iiiiiii"](index,a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_ii(index,a1) {
-  try {
-    return Module["dynCall_ii"](index,a1);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viijii(index,a1,a2,a3,a4,a5,a6) {
-  try {
-    Module["dynCall_viijii"](index,a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_id(index,a1) {
-  try {
-    return Module["dynCall_id"](index,a1);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) {
-  try {
-    return Module["dynCall_iiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_jii(index,a1,a2) {
-  try {
-    return Module["dynCall_jii"](index,a1,a2);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiii(index,a1,a2,a3) {
-  try {
-    return Module["dynCall_iiii"](index,a1,a2,a3);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viiiiiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15) {
-  try {
-    Module["dynCall_viiiiiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viiiiii(index,a1,a2,a3,a4,a5,a6) {
-  try {
-    Module["dynCall_viiiiii"](index,a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) {
-  try {
-    return Module["dynCall_iiiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iid(index,a1,a2) {
-  try {
-    return Module["dynCall_iid"](index,a1,a2);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_ji(index,a1) {
-  try {
-    return Module["dynCall_ji"](index,a1);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) {
-  try {
-    Module["dynCall_viiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iii(index,a1,a2) {
-  try {
-    return Module["dynCall_iii"](index,a1,a2);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiii(index,a1,a2,a3,a4,a5) {
-  try {
-    return Module["dynCall_iiiiii"](index,a1,a2,a3,a4,a5);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iij(index,a1,a2,a3) {
-  try {
-    return Module["dynCall_iij"](index,a1,a2,a3);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
-  try {
-    Module["dynCall_viiiiiii"](index,a1,a2,a3,a4,a5,a6,a7);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_i(index) {
-  try {
-    return Module["dynCall_i"](index);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiii(index,a1,a2,a3,a4) {
-  try {
-    return Module["dynCall_iiiii"](index,a1,a2,a3,a4);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiij(index,a1,a2,a3,a4,a5,a6) {
-  try {
-    return Module["dynCall_iiiiij"](index,a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
 function invoke_viii(index,a1,a2,a3) {
   try {
     Module["dynCall_viii"](index,a1,a2,a3);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_viij(index,a1,a2,a3,a4) {
-  try {
-    Module["dynCall_viij"](index,a1,a2,a3,a4);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_v(index) {
-  try {
-    Module["dynCall_v"](index);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8) {
-  try {
-    return Module["dynCall_iiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8);
-  } catch(e) {
-    if (typeof e !== 'number' && e !== 'longjmp') throw e;
-    Module["setThrew"](1, 0);
-  }
-}
-
-function invoke_iiiiid(index,a1,a2,a3,a4,a5) {
-  try {
-    return Module["dynCall_iiiiid"](index,a1,a2,a3,a4,a5);
   } catch(e) {
     if (typeof e !== 'number' && e !== 'longjmp') throw e;
     Module["setThrew"](1, 0);
@@ -6500,2987 +6197,4405 @@ function invoke_viiii(index,a1,a2,a3,a4) {
   }
 }
 
-Module.asmGlobalArg = { "Math": Math, "Int8Array": Int8Array, "Int16Array": Int16Array, "Int32Array": Int32Array, "Uint8Array": Uint8Array, "Uint16Array": Uint16Array, "Uint32Array": Uint32Array, "Float32Array": Float32Array, "Float64Array": Float64Array, "NaN": NaN, "Infinity": Infinity, "byteLength": byteLength };
+function invoke_viiiii(index,a1,a2,a3,a4,a5) {
+  try {
+    Module["dynCall_viiiii"](index,a1,a2,a3,a4,a5);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
 
-Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "abortStackOverflow": abortStackOverflow, "nullFunc_iiiiiiii": nullFunc_iiiiiiii, "nullFunc_iiiiiid": nullFunc_iiiiiid, "nullFunc_viiiii": nullFunc_viiiii, "nullFunc_vij": nullFunc_vij, "nullFunc_vi": nullFunc_vi, "nullFunc_vii": nullFunc_vii, "nullFunc_iiiiiii": nullFunc_iiiiiii, "nullFunc_ii": nullFunc_ii, "nullFunc_viijii": nullFunc_viijii, "nullFunc_id": nullFunc_id, "nullFunc_iiiiiiiiiiii": nullFunc_iiiiiiiiiiii, "nullFunc_jii": nullFunc_jii, "nullFunc_iiii": nullFunc_iiii, "nullFunc_viiiiiiiiiiiiiii": nullFunc_viiiiiiiiiiiiiii, "nullFunc_viiiiii": nullFunc_viiiiii, "nullFunc_iiiiiiiiiiiii": nullFunc_iiiiiiiiiiiii, "nullFunc_iid": nullFunc_iid, "nullFunc_ji": nullFunc_ji, "nullFunc_viiiiiiiiii": nullFunc_viiiiiiiiii, "nullFunc_iii": nullFunc_iii, "nullFunc_iiiiii": nullFunc_iiiiii, "nullFunc_iij": nullFunc_iij, "nullFunc_viiiiiii": nullFunc_viiiiiii, "nullFunc_i": nullFunc_i, "nullFunc_iiiii": nullFunc_iiiii, "nullFunc_iiiiij": nullFunc_iiiiij, "nullFunc_viii": nullFunc_viii, "nullFunc_viij": nullFunc_viij, "nullFunc_v": nullFunc_v, "nullFunc_iiiiiiiii": nullFunc_iiiiiiiii, "nullFunc_iiiiid": nullFunc_iiiiid, "nullFunc_viiii": nullFunc_viiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_iiiiiid": invoke_iiiiiid, "invoke_viiiii": invoke_viiiii, "invoke_vij": invoke_vij, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_iiiiiii": invoke_iiiiiii, "invoke_ii": invoke_ii, "invoke_viijii": invoke_viijii, "invoke_id": invoke_id, "invoke_iiiiiiiiiiii": invoke_iiiiiiiiiiii, "invoke_jii": invoke_jii, "invoke_iiii": invoke_iiii, "invoke_viiiiiiiiiiiiiii": invoke_viiiiiiiiiiiiiii, "invoke_viiiiii": invoke_viiiiii, "invoke_iiiiiiiiiiiii": invoke_iiiiiiiiiiiii, "invoke_iid": invoke_iid, "invoke_ji": invoke_ji, "invoke_viiiiiiiiii": invoke_viiiiiiiiii, "invoke_iii": invoke_iii, "invoke_iiiiii": invoke_iiiiii, "invoke_iij": invoke_iij, "invoke_viiiiiii": invoke_viiiiiii, "invoke_i": invoke_i, "invoke_iiiii": invoke_iiiii, "invoke_iiiiij": invoke_iiiiij, "invoke_viii": invoke_viii, "invoke_viij": invoke_viij, "invoke_v": invoke_v, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_iiiiid": invoke_iiiiid, "invoke_viiii": invoke_viiii, "___syscall221": ___syscall221, "_pthread_getspecific": _pthread_getspecific, "_pthread_cond_wait": _pthread_cond_wait, "___lock": ___lock, "_pthread_join": _pthread_join, "_pthread_key_create": _pthread_key_create, "__ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE": __ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE, "___gxx_personality_v0": ___gxx_personality_v0, "___cxa_find_matching_catch_4": ___cxa_find_matching_catch_4, "__arraySum": __arraySum, "___assert_fail": ___assert_fail, "___cxa_free_exception": ___cxa_free_exception, "___cxa_find_matching_catch_2": ___cxa_find_matching_catch_2, "_emscripten_get_now_is_monotonic": _emscripten_get_now_is_monotonic, "___buildEnvironment": ___buildEnvironment, "__addDays": __addDays, "_strftime_l": _strftime_l, "___setErrNo": ___setErrNo, "_llvm_eh_typeid_for": _llvm_eh_typeid_for, "___cxa_allocate_exception": ___cxa_allocate_exception, "_emscripten_memcpy_big": _emscripten_memcpy_big, "___cxa_end_catch": ___cxa_end_catch, "___resumeException": ___resumeException, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "__exit": __exit, "___cxa_begin_catch": ___cxa_begin_catch, "_strftime": _strftime, "___cxa_find_matching_catch_3": ___cxa_find_matching_catch_3, "___syscall91": ___syscall91, "_pthread_cond_signal": _pthread_cond_signal, "___cxa_thread_atexit": ___cxa_thread_atexit, "_pthread_mutex_destroy": _pthread_mutex_destroy, "_pthread_once": _pthread_once, "_abort": _abort, "_getenv": _getenv, "_clock_gettime": _clock_gettime, "___map_file": ___map_file, "___syscall54": ___syscall54, "___unlock": ___unlock, "__isLeapYear": __isLeapYear, "_emscripten_get_now": _emscripten_get_now, "_pthread_setspecific": _pthread_setspecific, "___cxa_atexit": ___cxa_atexit, "___cxa_throw": ___cxa_throw, "___cxa_rethrow": ___cxa_rethrow, "___syscall6": ___syscall6, "___syscall5": ___syscall5, "___cxa_pure_virtual": ___cxa_pure_virtual, "_pthread_cond_destroy": _pthread_cond_destroy, "_atexit": _atexit, "___syscall140": ___syscall140, "_exit": _exit, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "___syscall145": ___syscall145, "___syscall146": ___syscall146, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX, "___dso_handle": ___dso_handle };
+function invoke_viiiiii(index,a1,a2,a3,a4,a5,a6) {
+  try {
+    Module["dynCall_viiiiii"](index,a1,a2,a3,a4,a5,a6);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_viiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
+  try {
+    Module["dynCall_viiiiiii"](index,a1,a2,a3,a4,a5,a6,a7);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_viiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) {
+  try {
+    Module["dynCall_viiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_viiiiiiiiiiiiiii(index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15) {
+  try {
+    Module["dynCall_viiiiiiiiiiiiiii"](index,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_viij(index,a1,a2,a3,a4) {
+  try {
+    Module["dynCall_viij"](index,a1,a2,a3,a4);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_viijii(index,a1,a2,a3,a4,a5,a6) {
+  try {
+    Module["dynCall_viijii"](index,a1,a2,a3,a4,a5,a6);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+function invoke_vij(index,a1,a2,a3) {
+  try {
+    Module["dynCall_vij"](index,a1,a2,a3);
+  } catch(e) {
+    if (typeof e !== 'number' && e !== 'longjmp') throw e;
+    Module["setThrew"](1, 0);
+  }
+}
+
+Module.asmGlobalArg = {};
+
+Module.asmLibraryArg = { "abort": abort, "assert": assert, "enlargeMemory": enlargeMemory, "getTotalMemory": getTotalMemory, "abortOnCannotGrowMemory": abortOnCannotGrowMemory, "abortStackOverflow": abortStackOverflow, "nullFunc_i": nullFunc_i, "nullFunc_id": nullFunc_id, "nullFunc_ii": nullFunc_ii, "nullFunc_iid": nullFunc_iid, "nullFunc_iii": nullFunc_iii, "nullFunc_iiii": nullFunc_iiii, "nullFunc_iiiii": nullFunc_iiiii, "nullFunc_iiiiid": nullFunc_iiiiid, "nullFunc_iiiiii": nullFunc_iiiiii, "nullFunc_iiiiiid": nullFunc_iiiiiid, "nullFunc_iiiiiii": nullFunc_iiiiiii, "nullFunc_iiiiiiii": nullFunc_iiiiiiii, "nullFunc_iiiiiiiii": nullFunc_iiiiiiiii, "nullFunc_iiiiiiiiiiii": nullFunc_iiiiiiiiiiii, "nullFunc_iiiiiiiiiiiii": nullFunc_iiiiiiiiiiiii, "nullFunc_iiiiij": nullFunc_iiiiij, "nullFunc_iij": nullFunc_iij, "nullFunc_ji": nullFunc_ji, "nullFunc_jii": nullFunc_jii, "nullFunc_v": nullFunc_v, "nullFunc_vi": nullFunc_vi, "nullFunc_vii": nullFunc_vii, "nullFunc_viii": nullFunc_viii, "nullFunc_viiii": nullFunc_viiii, "nullFunc_viiiii": nullFunc_viiiii, "nullFunc_viiiiii": nullFunc_viiiiii, "nullFunc_viiiiiii": nullFunc_viiiiiii, "nullFunc_viiiiiiiiii": nullFunc_viiiiiiiiii, "nullFunc_viiiiiiiiiiiiiii": nullFunc_viiiiiiiiiiiiiii, "nullFunc_viij": nullFunc_viij, "nullFunc_viijii": nullFunc_viijii, "nullFunc_vij": nullFunc_vij, "invoke_i": invoke_i, "invoke_id": invoke_id, "invoke_ii": invoke_ii, "invoke_iid": invoke_iid, "invoke_iii": invoke_iii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_iiiiid": invoke_iiiiid, "invoke_iiiiii": invoke_iiiiii, "invoke_iiiiiid": invoke_iiiiiid, "invoke_iiiiiii": invoke_iiiiiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_iiiiiiiii": invoke_iiiiiiiii, "invoke_iiiiiiiiiiii": invoke_iiiiiiiiiiii, "invoke_iiiiiiiiiiiii": invoke_iiiiiiiiiiiii, "invoke_iiiiij": invoke_iiiiij, "invoke_iij": invoke_iij, "invoke_ji": invoke_ji, "invoke_jii": invoke_jii, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "invoke_viiii": invoke_viiii, "invoke_viiiii": invoke_viiiii, "invoke_viiiiii": invoke_viiiiii, "invoke_viiiiiii": invoke_viiiiiii, "invoke_viiiiiiiiii": invoke_viiiiiiiiii, "invoke_viiiiiiiiiiiiiii": invoke_viiiiiiiiiiiiiii, "invoke_viij": invoke_viij, "invoke_viijii": invoke_viijii, "invoke_vij": invoke_vij, "__ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE": __ZN4wasm12ModuleWriter5writeERNS_6ModuleENSt3__212basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE, "__ZSt18uncaught_exceptionv": __ZSt18uncaught_exceptionv, "___assert_fail": ___assert_fail, "___buildEnvironment": ___buildEnvironment, "___cxa_allocate_exception": ___cxa_allocate_exception, "___cxa_begin_catch": ___cxa_begin_catch, "___cxa_end_catch": ___cxa_end_catch, "___cxa_find_matching_catch": ___cxa_find_matching_catch, "___cxa_find_matching_catch_2": ___cxa_find_matching_catch_2, "___cxa_find_matching_catch_3": ___cxa_find_matching_catch_3, "___cxa_find_matching_catch_4": ___cxa_find_matching_catch_4, "___cxa_free_exception": ___cxa_free_exception, "___cxa_pure_virtual": ___cxa_pure_virtual, "___cxa_rethrow": ___cxa_rethrow, "___cxa_thread_atexit": ___cxa_thread_atexit, "___cxa_throw": ___cxa_throw, "___gxx_personality_v0": ___gxx_personality_v0, "___lock": ___lock, "___map_file": ___map_file, "___resumeException": ___resumeException, "___setErrNo": ___setErrNo, "___syscall140": ___syscall140, "___syscall145": ___syscall145, "___syscall146": ___syscall146, "___syscall221": ___syscall221, "___syscall5": ___syscall5, "___syscall54": ___syscall54, "___syscall6": ___syscall6, "___syscall91": ___syscall91, "___unlock": ___unlock, "__addDays": __addDays, "__arraySum": __arraySum, "__exit": __exit, "__isLeapYear": __isLeapYear, "_abort": _abort, "_atexit": _atexit, "_clock_gettime": _clock_gettime, "_emscripten_get_now": _emscripten_get_now, "_emscripten_get_now_is_monotonic": _emscripten_get_now_is_monotonic, "_emscripten_memcpy_big": _emscripten_memcpy_big, "_exit": _exit, "_getenv": _getenv, "_llvm_ceil_f64": _llvm_ceil_f64, "_llvm_eh_typeid_for": _llvm_eh_typeid_for, "_llvm_fabs_f64": _llvm_fabs_f64, "_llvm_floor_f64": _llvm_floor_f64, "_llvm_trap": _llvm_trap, "_pthread_cond_destroy": _pthread_cond_destroy, "_pthread_cond_signal": _pthread_cond_signal, "_pthread_cond_wait": _pthread_cond_wait, "_pthread_equal": _pthread_equal, "_pthread_getspecific": _pthread_getspecific, "_pthread_join": _pthread_join, "_pthread_key_create": _pthread_key_create, "_pthread_mutex_destroy": _pthread_mutex_destroy, "_pthread_once": _pthread_once, "_pthread_setspecific": _pthread_setspecific, "_strftime": _strftime, "_strftime_l": _strftime_l, "DYNAMICTOP_PTR": DYNAMICTOP_PTR, "tempDoublePtr": tempDoublePtr, "ABORT": ABORT, "STACKTOP": STACKTOP, "STACK_MAX": STACK_MAX, "___dso_handle": ___dso_handle };
 // EMSCRIPTEN_START_ASM
 var asm =Module["asm"]// EMSCRIPTEN_END_ASM
 (Module.asmGlobalArg, Module.asmLibraryArg, buffer);
 
-var real__BinaryenMulInt32 = asm["_BinaryenMulInt32"]; asm["_BinaryenMulInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMulInt32.apply(null, arguments);
-};
-
-var real__BinaryenDivUInt64 = asm["_BinaryenDivUInt64"]; asm["_BinaryenDivUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivUInt64.apply(null, arguments);
-};
-
-var real__BinaryenCtzInt32 = asm["_BinaryenCtzInt32"]; asm["_BinaryenCtzInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCtzInt32.apply(null, arguments);
-};
-
-var real__BinaryenCopySignFloat64 = asm["_BinaryenCopySignFloat64"]; asm["_BinaryenCopySignFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCopySignFloat64.apply(null, arguments);
-};
-
-var real__BinaryenCallIndirectGetTarget = asm["_BinaryenCallIndirectGetTarget"]; asm["_BinaryenCallIndirectGetTarget"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallIndirectGetTarget.apply(null, arguments);
-};
-
-var real__BinaryenShlInt32 = asm["_BinaryenShlInt32"]; asm["_BinaryenShlInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShlInt32.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetName = asm["_BinaryenFunctionGetName"]; asm["_BinaryenFunctionGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetName.apply(null, arguments);
-};
-
-var real__BinaryenTypeInt32 = asm["_BinaryenTypeInt32"]; asm["_BinaryenTypeInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeInt32.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWId = asm["_BinaryenAtomicRMWId"]; asm["_BinaryenAtomicRMWId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWId.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_path_cpp = asm["__GLOBAL__sub_I_path_cpp"]; asm["__GLOBAL__sub_I_path_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_path_cpp.apply(null, arguments);
-};
-
-var real__BinaryenExtendSInt32 = asm["_BinaryenExtendSInt32"]; asm["_BinaryenExtendSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExtendSInt32.apply(null, arguments);
-};
-
-var real__BinaryenRotLInt32 = asm["_BinaryenRotLInt32"]; asm["_BinaryenRotLInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRotLInt32.apply(null, arguments);
-};
-
-var real__BinaryenPromoteFloat32 = asm["_BinaryenPromoteFloat32"]; asm["_BinaryenPromoteFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenPromoteFloat32.apply(null, arguments);
-};
-
-var real__BinaryenTruncSFloat64ToInt32 = asm["_BinaryenTruncSFloat64ToInt32"]; asm["_BinaryenTruncSFloat64ToInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncSFloat64ToInt32.apply(null, arguments);
-};
-
-var real__BinaryenSwitchGetCondition = asm["_BinaryenSwitchGetCondition"]; asm["_BinaryenSwitchGetCondition"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchGetCondition.apply(null, arguments);
-};
-
-var real__BinaryenTruncSFloat32ToInt64 = asm["_BinaryenTruncSFloat32ToInt64"]; asm["_BinaryenTruncSFloat32ToInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncSFloat32ToInt64.apply(null, arguments);
-};
-
-var real__BinaryenEqFloat64 = asm["_BinaryenEqFloat64"]; asm["_BinaryenEqFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqFloat64.apply(null, arguments);
-};
-
-var real__BinaryenModuleAutoDrop = asm["_BinaryenModuleAutoDrop"]; asm["_BinaryenModuleAutoDrop"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleAutoDrop.apply(null, arguments);
-};
-
-var real__BinaryenSubFloat32 = asm["_BinaryenSubFloat32"]; asm["_BinaryenSubFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSubFloat32.apply(null, arguments);
-};
-
-var real__BinaryenHost = asm["_BinaryenHost"]; asm["_BinaryenHost"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHost.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_wasm_emscripten_cpp = asm["__GLOBAL__sub_I_wasm_emscripten_cpp"]; asm["__GLOBAL__sub_I_wasm_emscripten_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_wasm_emscripten_cpp.apply(null, arguments);
-};
-
-var real_stackSave = asm["stackSave"]; asm["stackSave"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_stackSave.apply(null, arguments);
-};
-
-var real__BinaryenSwitch = asm["_BinaryenSwitch"]; asm["_BinaryenSwitch"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitch.apply(null, arguments);
-};
-
-var real__BinaryenModuleCreate = asm["_BinaryenModuleCreate"]; asm["_BinaryenModuleCreate"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleCreate.apply(null, arguments);
-};
-
-var real__BinaryenLoadGetBytes = asm["_BinaryenLoadGetBytes"]; asm["_BinaryenLoadGetBytes"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadGetBytes.apply(null, arguments);
-};
-
-var real__BinaryenClzInt32 = asm["_BinaryenClzInt32"]; asm["_BinaryenClzInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenClzInt32.apply(null, arguments);
-};
-
-var real__BinaryenFunctionTypeGetParam = asm["_BinaryenFunctionTypeGetParam"]; asm["_BinaryenFunctionTypeGetParam"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionTypeGetParam.apply(null, arguments);
-};
-
-var real__BinaryenModuleInterpret = asm["_BinaryenModuleInterpret"]; asm["_BinaryenModuleInterpret"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleInterpret.apply(null, arguments);
-};
-
-var real__BinaryenNeInt64 = asm["_BinaryenNeInt64"]; asm["_BinaryenNeInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNeInt64.apply(null, arguments);
-};
-
-var real__BinaryenSetGlobalId = asm["_BinaryenSetGlobalId"]; asm["_BinaryenSetGlobalId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetGlobalId.apply(null, arguments);
-};
-
-var real__BinaryenGetLocalId = asm["_BinaryenGetLocalId"]; asm["_BinaryenGetLocalId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetLocalId.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWXor = asm["_BinaryenAtomicRMWXor"]; asm["_BinaryenAtomicRMWXor"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWXor.apply(null, arguments);
-};
-
-var real__BinaryenAddTableImport = asm["_BinaryenAddTableImport"]; asm["_BinaryenAddTableImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddTableImport.apply(null, arguments);
-};
-
-var real__BinaryenSelectId = asm["_BinaryenSelectId"]; asm["_BinaryenSelectId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSelectId.apply(null, arguments);
-};
-
-var real_setThrew = asm["setThrew"]; asm["setThrew"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_setThrew.apply(null, arguments);
-};
-
-var real__BinaryenRemUInt32 = asm["_BinaryenRemUInt32"]; asm["_BinaryenRemUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemUInt32.apply(null, arguments);
-};
-
-var real__BinaryenStoreId = asm["_BinaryenStoreId"]; asm["_BinaryenStoreId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreId.apply(null, arguments);
-};
-
-var real__malloc = asm["_malloc"]; asm["_malloc"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__malloc.apply(null, arguments);
-};
-
-var real__BinaryenSubInt64 = asm["_BinaryenSubInt64"]; asm["_BinaryenSubInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSubInt64.apply(null, arguments);
-};
-
-var real__BinaryenIfGetIfFalse = asm["_BinaryenIfGetIfFalse"]; asm["_BinaryenIfGetIfFalse"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenIfGetIfFalse.apply(null, arguments);
-};
-
-var real__BinaryenFloat64 = asm["_BinaryenFloat64"]; asm["_BinaryenFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFloat64.apply(null, arguments);
-};
-
-var real__BinaryenSetLocalGetIndex = asm["_BinaryenSetLocalGetIndex"]; asm["_BinaryenSetLocalGetIndex"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetLocalGetIndex.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_wasm_cpp = asm["__GLOBAL__sub_I_wasm_cpp"]; asm["__GLOBAL__sub_I_wasm_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_wasm_cpp.apply(null, arguments);
-};
-
-var real__BinaryenSetGlobalGetName = asm["_BinaryenSetGlobalGetName"]; asm["_BinaryenSetGlobalGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetGlobalGetName.apply(null, arguments);
-};
-
-var real__BinaryenRemSInt32 = asm["_BinaryenRemSInt32"]; asm["_BinaryenRemSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemSInt32.apply(null, arguments);
-};
-
-var real__BinaryenEqZInt64 = asm["_BinaryenEqZInt64"]; asm["_BinaryenEqZInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqZInt64.apply(null, arguments);
-};
-
-var real__BinaryenBlock = asm["_BinaryenBlock"]; asm["_BinaryenBlock"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBlock.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgGetOffset = asm["_BinaryenAtomicCmpxchgGetOffset"]; asm["_BinaryenAtomicCmpxchgGetOffset"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgGetOffset.apply(null, arguments);
-};
-
-var real__BinaryenConvertUInt64ToFloat64 = asm["_BinaryenConvertUInt64ToFloat64"]; asm["_BinaryenConvertUInt64ToFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertUInt64ToFloat64.apply(null, arguments);
-};
-
-var real__BinaryenSetLocalGetValue = asm["_BinaryenSetLocalGetValue"]; asm["_BinaryenSetLocalGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetLocalGetValue.apply(null, arguments);
-};
-
-var real__BinaryenCallImportGetOperand = asm["_BinaryenCallImportGetOperand"]; asm["_BinaryenCallImportGetOperand"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallImportGetOperand.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWAnd = asm["_BinaryenAtomicRMWAnd"]; asm["_BinaryenAtomicRMWAnd"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWAnd.apply(null, arguments);
-};
-
-var real__BinaryenAddMemoryImport = asm["_BinaryenAddMemoryImport"]; asm["_BinaryenAddMemoryImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddMemoryImport.apply(null, arguments);
-};
-
-var real__BinaryenBinaryGetOp = asm["_BinaryenBinaryGetOp"]; asm["_BinaryenBinaryGetOp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBinaryGetOp.apply(null, arguments);
-};
-
-var real__BinaryenSetGlobal = asm["_BinaryenSetGlobal"]; asm["_BinaryenSetGlobal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetGlobal.apply(null, arguments);
-};
-
-var real__BinaryenSelect = asm["_BinaryenSelect"]; asm["_BinaryenSelect"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSelect.apply(null, arguments);
-};
-
-var real__BinaryenStoreGetAlign = asm["_BinaryenStoreGetAlign"]; asm["_BinaryenStoreGetAlign"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreGetAlign.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_SafeHeap_cpp = asm["__GLOBAL__sub_I_SafeHeap_cpp"]; asm["__GLOBAL__sub_I_SafeHeap_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_SafeHeap_cpp.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_RelooperJumpThreading_cpp = asm["__GLOBAL__sub_I_RelooperJumpThreading_cpp"]; asm["__GLOBAL__sub_I_RelooperJumpThreading_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_RelooperJumpThreading_cpp.apply(null, arguments);
-};
-
-var real__BinaryenDropId = asm["_BinaryenDropId"]; asm["_BinaryenDropId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDropId.apply(null, arguments);
-};
-
-var real__BinaryenShlInt64 = asm["_BinaryenShlInt64"]; asm["_BinaryenShlInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShlInt64.apply(null, arguments);
-};
-
-var real__BinaryenLoadIsSigned = asm["_BinaryenLoadIsSigned"]; asm["_BinaryenLoadIsSigned"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadIsSigned.apply(null, arguments);
-};
-
-var real__BinaryenGeSInt64 = asm["_BinaryenGeSInt64"]; asm["_BinaryenGeSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeSInt64.apply(null, arguments);
-};
-
-var real__BinaryenModuleAllocateAndWrite = asm["_BinaryenModuleAllocateAndWrite"]; asm["_BinaryenModuleAllocateAndWrite"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleAllocateAndWrite.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_parser_cpp = asm["__GLOBAL__sub_I_parser_cpp"]; asm["__GLOBAL__sub_I_parser_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_parser_cpp.apply(null, arguments);
-};
-
-var real__BinaryenGtUInt32 = asm["_BinaryenGtUInt32"]; asm["_BinaryenGtUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtUInt32.apply(null, arguments);
-};
-
-var real__BinaryenFunctionRunPasses = asm["_BinaryenFunctionRunPasses"]; asm["_BinaryenFunctionRunPasses"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionRunPasses.apply(null, arguments);
-};
-
-var real__BinaryenTruncUFloat64ToInt64 = asm["_BinaryenTruncUFloat64ToInt64"]; asm["_BinaryenTruncUFloat64ToInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncUFloat64ToInt64.apply(null, arguments);
-};
-
-var real__BinaryenIfId = asm["_BinaryenIfId"]; asm["_BinaryenIfId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenIfId.apply(null, arguments);
-};
-
-var real__BinaryenLoadIsAtomic = asm["_BinaryenLoadIsAtomic"]; asm["_BinaryenLoadIsAtomic"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadIsAtomic.apply(null, arguments);
-};
-
-var real__BinaryenLiteralInt64 = asm["_BinaryenLiteralInt64"]; asm["_BinaryenLiteralInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralInt64.apply(null, arguments);
-};
-
-var real__BinaryenGtSInt32 = asm["_BinaryenGtSInt32"]; asm["_BinaryenGtSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtSInt32.apply(null, arguments);
-};
-
-var real__BinaryenCtzInt64 = asm["_BinaryenCtzInt64"]; asm["_BinaryenCtzInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCtzInt64.apply(null, arguments);
-};
-
-var real__BinaryenLtSInt32 = asm["_BinaryenLtSInt32"]; asm["_BinaryenLtSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtSInt32.apply(null, arguments);
-};
-
-var real__BinaryenRemoveExport = asm["_BinaryenRemoveExport"]; asm["_BinaryenRemoveExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemoveExport.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetParam = asm["_BinaryenFunctionGetParam"]; asm["_BinaryenFunctionGetParam"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetParam.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_InstrumentLocals_cpp = asm["__GLOBAL__sub_I_InstrumentLocals_cpp"]; asm["__GLOBAL__sub_I_InstrumentLocals_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_InstrumentLocals_cpp.apply(null, arguments);
-};
-
-var real__BinaryenIfGetIfTrue = asm["_BinaryenIfGetIfTrue"]; asm["_BinaryenIfGetIfTrue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenIfGetIfTrue.apply(null, arguments);
-};
-
-var real__BinaryenClzInt64 = asm["_BinaryenClzInt64"]; asm["_BinaryenClzInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenClzInt64.apply(null, arguments);
-};
-
-var real__BinaryenImportGetModule = asm["_BinaryenImportGetModule"]; asm["_BinaryenImportGetModule"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetModule.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgGetExpected = asm["_BinaryenAtomicCmpxchgGetExpected"]; asm["_BinaryenAtomicCmpxchgGetExpected"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgGetExpected.apply(null, arguments);
-};
-
-var real__BinaryenMaxFloat64 = asm["_BinaryenMaxFloat64"]; asm["_BinaryenMaxFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMaxFloat64.apply(null, arguments);
-};
-
-var real__BinaryenFunctionTypeGetResult = asm["_BinaryenFunctionTypeGetResult"]; asm["_BinaryenFunctionTypeGetResult"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionTypeGetResult.apply(null, arguments);
-};
-
-var real__BinaryenReturn = asm["_BinaryenReturn"]; asm["_BinaryenReturn"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReturn.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWGetPtr = asm["_BinaryenAtomicRMWGetPtr"]; asm["_BinaryenAtomicRMWGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWGetPtr.apply(null, arguments);
-};
-
-var real__BinaryenUnaryGetValue = asm["_BinaryenUnaryGetValue"]; asm["_BinaryenUnaryGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnaryGetValue.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchg = asm["_BinaryenAtomicCmpxchg"]; asm["_BinaryenAtomicCmpxchg"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchg.apply(null, arguments);
-};
-
-var real__BinaryenUnreachable = asm["_BinaryenUnreachable"]; asm["_BinaryenUnreachable"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnreachable.apply(null, arguments);
-};
-
-var real__BinaryenSubFloat64 = asm["_BinaryenSubFloat64"]; asm["_BinaryenSubFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSubFloat64.apply(null, arguments);
-};
-
-var real__BinaryenEqInt32 = asm["_BinaryenEqInt32"]; asm["_BinaryenEqInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqInt32.apply(null, arguments);
-};
-
-var real__BinaryenShrSInt64 = asm["_BinaryenShrSInt64"]; asm["_BinaryenShrSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShrSInt64.apply(null, arguments);
-};
-
-var real__BinaryenMulFloat32 = asm["_BinaryenMulFloat32"]; asm["_BinaryenMulFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMulFloat32.apply(null, arguments);
-};
-
-var real__BinaryenCallIndirect = asm["_BinaryenCallIndirect"]; asm["_BinaryenCallIndirect"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallIndirect.apply(null, arguments);
-};
-
-var real__BinaryenAddFunctionImport = asm["_BinaryenAddFunctionImport"]; asm["_BinaryenAddFunctionImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFunctionImport.apply(null, arguments);
-};
-
-var real__BinaryenGtFloat32 = asm["_BinaryenGtFloat32"]; asm["_BinaryenGtFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtFloat32.apply(null, arguments);
-};
-
-var real__BinaryenNone = asm["_BinaryenNone"]; asm["_BinaryenNone"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNone.apply(null, arguments);
-};
-
-var real____cxa_demangle = asm["___cxa_demangle"]; asm["___cxa_demangle"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real____cxa_demangle.apply(null, arguments);
-};
-
-var real__BinaryenSqrtFloat32 = asm["_BinaryenSqrtFloat32"]; asm["_BinaryenSqrtFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSqrtFloat32.apply(null, arguments);
-};
-
-var real__BinaryenInvalidId = asm["_BinaryenInvalidId"]; asm["_BinaryenInvalidId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenInvalidId.apply(null, arguments);
-};
-
-var real__BinaryenOrInt32 = asm["_BinaryenOrInt32"]; asm["_BinaryenOrInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenOrInt32.apply(null, arguments);
-};
-
-var real__BinaryenModuleAddDebugInfoFileName = asm["_BinaryenModuleAddDebugInfoFileName"]; asm["_BinaryenModuleAddDebugInfoFileName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleAddDebugInfoFileName.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetVar = asm["_BinaryenFunctionGetVar"]; asm["_BinaryenFunctionGetVar"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetVar.apply(null, arguments);
-};
-
-var real__BinaryenHostGetNameOperand = asm["_BinaryenHostGetNameOperand"]; asm["_BinaryenHostGetNameOperand"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHostGetNameOperand.apply(null, arguments);
-};
-
-var real__BinaryenLiteralFloat32 = asm["_BinaryenLiteralFloat32"]; asm["_BinaryenLiteralFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralFloat32.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWakeGetPtr = asm["_BinaryenAtomicWakeGetPtr"]; asm["_BinaryenAtomicWakeGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWakeGetPtr.apply(null, arguments);
-};
-
-var real__BinaryenBreakGetCondition = asm["_BinaryenBreakGetCondition"]; asm["_BinaryenBreakGetCondition"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBreakGetCondition.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWait = asm["_BinaryenAtomicWait"]; asm["_BinaryenAtomicWait"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWait.apply(null, arguments);
-};
-
-var real__BinaryenNop = asm["_BinaryenNop"]; asm["_BinaryenNop"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNop.apply(null, arguments);
-};
-
-var real_stackRestore = asm["stackRestore"]; asm["stackRestore"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_stackRestore.apply(null, arguments);
-};
-
-var real__BinaryenDrop = asm["_BinaryenDrop"]; asm["_BinaryenDrop"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDrop.apply(null, arguments);
-};
-
-var real___GLOBAL__I_000101 = asm["__GLOBAL__I_000101"]; asm["__GLOBAL__I_000101"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__I_000101.apply(null, arguments);
-};
-
-var real__BinaryenLoadId = asm["_BinaryenLoadId"]; asm["_BinaryenLoadId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadId.apply(null, arguments);
-};
-
-var real__BinaryenTeeLocal = asm["_BinaryenTeeLocal"]; asm["_BinaryenTeeLocal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTeeLocal.apply(null, arguments);
-};
-
-var real__BinaryenLoad = asm["_BinaryenLoad"]; asm["_BinaryenLoad"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoad.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetResult = asm["_BinaryenFunctionGetResult"]; asm["_BinaryenFunctionGetResult"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetResult.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWGetOp = asm["_BinaryenAtomicRMWGetOp"]; asm["_BinaryenAtomicRMWGetOp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWGetOp.apply(null, arguments);
-};
-
-var real__BinaryenBlockId = asm["_BinaryenBlockId"]; asm["_BinaryenBlockId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBlockId.apply(null, arguments);
-};
-
-var real__BinaryenCall = asm["_BinaryenCall"]; asm["_BinaryenCall"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCall.apply(null, arguments);
-};
-
-var real__BinaryenNegFloat32 = asm["_BinaryenNegFloat32"]; asm["_BinaryenNegFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNegFloat32.apply(null, arguments);
-};
-
-var real__BinaryenAddFunctionExport = asm["_BinaryenAddFunctionExport"]; asm["_BinaryenAddFunctionExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFunctionExport.apply(null, arguments);
-};
-
-var real__BinaryenNearestFloat32 = asm["_BinaryenNearestFloat32"]; asm["_BinaryenNearestFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNearestFloat32.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_LogExecution_cpp = asm["__GLOBAL__sub_I_LogExecution_cpp"]; asm["__GLOBAL__sub_I_LogExecution_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_LogExecution_cpp.apply(null, arguments);
-};
-
-var real__BinaryenExternalMemory = asm["_BinaryenExternalMemory"]; asm["_BinaryenExternalMemory"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExternalMemory.apply(null, arguments);
-};
-
-var real__BinaryenBinaryGetRight = asm["_BinaryenBinaryGetRight"]; asm["_BinaryenBinaryGetRight"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBinaryGetRight.apply(null, arguments);
-};
-
-var real__BinaryenLeUInt32 = asm["_BinaryenLeUInt32"]; asm["_BinaryenLeUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeUInt32.apply(null, arguments);
-};
-
-var real__BinaryenNeFloat64 = asm["_BinaryenNeFloat64"]; asm["_BinaryenNeFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNeFloat64.apply(null, arguments);
-};
-
-var real__BinaryenRemSInt64 = asm["_BinaryenRemSInt64"]; asm["_BinaryenRemSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemSInt64.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgGetReplacement = asm["_BinaryenAtomicCmpxchgGetReplacement"]; asm["_BinaryenAtomicCmpxchgGetReplacement"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgGetReplacement.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetType = asm["_BinaryenFunctionGetType"]; asm["_BinaryenFunctionGetType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetType.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_OptimizeInstructions_cpp = asm["__GLOBAL__sub_I_OptimizeInstructions_cpp"]; asm["__GLOBAL__sub_I_OptimizeInstructions_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_OptimizeInstructions_cpp.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueF32 = asm["_BinaryenConstGetValueF32"]; asm["_BinaryenConstGetValueF32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueF32.apply(null, arguments);
-};
-
-var real__BinaryenCeilFloat64 = asm["_BinaryenCeilFloat64"]; asm["_BinaryenCeilFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCeilFloat64.apply(null, arguments);
-};
-
-var real__BinaryenLeFloat32 = asm["_BinaryenLeFloat32"]; asm["_BinaryenLeFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeFloat32.apply(null, arguments);
-};
-
-var real__free = asm["_free"]; asm["_free"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__free.apply(null, arguments);
-};
-
-var real__BinaryenUndefined = asm["_BinaryenUndefined"]; asm["_BinaryenUndefined"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUndefined.apply(null, arguments);
-};
-
-var real__BinaryenLtFloat32 = asm["_BinaryenLtFloat32"]; asm["_BinaryenLtFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtFloat32.apply(null, arguments);
+var real__BinaryenAbsFloat32 = asm["_BinaryenAbsFloat32"]; asm["_BinaryenAbsFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAbsFloat32.apply(null, arguments);
 };
 
 var real__BinaryenAbsFloat64 = asm["_BinaryenAbsFloat64"]; asm["_BinaryenAbsFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAbsFloat64.apply(null, arguments);
-};
-
-var real__BinaryenLtSInt64 = asm["_BinaryenLtSInt64"]; asm["_BinaryenLtSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtSInt64.apply(null, arguments);
-};
-
-var real__BinaryenHostGetOp = asm["_BinaryenHostGetOp"]; asm["_BinaryenHostGetOp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHostGetOp.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWGetValue = asm["_BinaryenAtomicRMWGetValue"]; asm["_BinaryenAtomicRMWGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWGetValue.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_TrapMode_cpp = asm["__GLOBAL__sub_I_TrapMode_cpp"]; asm["__GLOBAL__sub_I_TrapMode_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_TrapMode_cpp.apply(null, arguments);
-};
-
-var real__BinaryenLiteralFloat64Bits = asm["_BinaryenLiteralFloat64Bits"]; asm["_BinaryenLiteralFloat64Bits"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralFloat64Bits.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgId = asm["_BinaryenAtomicCmpxchgId"]; asm["_BinaryenAtomicCmpxchgId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgId.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_optimizer_shared_cpp = asm["__GLOBAL__sub_I_optimizer_shared_cpp"]; asm["__GLOBAL__sub_I_optimizer_shared_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_optimizer_shared_cpp.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgGetPtr = asm["_BinaryenAtomicCmpxchgGetPtr"]; asm["_BinaryenAtomicCmpxchgGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgGetPtr.apply(null, arguments);
-};
-
-var real__BinaryenBinaryId = asm["_BinaryenBinaryId"]; asm["_BinaryenBinaryId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBinaryId.apply(null, arguments);
-};
-
-var real__BinaryenAddFunctionType = asm["_BinaryenAddFunctionType"]; asm["_BinaryenAddFunctionType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFunctionType.apply(null, arguments);
-};
-
-var real__BinaryenSwitchGetValue = asm["_BinaryenSwitchGetValue"]; asm["_BinaryenSwitchGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchGetValue.apply(null, arguments);
-};
-
-var real__BinaryenModuleRead = asm["_BinaryenModuleRead"]; asm["_BinaryenModuleRead"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleRead.apply(null, arguments);
-};
-
-var real__BinaryenSetLocal = asm["_BinaryenSetLocal"]; asm["_BinaryenSetLocal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetLocal.apply(null, arguments);
-};
-
-var real__BinaryenExportGetValue = asm["_BinaryenExportGetValue"]; asm["_BinaryenExportGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExportGetValue.apply(null, arguments);
-};
-
-var real__BinaryenReinterpretInt64 = asm["_BinaryenReinterpretInt64"]; asm["_BinaryenReinterpretInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReinterpretInt64.apply(null, arguments);
-};
-
-var real__BinaryenOrInt64 = asm["_BinaryenOrInt64"]; asm["_BinaryenOrInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenOrInt64.apply(null, arguments);
-};
-
-var real__BinaryenSwitchGetName = asm["_BinaryenSwitchGetName"]; asm["_BinaryenSwitchGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchGetName.apply(null, arguments);
-};
-
-var real__BinaryenFunctionTypeGetName = asm["_BinaryenFunctionTypeGetName"]; asm["_BinaryenFunctionTypeGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionTypeGetName.apply(null, arguments);
-};
-
-var real__BinaryenExpressionPrint = asm["_BinaryenExpressionPrint"]; asm["_BinaryenExpressionPrint"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExpressionPrint.apply(null, arguments);
-};
-
-var real__BinaryenGeFloat32 = asm["_BinaryenGeFloat32"]; asm["_BinaryenGeFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeFloat32.apply(null, arguments);
-};
-
-var real__BinaryenRemUInt64 = asm["_BinaryenRemUInt64"]; asm["_BinaryenRemUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemUInt64.apply(null, arguments);
-};
-
-var real__BinaryenBreakId = asm["_BinaryenBreakId"]; asm["_BinaryenBreakId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBreakId.apply(null, arguments);
-};
-
-var real__BinaryenXorInt32 = asm["_BinaryenXorInt32"]; asm["_BinaryenXorInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenXorInt32.apply(null, arguments);
-};
-
-var real__BinaryenTypeFloat32 = asm["_BinaryenTypeFloat32"]; asm["_BinaryenTypeFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeFloat32.apply(null, arguments);
-};
-
-var real__BinaryenTruncFloat32 = asm["_BinaryenTruncFloat32"]; asm["_BinaryenTruncFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncFloat32.apply(null, arguments);
-};
-
-var real__BinaryenGetOptimizeLevel = asm["_BinaryenGetOptimizeLevel"]; asm["_BinaryenGetOptimizeLevel"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetOptimizeLevel.apply(null, arguments);
-};
-
-var real__BinaryenSelectGetIfFalse = asm["_BinaryenSelectGetIfFalse"]; asm["_BinaryenSelectGetIfFalse"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSelectGetIfFalse.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_pass_cpp = asm["__GLOBAL__sub_I_pass_cpp"]; asm["__GLOBAL__sub_I_pass_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_pass_cpp.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_simple_ast_cpp = asm["__GLOBAL__sub_I_simple_ast_cpp"]; asm["__GLOBAL__sub_I_simple_ast_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_simple_ast_cpp.apply(null, arguments);
-};
-
-var real__BinaryenHostGetNumOperands = asm["_BinaryenHostGetNumOperands"]; asm["_BinaryenHostGetNumOperands"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHostGetNumOperands.apply(null, arguments);
-};
-
-var real__BinaryenBreakGetName = asm["_BinaryenBreakGetName"]; asm["_BinaryenBreakGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBreakGetName.apply(null, arguments);
-};
-
-var real_setTempRet0 = asm["setTempRet0"]; asm["setTempRet0"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_setTempRet0.apply(null, arguments);
-};
-
-var real__BinaryenNearestFloat64 = asm["_BinaryenNearestFloat64"]; asm["_BinaryenNearestFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNearestFloat64.apply(null, arguments);
-};
-
-var real__BinaryenConvertSInt64ToFloat32 = asm["_BinaryenConvertSInt64ToFloat32"]; asm["_BinaryenConvertSInt64ToFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertSInt64ToFloat32.apply(null, arguments);
-};
-
-var real__BinaryenGetFunction = asm["_BinaryenGetFunction"]; asm["_BinaryenGetFunction"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetFunction.apply(null, arguments);
-};
-
-var real__BinaryenTruncUFloat32ToInt32 = asm["_BinaryenTruncUFloat32ToInt32"]; asm["_BinaryenTruncUFloat32ToInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncUFloat32ToInt32.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_iostream_cpp = asm["__GLOBAL__sub_I_iostream_cpp"]; asm["__GLOBAL__sub_I_iostream_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_iostream_cpp.apply(null, arguments);
-};
-
-var real__BinaryenDivUInt32 = asm["_BinaryenDivUInt32"]; asm["_BinaryenDivUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivUInt32.apply(null, arguments);
-};
-
-var real__BinaryenMinFloat64 = asm["_BinaryenMinFloat64"]; asm["_BinaryenMinFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMinFloat64.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWakeGetWakeCount = asm["_BinaryenAtomicWakeGetWakeCount"]; asm["_BinaryenAtomicWakeGetWakeCount"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWakeGetWakeCount.apply(null, arguments);
-};
-
-var real__BinaryenNeFloat32 = asm["_BinaryenNeFloat32"]; asm["_BinaryenNeFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNeFloat32.apply(null, arguments);
-};
-
-var real__BinaryenModuleWriteWithSourceMap = asm["_BinaryenModuleWriteWithSourceMap"]; asm["_BinaryenModuleWriteWithSourceMap"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleWriteWithSourceMap.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWaitGetExpectedType = asm["_BinaryenAtomicWaitGetExpectedType"]; asm["_BinaryenAtomicWaitGetExpectedType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWaitGetExpectedType.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_LegalizeJSInterface_cpp = asm["__GLOBAL__sub_I_LegalizeJSInterface_cpp"]; asm["__GLOBAL__sub_I_LegalizeJSInterface_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_LegalizeJSInterface_cpp.apply(null, arguments);
-};
-
-var real__BinaryenExpressionGetId = asm["_BinaryenExpressionGetId"]; asm["_BinaryenExpressionGetId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExpressionGetId.apply(null, arguments);
-};
-
-var real__BinaryenBlockGetChild = asm["_BinaryenBlockGetChild"]; asm["_BinaryenBlockGetChild"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBlockGetChild.apply(null, arguments);
-};
-
-var real__BinaryenCallGetOperand = asm["_BinaryenCallGetOperand"]; asm["_BinaryenCallGetOperand"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallGetOperand.apply(null, arguments);
-};
-
-var real__BinaryenModulePrint = asm["_BinaryenModulePrint"]; asm["_BinaryenModulePrint"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModulePrint.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWSub = asm["_BinaryenAtomicRMWSub"]; asm["_BinaryenAtomicRMWSub"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWSub.apply(null, arguments);
-};
-
-var real__BinaryenLeSInt64 = asm["_BinaryenLeSInt64"]; asm["_BinaryenLeSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeSInt64.apply(null, arguments);
-};
-
-var real__BinaryenExportGetKind = asm["_BinaryenExportGetKind"]; asm["_BinaryenExportGetKind"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExportGetKind.apply(null, arguments);
-};
-
-var real__BinaryenAtomicLoad = asm["_BinaryenAtomicLoad"]; asm["_BinaryenAtomicLoad"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicLoad.apply(null, arguments);
-};
-
-var real__BinaryenTruncUFloat32ToInt64 = asm["_BinaryenTruncUFloat32ToInt64"]; asm["_BinaryenTruncUFloat32ToInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncUFloat32ToInt64.apply(null, arguments);
-};
-
-var real__BinaryenRotLInt64 = asm["_BinaryenRotLInt64"]; asm["_BinaryenRotLInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRotLInt64.apply(null, arguments);
-};
-
-var real__BinaryenSetStart = asm["_BinaryenSetStart"]; asm["_BinaryenSetStart"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetStart.apply(null, arguments);
-};
-
-var real__BinaryenSqrtFloat64 = asm["_BinaryenSqrtFloat64"]; asm["_BinaryenSqrtFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSqrtFloat64.apply(null, arguments);
-};
-
-var real__BinaryenSwitchId = asm["_BinaryenSwitchId"]; asm["_BinaryenSwitchId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchId.apply(null, arguments);
-};
-
-var real__BinaryenStoreGetValue = asm["_BinaryenStoreGetValue"]; asm["_BinaryenStoreGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreGetValue.apply(null, arguments);
-};
-
-var real__fflush = asm["_fflush"]; asm["_fflush"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__fflush.apply(null, arguments);
-};
-
-var real__BinaryenCallGetTarget = asm["_BinaryenCallGetTarget"]; asm["_BinaryenCallGetTarget"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallGetTarget.apply(null, arguments);
-};
-
-var real__BinaryenPopcntInt64 = asm["_BinaryenPopcntInt64"]; asm["_BinaryenPopcntInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenPopcntInt64.apply(null, arguments);
-};
-
-var real__BinaryenRotRInt32 = asm["_BinaryenRotRInt32"]; asm["_BinaryenRotRInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRotRInt32.apply(null, arguments);
-};
-
-var real__BinaryenConvertSInt32ToFloat64 = asm["_BinaryenConvertSInt32ToFloat64"]; asm["_BinaryenConvertSInt32ToFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertSInt32ToFloat64.apply(null, arguments);
-};
-
-var real__BinaryenGtSInt64 = asm["_BinaryenGtSInt64"]; asm["_BinaryenGtSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtSInt64.apply(null, arguments);
-};
-
-var real__BinaryenLoadGetAlign = asm["_BinaryenLoadGetAlign"]; asm["_BinaryenLoadGetAlign"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadGetAlign.apply(null, arguments);
-};
-
-var real__pthread_mutex_unlock = asm["_pthread_mutex_unlock"]; asm["_pthread_mutex_unlock"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__pthread_mutex_unlock.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetBody = asm["_BinaryenFunctionGetBody"]; asm["_BinaryenFunctionGetBody"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetBody.apply(null, arguments);
-};
-
-var real__BinaryenDropGetValue = asm["_BinaryenDropGetValue"]; asm["_BinaryenDropGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDropGetValue.apply(null, arguments);
-};
-
-var real__BinaryenAndInt32 = asm["_BinaryenAndInt32"]; asm["_BinaryenAndInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAndInt32.apply(null, arguments);
-};
-
-var real__BinaryenFunctionSetDebugLocation = asm["_BinaryenFunctionSetDebugLocation"]; asm["_BinaryenFunctionSetDebugLocation"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionSetDebugLocation.apply(null, arguments);
-};
-
-var real____errno_location = asm["___errno_location"]; asm["___errno_location"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real____errno_location.apply(null, arguments);
-};
-
-var real__memmove = asm["_memmove"]; asm["_memmove"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__memmove.apply(null, arguments);
-};
-
-var real__BinaryenSelectGetIfTrue = asm["_BinaryenSelectGetIfTrue"]; asm["_BinaryenSelectGetIfTrue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSelectGetIfTrue.apply(null, arguments);
-};
-
-var real____cxa_is_pointer_type = asm["___cxa_is_pointer_type"]; asm["___cxa_is_pointer_type"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real____cxa_is_pointer_type.apply(null, arguments);
-};
-
-var real__BinaryenLoadGetPtr = asm["_BinaryenLoadGetPtr"]; asm["_BinaryenLoadGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadGetPtr.apply(null, arguments);
-};
-
-var real__BinaryenGrowMemory = asm["_BinaryenGrowMemory"]; asm["_BinaryenGrowMemory"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGrowMemory.apply(null, arguments);
-};
-
-var real__BinaryenRemoveFunction = asm["_BinaryenRemoveFunction"]; asm["_BinaryenRemoveFunction"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemoveFunction.apply(null, arguments);
-};
-
-var real__BinaryenSubInt32 = asm["_BinaryenSubInt32"]; asm["_BinaryenSubInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSubInt32.apply(null, arguments);
-};
-
-var real__BinaryenFunctionGetNumParams = asm["_BinaryenFunctionGetNumParams"]; asm["_BinaryenFunctionGetNumParams"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetNumParams.apply(null, arguments);
-};
-
-var real__BinaryenTypeUnreachable = asm["_BinaryenTypeUnreachable"]; asm["_BinaryenTypeUnreachable"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeUnreachable.apply(null, arguments);
-};
-
-var real__BinaryenEqZInt32 = asm["_BinaryenEqZInt32"]; asm["_BinaryenEqZInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqZInt32.apply(null, arguments);
-};
-
-var real__BinaryenAddGlobalExport = asm["_BinaryenAddGlobalExport"]; asm["_BinaryenAddGlobalExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddGlobalExport.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWaitGetPtr = asm["_BinaryenAtomicWaitGetPtr"]; asm["_BinaryenAtomicWaitGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWaitGetPtr.apply(null, arguments);
-};
-
-var real__BinaryenDivFloat64 = asm["_BinaryenDivFloat64"]; asm["_BinaryenDivFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivFloat64.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAbsFloat64.apply(null, arguments);
 };
 
 var real__BinaryenAddExport = asm["_BinaryenAddExport"]; asm["_BinaryenAddExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddExport.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWGetOffset = asm["_BinaryenAtomicRMWGetOffset"]; asm["_BinaryenAtomicRMWGetOffset"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWGetOffset.apply(null, arguments);
-};
-
-var real__BinaryenReturnId = asm["_BinaryenReturnId"]; asm["_BinaryenReturnId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReturnId.apply(null, arguments);
-};
-
-var real_stackAlloc = asm["stackAlloc"]; asm["stackAlloc"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_stackAlloc.apply(null, arguments);
-};
-
-var real__BinaryenCallImportGetNumOperands = asm["_BinaryenCallImportGetNumOperands"]; asm["_BinaryenCallImportGetNumOperands"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallImportGetNumOperands.apply(null, arguments);
-};
-
-var real__BinaryenCallIndirectGetOperand = asm["_BinaryenCallIndirectGetOperand"]; asm["_BinaryenCallIndirectGetOperand"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallIndirectGetOperand.apply(null, arguments);
-};
-
-var real__BinaryenXorInt64 = asm["_BinaryenXorInt64"]; asm["_BinaryenXorInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenXorInt64.apply(null, arguments);
-};
-
-var real__BinaryenCurrentMemory = asm["_BinaryenCurrentMemory"]; asm["_BinaryenCurrentMemory"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCurrentMemory.apply(null, arguments);
-};
-
-var real__BinaryenReturnGetValue = asm["_BinaryenReturnGetValue"]; asm["_BinaryenReturnGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReturnGetValue.apply(null, arguments);
-};
-
-var real__BinaryenConst = asm["_BinaryenConst"]; asm["_BinaryenConst"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConst.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWakeId = asm["_BinaryenAtomicWakeId"]; asm["_BinaryenAtomicWakeId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWakeId.apply(null, arguments);
-};
-
-var real__BinaryenCallImport = asm["_BinaryenCallImport"]; asm["_BinaryenCallImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallImport.apply(null, arguments);
-};
-
-var real____cxa_can_catch = asm["___cxa_can_catch"]; asm["___cxa_can_catch"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real____cxa_can_catch.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_threads_cpp = asm["__GLOBAL__sub_I_threads_cpp"]; asm["__GLOBAL__sub_I_threads_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_threads_cpp.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddExport.apply(null, arguments);
 };
 
 var real__BinaryenAddFloat32 = asm["_BinaryenAddFloat32"]; asm["_BinaryenAddFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFloat32.apply(null, arguments);
-};
-
-var real__BinaryenSetOptimizeLevel = asm["_BinaryenSetOptimizeLevel"]; asm["_BinaryenSetOptimizeLevel"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetOptimizeLevel.apply(null, arguments);
-};
-
-var real__BinaryenTruncUFloat64ToInt32 = asm["_BinaryenTruncUFloat64ToInt32"]; asm["_BinaryenTruncUFloat64ToInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncUFloat64ToInt32.apply(null, arguments);
-};
-
-var real__BinaryenModulePrintAsmjs = asm["_BinaryenModulePrintAsmjs"]; asm["_BinaryenModulePrintAsmjs"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModulePrintAsmjs.apply(null, arguments);
-};
-
-var real__BinaryenTypeNone = asm["_BinaryenTypeNone"]; asm["_BinaryenTypeNone"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeNone.apply(null, arguments);
-};
-
-var real__BinaryenAddInt32 = asm["_BinaryenAddInt32"]; asm["_BinaryenAddInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddInt32.apply(null, arguments);
-};
-
-var real__BinaryenShrUInt32 = asm["_BinaryenShrUInt32"]; asm["_BinaryenShrUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShrUInt32.apply(null, arguments);
-};
-
-var real__BinaryenConvertSInt64ToFloat64 = asm["_BinaryenConvertSInt64ToFloat64"]; asm["_BinaryenConvertSInt64ToFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertSInt64ToFloat64.apply(null, arguments);
-};
-
-var real__BinaryenHostGetOperand = asm["_BinaryenHostGetOperand"]; asm["_BinaryenHostGetOperand"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHostGetOperand.apply(null, arguments);
-};
-
-var real__BinaryenExternalFunction = asm["_BinaryenExternalFunction"]; asm["_BinaryenExternalFunction"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExternalFunction.apply(null, arguments);
-};
-
-var real__BinaryenCallId = asm["_BinaryenCallId"]; asm["_BinaryenCallId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallId.apply(null, arguments);
-};
-
-var real__BinaryenDivSInt64 = asm["_BinaryenDivSInt64"]; asm["_BinaryenDivSInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivSInt64.apply(null, arguments);
-};
-
-var real__BinaryenSetAPITracing = asm["_BinaryenSetAPITracing"]; asm["_BinaryenSetAPITracing"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetAPITracing.apply(null, arguments);
-};
-
-var real__BinaryenAddFunction = asm["_BinaryenAddFunction"]; asm["_BinaryenAddFunction"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFunction.apply(null, arguments);
-};
-
-var real__BinaryenLtUInt32 = asm["_BinaryenLtUInt32"]; asm["_BinaryenLtUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtUInt32.apply(null, arguments);
-};
-
-var real_getTempRet0 = asm["getTempRet0"]; asm["getTempRet0"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_getTempRet0.apply(null, arguments);
-};
-
-var real__BinaryenSetMemory = asm["_BinaryenSetMemory"]; asm["_BinaryenSetMemory"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetMemory.apply(null, arguments);
-};
-
-var real__BinaryenGetLocalGetIndex = asm["_BinaryenGetLocalGetIndex"]; asm["_BinaryenGetLocalGetIndex"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetLocalGetIndex.apply(null, arguments);
-};
-
-var real__BinaryenUnreachableId = asm["_BinaryenUnreachableId"]; asm["_BinaryenUnreachableId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnreachableId.apply(null, arguments);
-};
-
-var real__BinaryenPopcntInt32 = asm["_BinaryenPopcntInt32"]; asm["_BinaryenPopcntInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenPopcntInt32.apply(null, arguments);
-};
-
-var real__BinaryenMulFloat64 = asm["_BinaryenMulFloat64"]; asm["_BinaryenMulFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMulFloat64.apply(null, arguments);
-};
-
-var real__BinaryenStoreIsAtomic = asm["_BinaryenStoreIsAtomic"]; asm["_BinaryenStoreIsAtomic"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreIsAtomic.apply(null, arguments);
-};
-
-var real__BinaryenCallIndirectGetNumOperands = asm["_BinaryenCallIndirectGetNumOperands"]; asm["_BinaryenCallIndirectGetNumOperands"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallIndirectGetNumOperands.apply(null, arguments);
-};
-
-var real__BinaryenShrSInt32 = asm["_BinaryenShrSInt32"]; asm["_BinaryenShrSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShrSInt32.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_Precompute_cpp = asm["__GLOBAL__sub_I_Precompute_cpp"]; asm["__GLOBAL__sub_I_Precompute_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_Precompute_cpp.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueI64 = asm["_BinaryenConstGetValueI64"]; asm["_BinaryenConstGetValueI64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueI64.apply(null, arguments);
-};
-
-var real__BinaryenSetGlobalGetValue = asm["_BinaryenSetGlobalGetValue"]; asm["_BinaryenSetGlobalGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetGlobalGetValue.apply(null, arguments);
-};
-
-var real__BinaryenLoadGetOffset = asm["_BinaryenLoadGetOffset"]; asm["_BinaryenLoadGetOffset"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoadGetOffset.apply(null, arguments);
-};
-
-var real__BinaryenGeUInt32 = asm["_BinaryenGeUInt32"]; asm["_BinaryenGeUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeUInt32.apply(null, arguments);
-};
-
-var real__BinaryenLoop = asm["_BinaryenLoop"]; asm["_BinaryenLoop"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoop.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueI64High = asm["_BinaryenConstGetValueI64High"]; asm["_BinaryenConstGetValueI64High"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueI64High.apply(null, arguments);
-};
-
-var real__BinaryenExternalGlobal = asm["_BinaryenExternalGlobal"]; asm["_BinaryenExternalGlobal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExternalGlobal.apply(null, arguments);
-};
-
-var real__BinaryenAddImport = asm["_BinaryenAddImport"]; asm["_BinaryenAddImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddImport.apply(null, arguments);
-};
-
-var real__BinaryenImportGetFunctionType = asm["_BinaryenImportGetFunctionType"]; asm["_BinaryenImportGetFunctionType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetFunctionType.apply(null, arguments);
-};
-
-var real__BinaryenTruncSFloat64ToInt64 = asm["_BinaryenTruncSFloat64ToInt64"]; asm["_BinaryenTruncSFloat64ToInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncSFloat64ToInt64.apply(null, arguments);
-};
-
-var real__BinaryenNeInt32 = asm["_BinaryenNeInt32"]; asm["_BinaryenNeInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNeInt32.apply(null, arguments);
-};
-
-var real__BinaryenTruncSFloat32ToInt32 = asm["_BinaryenTruncSFloat32ToInt32"]; asm["_BinaryenTruncSFloat32ToInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncSFloat32ToInt32.apply(null, arguments);
-};
-
-var real__BinaryenGetGlobalId = asm["_BinaryenGetGlobalId"]; asm["_BinaryenGetGlobalId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetGlobalId.apply(null, arguments);
-};
-
-var real__BinaryenGtFloat64 = asm["_BinaryenGtFloat64"]; asm["_BinaryenGtFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtFloat64.apply(null, arguments);
-};
-
-var real__BinaryenFunctionTypeGetNumParams = asm["_BinaryenFunctionTypeGetNumParams"]; asm["_BinaryenFunctionTypeGetNumParams"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionTypeGetNumParams.apply(null, arguments);
-};
-
-var real__BinaryenRemoveImport = asm["_BinaryenRemoveImport"]; asm["_BinaryenRemoveImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRemoveImport.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWake = asm["_BinaryenAtomicWake"]; asm["_BinaryenAtomicWake"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWake.apply(null, arguments);
-};
-
-var real__BinaryenNegFloat64 = asm["_BinaryenNegFloat64"]; asm["_BinaryenNegFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNegFloat64.apply(null, arguments);
-};
-
-var real__BinaryenFloat32 = asm["_BinaryenFloat32"]; asm["_BinaryenFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFloat32.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_Metrics_cpp = asm["__GLOBAL__sub_I_Metrics_cpp"]; asm["__GLOBAL__sub_I_Metrics_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_Metrics_cpp.apply(null, arguments);
-};
-
-var real__BinaryenExtendUInt32 = asm["_BinaryenExtendUInt32"]; asm["_BinaryenExtendUInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExtendUInt32.apply(null, arguments);
-};
-
-var real__BinaryenCallIndirectId = asm["_BinaryenCallIndirectId"]; asm["_BinaryenCallIndirectId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallIndirectId.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWXchg = asm["_BinaryenAtomicRMWXchg"]; asm["_BinaryenAtomicRMWXchg"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWXchg.apply(null, arguments);
-};
-
-var real__BinaryenGetGlobal = asm["_BinaryenGetGlobal"]; asm["_BinaryenGetGlobal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetGlobal.apply(null, arguments);
-};
-
-var real__BinaryenLtFloat64 = asm["_BinaryenLtFloat64"]; asm["_BinaryenLtFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtFloat64.apply(null, arguments);
-};
-
-var real__BinaryenAddTableExport = asm["_BinaryenAddTableExport"]; asm["_BinaryenAddTableExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddTableExport.apply(null, arguments);
-};
-
-var real__BinaryenSetShrinkLevel = asm["_BinaryenSetShrinkLevel"]; asm["_BinaryenSetShrinkLevel"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetShrinkLevel.apply(null, arguments);
-};
-
-var real__BinaryenGtUInt64 = asm["_BinaryenGtUInt64"]; asm["_BinaryenGtUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGtUInt64.apply(null, arguments);
-};
-
-var real__BinaryenAtomicCmpxchgGetBytes = asm["_BinaryenAtomicCmpxchgGetBytes"]; asm["_BinaryenAtomicCmpxchgGetBytes"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicCmpxchgGetBytes.apply(null, arguments);
-};
-
-var real__llvm_bswap_i32 = asm["_llvm_bswap_i32"]; asm["_llvm_bswap_i32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__llvm_bswap_i32.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_InstrumentMemory_cpp = asm["__GLOBAL__sub_I_InstrumentMemory_cpp"]; asm["__GLOBAL__sub_I_InstrumentMemory_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_InstrumentMemory_cpp.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMW = asm["_BinaryenAtomicRMW"]; asm["_BinaryenAtomicRMW"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMW.apply(null, arguments);
-};
-
-var real__BinaryenLiteralFloat32Bits = asm["_BinaryenLiteralFloat32Bits"]; asm["_BinaryenLiteralFloat32Bits"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralFloat32Bits.apply(null, arguments);
-};
-
-var real__pthread_mutex_lock = asm["_pthread_mutex_lock"]; asm["_pthread_mutex_lock"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__pthread_mutex_lock.apply(null, arguments);
-};
-
-var real__BinaryenModuleRunPasses = asm["_BinaryenModuleRunPasses"]; asm["_BinaryenModuleRunPasses"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleRunPasses.apply(null, arguments);
-};
-
-var real__BinaryenWrapInt64 = asm["_BinaryenWrapInt64"]; asm["_BinaryenWrapInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenWrapInt64.apply(null, arguments);
-};
-
-var real__BinaryenIf = asm["_BinaryenIf"]; asm["_BinaryenIf"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenIf.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWOr = asm["_BinaryenAtomicRMWOr"]; asm["_BinaryenAtomicRMWOr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWOr.apply(null, arguments);
-};
-
-var real__BinaryenImportGetName = asm["_BinaryenImportGetName"]; asm["_BinaryenImportGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetName.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWGetBytes = asm["_BinaryenAtomicRMWGetBytes"]; asm["_BinaryenAtomicRMWGetBytes"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWGetBytes.apply(null, arguments);
-};
-
-var real__BinaryenCeilFloat32 = asm["_BinaryenCeilFloat32"]; asm["_BinaryenCeilFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCeilFloat32.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueF64 = asm["_BinaryenConstGetValueF64"]; asm["_BinaryenConstGetValueF64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueF64.apply(null, arguments);
-};
-
-var real__BinaryenLtUInt64 = asm["_BinaryenLtUInt64"]; asm["_BinaryenLtUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLtUInt64.apply(null, arguments);
-};
-
-var real__BinaryenSetFunctionTable = asm["_BinaryenSetFunctionTable"]; asm["_BinaryenSetFunctionTable"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetFunctionTable.apply(null, arguments);
-};
-
-var real__BinaryenAtomicStore = asm["_BinaryenAtomicStore"]; asm["_BinaryenAtomicStore"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicStore.apply(null, arguments);
-};
-
-var real__BinaryenGetGlobalGetName = asm["_BinaryenGetGlobalGetName"]; asm["_BinaryenGetGlobalGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetGlobalGetName.apply(null, arguments);
-};
-
-var real__BinaryenGetFunctionTypeBySignature = asm["_BinaryenGetFunctionTypeBySignature"]; asm["_BinaryenGetFunctionTypeBySignature"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetFunctionTypeBySignature.apply(null, arguments);
-};
-
-var real__BinaryenTypeAuto = asm["_BinaryenTypeAuto"]; asm["_BinaryenTypeAuto"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeAuto.apply(null, arguments);
-};
-
-var real__BinaryenBreak = asm["_BinaryenBreak"]; asm["_BinaryenBreak"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBreak.apply(null, arguments);
-};
-
-var real__BinaryenUnaryGetOp = asm["_BinaryenUnaryGetOp"]; asm["_BinaryenUnaryGetOp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnaryGetOp.apply(null, arguments);
-};
-
-var real__BinaryenExportGetName = asm["_BinaryenExportGetName"]; asm["_BinaryenExportGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExportGetName.apply(null, arguments);
-};
-
-var real__BinaryenUnary = asm["_BinaryenUnary"]; asm["_BinaryenUnary"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnary.apply(null, arguments);
-};
-
-var real__BinaryenMaxFloat32 = asm["_BinaryenMaxFloat32"]; asm["_BinaryenMaxFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMaxFloat32.apply(null, arguments);
-};
-
-var real__BinaryenLoopId = asm["_BinaryenLoopId"]; asm["_BinaryenLoopId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoopId.apply(null, arguments);
-};
-
-var real__sbrk = asm["_sbrk"]; asm["_sbrk"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__sbrk.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFloat32.apply(null, arguments);
 };
 
 var real__BinaryenAddFloat64 = asm["_BinaryenAddFloat64"]; asm["_BinaryenAddFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddFloat64.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFloat64.apply(null, arguments);
 };
 
-var real__BinaryenExternalTable = asm["_BinaryenExternalTable"]; asm["_BinaryenExternalTable"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExternalTable.apply(null, arguments);
+var real__BinaryenAddFunction = asm["_BinaryenAddFunction"]; asm["_BinaryenAddFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFunction.apply(null, arguments);
 };
 
-var real__BinaryenImportGetKind = asm["_BinaryenImportGetKind"]; asm["_BinaryenImportGetKind"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetKind.apply(null, arguments);
+var real__BinaryenAddFunctionExport = asm["_BinaryenAddFunctionExport"]; asm["_BinaryenAddFunctionExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFunctionExport.apply(null, arguments);
 };
 
-var real__BinaryenReinterpretInt32 = asm["_BinaryenReinterpretInt32"]; asm["_BinaryenReinterpretInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReinterpretInt32.apply(null, arguments);
+var real__BinaryenAddFunctionImport = asm["_BinaryenAddFunctionImport"]; asm["_BinaryenAddFunctionImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFunctionImport.apply(null, arguments);
 };
 
-var real__BinaryenFloorFloat32 = asm["_BinaryenFloorFloat32"]; asm["_BinaryenFloorFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFloorFloat32.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueI32 = asm["_BinaryenConstGetValueI32"]; asm["_BinaryenConstGetValueI32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueI32.apply(null, arguments);
-};
-
-var real__BinaryenEqInt64 = asm["_BinaryenEqInt64"]; asm["_BinaryenEqInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqInt64.apply(null, arguments);
-};
-
-var real__BinaryenGeFloat64 = asm["_BinaryenGeFloat64"]; asm["_BinaryenGeFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeFloat64.apply(null, arguments);
-};
-
-var real__emscripten_get_global_libc = asm["_emscripten_get_global_libc"]; asm["_emscripten_get_global_libc"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__emscripten_get_global_libc.apply(null, arguments);
-};
-
-var real__BinaryenSelectGetCondition = asm["_BinaryenSelectGetCondition"]; asm["_BinaryenSelectGetCondition"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSelectGetCondition.apply(null, arguments);
-};
-
-var real__BinaryenModuleGetDebugInfoFileName = asm["_BinaryenModuleGetDebugInfoFileName"]; asm["_BinaryenModuleGetDebugInfoFileName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleGetDebugInfoFileName.apply(null, arguments);
-};
-
-var real__BinaryenSetLocalId = asm["_BinaryenSetLocalId"]; asm["_BinaryenSetLocalId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetLocalId.apply(null, arguments);
-};
-
-var real__BinaryenGeUInt64 = asm["_BinaryenGeUInt64"]; asm["_BinaryenGeUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeUInt64.apply(null, arguments);
-};
-
-var real__BinaryenConvertUInt32ToFloat64 = asm["_BinaryenConvertUInt32ToFloat64"]; asm["_BinaryenConvertUInt32ToFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertUInt32ToFloat64.apply(null, arguments);
-};
-
-var real__BinaryenBlockGetName = asm["_BinaryenBlockGetName"]; asm["_BinaryenBlockGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBlockGetName.apply(null, arguments);
-};
-
-var real__BinaryenReinterpretFloat32 = asm["_BinaryenReinterpretFloat32"]; asm["_BinaryenReinterpretFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReinterpretFloat32.apply(null, arguments);
-};
-
-var real__BinaryenIfGetCondition = asm["_BinaryenIfGetCondition"]; asm["_BinaryenIfGetCondition"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenIfGetCondition.apply(null, arguments);
-};
-
-var real__BinaryenFunctionOptimize = asm["_BinaryenFunctionOptimize"]; asm["_BinaryenFunctionOptimize"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionOptimize.apply(null, arguments);
-};
-
-var real__BinaryenHostId = asm["_BinaryenHostId"]; asm["_BinaryenHostId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHostId.apply(null, arguments);
-};
-
-var real__BinaryenTruncFloat64 = asm["_BinaryenTruncFloat64"]; asm["_BinaryenTruncFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTruncFloat64.apply(null, arguments);
-};
-
-var real__BinaryenTypeFloat64 = asm["_BinaryenTypeFloat64"]; asm["_BinaryenTypeFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeFloat64.apply(null, arguments);
-};
-
-var real__BinaryenAtomicRMWAdd = asm["_BinaryenAtomicRMWAdd"]; asm["_BinaryenAtomicRMWAdd"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicRMWAdd.apply(null, arguments);
-};
-
-var real__BinaryenLiteralFloat64 = asm["_BinaryenLiteralFloat64"]; asm["_BinaryenLiteralFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralFloat64.apply(null, arguments);
-};
-
-var real__BinaryenCallGetNumOperands = asm["_BinaryenCallGetNumOperands"]; asm["_BinaryenCallGetNumOperands"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallGetNumOperands.apply(null, arguments);
-};
-
-var real__BinaryenHasFeature = asm["_BinaryenHasFeature"]; asm["_BinaryenHasFeature"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenHasFeature.apply(null, arguments);
-};
-
-var real__BinaryenSwitchGetDefaultName = asm["_BinaryenSwitchGetDefaultName"]; asm["_BinaryenSwitchGetDefaultName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchGetDefaultName.apply(null, arguments);
-};
-
-var real__BinaryenSetLocalIsTee = asm["_BinaryenSetLocalIsTee"]; asm["_BinaryenSetLocalIsTee"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetLocalIsTee.apply(null, arguments);
-};
-
-var real__BinaryenTypeInt64 = asm["_BinaryenTypeInt64"]; asm["_BinaryenTypeInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenTypeInt64.apply(null, arguments);
-};
-
-var real__BinaryenModuleValidate = asm["_BinaryenModuleValidate"]; asm["_BinaryenModuleValidate"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleValidate.apply(null, arguments);
-};
-
-var real__BinaryenUnaryId = asm["_BinaryenUnaryId"]; asm["_BinaryenUnaryId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenUnaryId.apply(null, arguments);
-};
-
-var real__BinaryenStoreGetOffset = asm["_BinaryenStoreGetOffset"]; asm["_BinaryenStoreGetOffset"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreGetOffset.apply(null, arguments);
-};
-
-var real__BinaryenLeSInt32 = asm["_BinaryenLeSInt32"]; asm["_BinaryenLeSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeSInt32.apply(null, arguments);
-};
-
-var real__BinaryenMulInt64 = asm["_BinaryenMulInt64"]; asm["_BinaryenMulInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMulInt64.apply(null, arguments);
-};
-
-var real__BinaryenCopySignFloat32 = asm["_BinaryenCopySignFloat32"]; asm["_BinaryenCopySignFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCopySignFloat32.apply(null, arguments);
-};
-
-var real__BinaryenGetShrinkLevel = asm["_BinaryenGetShrinkLevel"]; asm["_BinaryenGetShrinkLevel"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetShrinkLevel.apply(null, arguments);
-};
-
-var real__BinaryenCallImportGetTarget = asm["_BinaryenCallImportGetTarget"]; asm["_BinaryenCallImportGetTarget"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallImportGetTarget.apply(null, arguments);
-};
-
-var real__BinaryenStore = asm["_BinaryenStore"]; asm["_BinaryenStore"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStore.apply(null, arguments);
-};
-
-var real__BinaryenBinary = asm["_BinaryenBinary"]; asm["_BinaryenBinary"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBinary.apply(null, arguments);
-};
-
-var real__BinaryenLeUInt64 = asm["_BinaryenLeUInt64"]; asm["_BinaryenLeUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeUInt64.apply(null, arguments);
-};
-
-var real_establishStackSpace = asm["establishStackSpace"]; asm["establishStackSpace"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real_establishStackSpace.apply(null, arguments);
-};
-
-var real__BinaryenModuleDispose = asm["_BinaryenModuleDispose"]; asm["_BinaryenModuleDispose"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleDispose.apply(null, arguments);
-};
-
-var real__BinaryenCallImportId = asm["_BinaryenCallImportId"]; asm["_BinaryenCallImportId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenCallImportId.apply(null, arguments);
-};
-
-var real__BinaryenAddMemoryExport = asm["_BinaryenAddMemoryExport"]; asm["_BinaryenAddMemoryExport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddMemoryExport.apply(null, arguments);
-};
-
-var real__BinaryenStoreGetBytes = asm["_BinaryenStoreGetBytes"]; asm["_BinaryenStoreGetBytes"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreGetBytes.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_SSAify_cpp = asm["__GLOBAL__sub_I_SSAify_cpp"]; asm["__GLOBAL__sub_I_SSAify_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_SSAify_cpp.apply(null, arguments);
-};
-
-var real__BinaryenRotRInt64 = asm["_BinaryenRotRInt64"]; asm["_BinaryenRotRInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenRotRInt64.apply(null, arguments);
-};
-
-var real__BinaryenImportGetGlobalType = asm["_BinaryenImportGetGlobalType"]; asm["_BinaryenImportGetGlobalType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetGlobalType.apply(null, arguments);
-};
-
-var real__BinaryenDemoteFloat64 = asm["_BinaryenDemoteFloat64"]; asm["_BinaryenDemoteFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDemoteFloat64.apply(null, arguments);
-};
-
-var real__BinaryenModuleWrite = asm["_BinaryenModuleWrite"]; asm["_BinaryenModuleWrite"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleWrite.apply(null, arguments);
-};
-
-var real__BinaryenAddGlobalImport = asm["_BinaryenAddGlobalImport"]; asm["_BinaryenAddGlobalImport"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddGlobalImport.apply(null, arguments);
-};
-
-var real__BinaryenLeFloat64 = asm["_BinaryenLeFloat64"]; asm["_BinaryenLeFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLeFloat64.apply(null, arguments);
-};
-
-var real__BinaryenEqFloat32 = asm["_BinaryenEqFloat32"]; asm["_BinaryenEqFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenEqFloat32.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWaitGetTimeout = asm["_BinaryenAtomicWaitGetTimeout"]; asm["_BinaryenAtomicWaitGetTimeout"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWaitGetTimeout.apply(null, arguments);
-};
-
-var real__BinaryenAtomicWaitId = asm["_BinaryenAtomicWaitId"]; asm["_BinaryenAtomicWaitId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWaitId.apply(null, arguments);
-};
-
-var real__BinaryenLoopGetName = asm["_BinaryenLoopGetName"]; asm["_BinaryenLoopGetName"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoopGetName.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_binaryen_c_cpp = asm["__GLOBAL__sub_I_binaryen_c_cpp"]; asm["__GLOBAL__sub_I_binaryen_c_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_binaryen_c_cpp.apply(null, arguments);
-};
-
-var real__BinaryenPageSize = asm["_BinaryenPageSize"]; asm["_BinaryenPageSize"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenPageSize.apply(null, arguments);
-};
-
-var real__BinaryenLoopGetBody = asm["_BinaryenLoopGetBody"]; asm["_BinaryenLoopGetBody"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLoopGetBody.apply(null, arguments);
-};
-
-var real__BinaryenExpressionGetType = asm["_BinaryenExpressionGetType"]; asm["_BinaryenExpressionGetType"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenExpressionGetType.apply(null, arguments);
-};
-
-var real__BinaryenSwitchGetNumNames = asm["_BinaryenSwitchGetNumNames"]; asm["_BinaryenSwitchGetNumNames"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSwitchGetNumNames.apply(null, arguments);
-};
-
-var real__pthread_cond_broadcast = asm["_pthread_cond_broadcast"]; asm["_pthread_cond_broadcast"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__pthread_cond_broadcast.apply(null, arguments);
-};
-
-var real__BinaryenAndInt64 = asm["_BinaryenAndInt64"]; asm["_BinaryenAndInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAndInt64.apply(null, arguments);
-};
-
-var real__BinaryenInt64 = asm["_BinaryenInt64"]; asm["_BinaryenInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenInt64.apply(null, arguments);
-};
-
-var real__BinaryenImportGetBase = asm["_BinaryenImportGetBase"]; asm["_BinaryenImportGetBase"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenImportGetBase.apply(null, arguments);
-};
-
-var real__BinaryenConvertSInt32ToFloat32 = asm["_BinaryenConvertSInt32ToFloat32"]; asm["_BinaryenConvertSInt32ToFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertSInt32ToFloat32.apply(null, arguments);
-};
-
-var real__BinaryenGetLocal = asm["_BinaryenGetLocal"]; asm["_BinaryenGetLocal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetLocal.apply(null, arguments);
-};
-
-var real__BinaryenAbsFloat32 = asm["_BinaryenAbsFloat32"]; asm["_BinaryenAbsFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAbsFloat32.apply(null, arguments);
-};
-
-var real__BinaryenDivFloat32 = asm["_BinaryenDivFloat32"]; asm["_BinaryenDivFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivFloat32.apply(null, arguments);
-};
-
-var real__BinaryenConstGetValueI64Low = asm["_BinaryenConstGetValueI64Low"]; asm["_BinaryenConstGetValueI64Low"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstGetValueI64Low.apply(null, arguments);
-};
-
-var real__BinaryenBinaryGetLeft = asm["_BinaryenBinaryGetLeft"]; asm["_BinaryenBinaryGetLeft"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBinaryGetLeft.apply(null, arguments);
-};
-
-var real__BinaryenConvertUInt64ToFloat32 = asm["_BinaryenConvertUInt64ToFloat32"]; asm["_BinaryenConvertUInt64ToFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertUInt64ToFloat32.apply(null, arguments);
+var real__BinaryenAddFunctionType = asm["_BinaryenAddFunctionType"]; asm["_BinaryenAddFunctionType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddFunctionType.apply(null, arguments);
 };
 
 var real__BinaryenAddGlobal = asm["_BinaryenAddGlobal"]; asm["_BinaryenAddGlobal"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddGlobal.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddGlobal.apply(null, arguments);
 };
 
-var real__BinaryenGetDebugInfo = asm["_BinaryenGetDebugInfo"]; asm["_BinaryenGetDebugInfo"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGetDebugInfo.apply(null, arguments);
+var real__BinaryenAddGlobalExport = asm["_BinaryenAddGlobalExport"]; asm["_BinaryenAddGlobalExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddGlobalExport.apply(null, arguments);
 };
 
-var real__BinaryenStoreGetPtr = asm["_BinaryenStoreGetPtr"]; asm["_BinaryenStoreGetPtr"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenStoreGetPtr.apply(null, arguments);
+var real__BinaryenAddGlobalImport = asm["_BinaryenAddGlobalImport"]; asm["_BinaryenAddGlobalImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddGlobalImport.apply(null, arguments);
 };
 
-var real__BinaryenFunctionGetNumVars = asm["_BinaryenFunctionGetNumVars"]; asm["_BinaryenFunctionGetNumVars"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFunctionGetNumVars.apply(null, arguments);
+var real__BinaryenAddImport = asm["_BinaryenAddImport"]; asm["_BinaryenAddImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddImport.apply(null, arguments);
 };
 
-var real___GLOBAL__sub_I_shared_constants_cpp = asm["__GLOBAL__sub_I_shared_constants_cpp"]; asm["__GLOBAL__sub_I_shared_constants_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_shared_constants_cpp.apply(null, arguments);
-};
-
-var real__BinaryenSetDebugInfo = asm["_BinaryenSetDebugInfo"]; asm["_BinaryenSetDebugInfo"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenSetDebugInfo.apply(null, arguments);
-};
-
-var real__BinaryenShrUInt64 = asm["_BinaryenShrUInt64"]; asm["_BinaryenShrUInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenShrUInt64.apply(null, arguments);
-};
-
-var real__BinaryenModuleParse = asm["_BinaryenModuleParse"]; asm["_BinaryenModuleParse"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleParse.apply(null, arguments);
-};
-
-var real__BinaryenBreakGetValue = asm["_BinaryenBreakGetValue"]; asm["_BinaryenBreakGetValue"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBreakGetValue.apply(null, arguments);
-};
-
-var real___GLOBAL__sub_I_I64ToI32Lowering_cpp = asm["__GLOBAL__sub_I_I64ToI32Lowering_cpp"]; asm["__GLOBAL__sub_I_I64ToI32Lowering_cpp"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real___GLOBAL__sub_I_I64ToI32Lowering_cpp.apply(null, arguments);
-};
-
-var real__BinaryenFloorFloat64 = asm["_BinaryenFloorFloat64"]; asm["_BinaryenFloorFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenFloorFloat64.apply(null, arguments);
-};
-
-var real__BinaryenModuleOptimize = asm["_BinaryenModuleOptimize"]; asm["_BinaryenModuleOptimize"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenModuleOptimize.apply(null, arguments);
-};
-
-var real__BinaryenNopId = asm["_BinaryenNopId"]; asm["_BinaryenNopId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenNopId.apply(null, arguments);
-};
-
-var real__BinaryenLiteralInt32 = asm["_BinaryenLiteralInt32"]; asm["_BinaryenLiteralInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenLiteralInt32.apply(null, arguments);
-};
-
-var real__BinaryenReinterpretFloat64 = asm["_BinaryenReinterpretFloat64"]; asm["_BinaryenReinterpretFloat64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenReinterpretFloat64.apply(null, arguments);
-};
-
-var real__BinaryenConvertUInt32ToFloat32 = asm["_BinaryenConvertUInt32ToFloat32"]; asm["_BinaryenConvertUInt32ToFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConvertUInt32ToFloat32.apply(null, arguments);
+var real__BinaryenAddInt32 = asm["_BinaryenAddInt32"]; asm["_BinaryenAddInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddInt32.apply(null, arguments);
 };
 
 var real__BinaryenAddInt64 = asm["_BinaryenAddInt64"]; asm["_BinaryenAddInt64"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAddInt64.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddInt64.apply(null, arguments);
 };
 
-var real__BinaryenGeSInt32 = asm["_BinaryenGeSInt32"]; asm["_BinaryenGeSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenGeSInt32.apply(null, arguments);
+var real__BinaryenAddMemoryExport = asm["_BinaryenAddMemoryExport"]; asm["_BinaryenAddMemoryExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddMemoryExport.apply(null, arguments);
 };
 
-var real__BinaryenInt32 = asm["_BinaryenInt32"]; asm["_BinaryenInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenInt32.apply(null, arguments);
+var real__BinaryenAddMemoryImport = asm["_BinaryenAddMemoryImport"]; asm["_BinaryenAddMemoryImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddMemoryImport.apply(null, arguments);
 };
 
-var real__BinaryenBlockGetNumChildren = asm["_BinaryenBlockGetNumChildren"]; asm["_BinaryenBlockGetNumChildren"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenBlockGetNumChildren.apply(null, arguments);
+var real__BinaryenAddTableExport = asm["_BinaryenAddTableExport"]; asm["_BinaryenAddTableExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddTableExport.apply(null, arguments);
 };
 
-var real__BinaryenMinFloat32 = asm["_BinaryenMinFloat32"]; asm["_BinaryenMinFloat32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenMinFloat32.apply(null, arguments);
+var real__BinaryenAddTableImport = asm["_BinaryenAddTableImport"]; asm["_BinaryenAddTableImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAddTableImport.apply(null, arguments);
+};
+
+var real__BinaryenAndInt32 = asm["_BinaryenAndInt32"]; asm["_BinaryenAndInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAndInt32.apply(null, arguments);
+};
+
+var real__BinaryenAndInt64 = asm["_BinaryenAndInt64"]; asm["_BinaryenAndInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAndInt64.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchg = asm["_BinaryenAtomicCmpxchg"]; asm["_BinaryenAtomicCmpxchg"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchg.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgGetBytes = asm["_BinaryenAtomicCmpxchgGetBytes"]; asm["_BinaryenAtomicCmpxchgGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgGetBytes.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgGetExpected = asm["_BinaryenAtomicCmpxchgGetExpected"]; asm["_BinaryenAtomicCmpxchgGetExpected"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgGetExpected.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgGetOffset = asm["_BinaryenAtomicCmpxchgGetOffset"]; asm["_BinaryenAtomicCmpxchgGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgGetOffset.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgGetPtr = asm["_BinaryenAtomicCmpxchgGetPtr"]; asm["_BinaryenAtomicCmpxchgGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgGetReplacement = asm["_BinaryenAtomicCmpxchgGetReplacement"]; asm["_BinaryenAtomicCmpxchgGetReplacement"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgGetReplacement.apply(null, arguments);
+};
+
+var real__BinaryenAtomicCmpxchgId = asm["_BinaryenAtomicCmpxchgId"]; asm["_BinaryenAtomicCmpxchgId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicCmpxchgId.apply(null, arguments);
+};
+
+var real__BinaryenAtomicLoad = asm["_BinaryenAtomicLoad"]; asm["_BinaryenAtomicLoad"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicLoad.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMW = asm["_BinaryenAtomicRMW"]; asm["_BinaryenAtomicRMW"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMW.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWAdd = asm["_BinaryenAtomicRMWAdd"]; asm["_BinaryenAtomicRMWAdd"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWAdd.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWAnd = asm["_BinaryenAtomicRMWAnd"]; asm["_BinaryenAtomicRMWAnd"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWAnd.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWGetBytes = asm["_BinaryenAtomicRMWGetBytes"]; asm["_BinaryenAtomicRMWGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWGetBytes.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWGetOffset = asm["_BinaryenAtomicRMWGetOffset"]; asm["_BinaryenAtomicRMWGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWGetOffset.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWGetOp = asm["_BinaryenAtomicRMWGetOp"]; asm["_BinaryenAtomicRMWGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWGetOp.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWGetPtr = asm["_BinaryenAtomicRMWGetPtr"]; asm["_BinaryenAtomicRMWGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWGetValue = asm["_BinaryenAtomicRMWGetValue"]; asm["_BinaryenAtomicRMWGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWGetValue.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWId = asm["_BinaryenAtomicRMWId"]; asm["_BinaryenAtomicRMWId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWId.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWOr = asm["_BinaryenAtomicRMWOr"]; asm["_BinaryenAtomicRMWOr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWOr.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWSub = asm["_BinaryenAtomicRMWSub"]; asm["_BinaryenAtomicRMWSub"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWSub.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWXchg = asm["_BinaryenAtomicRMWXchg"]; asm["_BinaryenAtomicRMWXchg"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWXchg.apply(null, arguments);
+};
+
+var real__BinaryenAtomicRMWXor = asm["_BinaryenAtomicRMWXor"]; asm["_BinaryenAtomicRMWXor"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicRMWXor.apply(null, arguments);
+};
+
+var real__BinaryenAtomicStore = asm["_BinaryenAtomicStore"]; asm["_BinaryenAtomicStore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicStore.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWait = asm["_BinaryenAtomicWait"]; asm["_BinaryenAtomicWait"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWait.apply(null, arguments);
 };
 
 var real__BinaryenAtomicWaitGetExpected = asm["_BinaryenAtomicWaitGetExpected"]; asm["_BinaryenAtomicWaitGetExpected"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenAtomicWaitGetExpected.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWaitGetExpected.apply(null, arguments);
 };
 
-var real__BinaryenDivSInt32 = asm["_BinaryenDivSInt32"]; asm["_BinaryenDivSInt32"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenDivSInt32.apply(null, arguments);
+var real__BinaryenAtomicWaitGetExpectedType = asm["_BinaryenAtomicWaitGetExpectedType"]; asm["_BinaryenAtomicWaitGetExpectedType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWaitGetExpectedType.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWaitGetPtr = asm["_BinaryenAtomicWaitGetPtr"]; asm["_BinaryenAtomicWaitGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWaitGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWaitGetTimeout = asm["_BinaryenAtomicWaitGetTimeout"]; asm["_BinaryenAtomicWaitGetTimeout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWaitGetTimeout.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWaitId = asm["_BinaryenAtomicWaitId"]; asm["_BinaryenAtomicWaitId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWaitId.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWake = asm["_BinaryenAtomicWake"]; asm["_BinaryenAtomicWake"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWake.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWakeGetPtr = asm["_BinaryenAtomicWakeGetPtr"]; asm["_BinaryenAtomicWakeGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWakeGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWakeGetWakeCount = asm["_BinaryenAtomicWakeGetWakeCount"]; asm["_BinaryenAtomicWakeGetWakeCount"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWakeGetWakeCount.apply(null, arguments);
+};
+
+var real__BinaryenAtomicWakeId = asm["_BinaryenAtomicWakeId"]; asm["_BinaryenAtomicWakeId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenAtomicWakeId.apply(null, arguments);
+};
+
+var real__BinaryenBinary = asm["_BinaryenBinary"]; asm["_BinaryenBinary"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBinary.apply(null, arguments);
+};
+
+var real__BinaryenBinaryGetLeft = asm["_BinaryenBinaryGetLeft"]; asm["_BinaryenBinaryGetLeft"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBinaryGetLeft.apply(null, arguments);
+};
+
+var real__BinaryenBinaryGetOp = asm["_BinaryenBinaryGetOp"]; asm["_BinaryenBinaryGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBinaryGetOp.apply(null, arguments);
+};
+
+var real__BinaryenBinaryGetRight = asm["_BinaryenBinaryGetRight"]; asm["_BinaryenBinaryGetRight"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBinaryGetRight.apply(null, arguments);
+};
+
+var real__BinaryenBinaryId = asm["_BinaryenBinaryId"]; asm["_BinaryenBinaryId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBinaryId.apply(null, arguments);
+};
+
+var real__BinaryenBlock = asm["_BinaryenBlock"]; asm["_BinaryenBlock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBlock.apply(null, arguments);
+};
+
+var real__BinaryenBlockGetChild = asm["_BinaryenBlockGetChild"]; asm["_BinaryenBlockGetChild"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBlockGetChild.apply(null, arguments);
+};
+
+var real__BinaryenBlockGetName = asm["_BinaryenBlockGetName"]; asm["_BinaryenBlockGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBlockGetName.apply(null, arguments);
+};
+
+var real__BinaryenBlockGetNumChildren = asm["_BinaryenBlockGetNumChildren"]; asm["_BinaryenBlockGetNumChildren"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBlockGetNumChildren.apply(null, arguments);
+};
+
+var real__BinaryenBlockId = asm["_BinaryenBlockId"]; asm["_BinaryenBlockId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBlockId.apply(null, arguments);
+};
+
+var real__BinaryenBreak = asm["_BinaryenBreak"]; asm["_BinaryenBreak"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBreak.apply(null, arguments);
+};
+
+var real__BinaryenBreakGetCondition = asm["_BinaryenBreakGetCondition"]; asm["_BinaryenBreakGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBreakGetCondition.apply(null, arguments);
+};
+
+var real__BinaryenBreakGetName = asm["_BinaryenBreakGetName"]; asm["_BinaryenBreakGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBreakGetName.apply(null, arguments);
+};
+
+var real__BinaryenBreakGetValue = asm["_BinaryenBreakGetValue"]; asm["_BinaryenBreakGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBreakGetValue.apply(null, arguments);
+};
+
+var real__BinaryenBreakId = asm["_BinaryenBreakId"]; asm["_BinaryenBreakId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenBreakId.apply(null, arguments);
+};
+
+var real__BinaryenCall = asm["_BinaryenCall"]; asm["_BinaryenCall"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCall.apply(null, arguments);
+};
+
+var real__BinaryenCallGetNumOperands = asm["_BinaryenCallGetNumOperands"]; asm["_BinaryenCallGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallGetNumOperands.apply(null, arguments);
+};
+
+var real__BinaryenCallGetOperand = asm["_BinaryenCallGetOperand"]; asm["_BinaryenCallGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallGetOperand.apply(null, arguments);
+};
+
+var real__BinaryenCallGetTarget = asm["_BinaryenCallGetTarget"]; asm["_BinaryenCallGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallGetTarget.apply(null, arguments);
+};
+
+var real__BinaryenCallId = asm["_BinaryenCallId"]; asm["_BinaryenCallId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallId.apply(null, arguments);
+};
+
+var real__BinaryenCallImport = asm["_BinaryenCallImport"]; asm["_BinaryenCallImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallImport.apply(null, arguments);
+};
+
+var real__BinaryenCallImportGetNumOperands = asm["_BinaryenCallImportGetNumOperands"]; asm["_BinaryenCallImportGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallImportGetNumOperands.apply(null, arguments);
+};
+
+var real__BinaryenCallImportGetOperand = asm["_BinaryenCallImportGetOperand"]; asm["_BinaryenCallImportGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallImportGetOperand.apply(null, arguments);
+};
+
+var real__BinaryenCallImportGetTarget = asm["_BinaryenCallImportGetTarget"]; asm["_BinaryenCallImportGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallImportGetTarget.apply(null, arguments);
+};
+
+var real__BinaryenCallImportId = asm["_BinaryenCallImportId"]; asm["_BinaryenCallImportId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallImportId.apply(null, arguments);
+};
+
+var real__BinaryenCallIndirect = asm["_BinaryenCallIndirect"]; asm["_BinaryenCallIndirect"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallIndirect.apply(null, arguments);
+};
+
+var real__BinaryenCallIndirectGetNumOperands = asm["_BinaryenCallIndirectGetNumOperands"]; asm["_BinaryenCallIndirectGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallIndirectGetNumOperands.apply(null, arguments);
+};
+
+var real__BinaryenCallIndirectGetOperand = asm["_BinaryenCallIndirectGetOperand"]; asm["_BinaryenCallIndirectGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallIndirectGetOperand.apply(null, arguments);
+};
+
+var real__BinaryenCallIndirectGetTarget = asm["_BinaryenCallIndirectGetTarget"]; asm["_BinaryenCallIndirectGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallIndirectGetTarget.apply(null, arguments);
+};
+
+var real__BinaryenCallIndirectId = asm["_BinaryenCallIndirectId"]; asm["_BinaryenCallIndirectId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCallIndirectId.apply(null, arguments);
+};
+
+var real__BinaryenCeilFloat32 = asm["_BinaryenCeilFloat32"]; asm["_BinaryenCeilFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCeilFloat32.apply(null, arguments);
+};
+
+var real__BinaryenCeilFloat64 = asm["_BinaryenCeilFloat64"]; asm["_BinaryenCeilFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCeilFloat64.apply(null, arguments);
+};
+
+var real__BinaryenClzInt32 = asm["_BinaryenClzInt32"]; asm["_BinaryenClzInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenClzInt32.apply(null, arguments);
+};
+
+var real__BinaryenClzInt64 = asm["_BinaryenClzInt64"]; asm["_BinaryenClzInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenClzInt64.apply(null, arguments);
+};
+
+var real__BinaryenConst = asm["_BinaryenConst"]; asm["_BinaryenConst"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConst.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueF32 = asm["_BinaryenConstGetValueF32"]; asm["_BinaryenConstGetValueF32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueF32.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueF64 = asm["_BinaryenConstGetValueF64"]; asm["_BinaryenConstGetValueF64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueF64.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueI32 = asm["_BinaryenConstGetValueI32"]; asm["_BinaryenConstGetValueI32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueI32.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueI64 = asm["_BinaryenConstGetValueI64"]; asm["_BinaryenConstGetValueI64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueI64.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueI64High = asm["_BinaryenConstGetValueI64High"]; asm["_BinaryenConstGetValueI64High"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueI64High.apply(null, arguments);
+};
+
+var real__BinaryenConstGetValueI64Low = asm["_BinaryenConstGetValueI64Low"]; asm["_BinaryenConstGetValueI64Low"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstGetValueI64Low.apply(null, arguments);
 };
 
 var real__BinaryenConstId = asm["_BinaryenConstId"]; asm["_BinaryenConstId"] = function() {
-assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-return real__BinaryenConstId.apply(null, arguments);
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConstId.apply(null, arguments);
+};
+
+var real__BinaryenConvertSInt32ToFloat32 = asm["_BinaryenConvertSInt32ToFloat32"]; asm["_BinaryenConvertSInt32ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertSInt32ToFloat32.apply(null, arguments);
+};
+
+var real__BinaryenConvertSInt32ToFloat64 = asm["_BinaryenConvertSInt32ToFloat64"]; asm["_BinaryenConvertSInt32ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertSInt32ToFloat64.apply(null, arguments);
+};
+
+var real__BinaryenConvertSInt64ToFloat32 = asm["_BinaryenConvertSInt64ToFloat32"]; asm["_BinaryenConvertSInt64ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertSInt64ToFloat32.apply(null, arguments);
+};
+
+var real__BinaryenConvertSInt64ToFloat64 = asm["_BinaryenConvertSInt64ToFloat64"]; asm["_BinaryenConvertSInt64ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertSInt64ToFloat64.apply(null, arguments);
+};
+
+var real__BinaryenConvertUInt32ToFloat32 = asm["_BinaryenConvertUInt32ToFloat32"]; asm["_BinaryenConvertUInt32ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertUInt32ToFloat32.apply(null, arguments);
+};
+
+var real__BinaryenConvertUInt32ToFloat64 = asm["_BinaryenConvertUInt32ToFloat64"]; asm["_BinaryenConvertUInt32ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertUInt32ToFloat64.apply(null, arguments);
+};
+
+var real__BinaryenConvertUInt64ToFloat32 = asm["_BinaryenConvertUInt64ToFloat32"]; asm["_BinaryenConvertUInt64ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertUInt64ToFloat32.apply(null, arguments);
+};
+
+var real__BinaryenConvertUInt64ToFloat64 = asm["_BinaryenConvertUInt64ToFloat64"]; asm["_BinaryenConvertUInt64ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenConvertUInt64ToFloat64.apply(null, arguments);
+};
+
+var real__BinaryenCopySignFloat32 = asm["_BinaryenCopySignFloat32"]; asm["_BinaryenCopySignFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCopySignFloat32.apply(null, arguments);
+};
+
+var real__BinaryenCopySignFloat64 = asm["_BinaryenCopySignFloat64"]; asm["_BinaryenCopySignFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCopySignFloat64.apply(null, arguments);
+};
+
+var real__BinaryenCtzInt32 = asm["_BinaryenCtzInt32"]; asm["_BinaryenCtzInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCtzInt32.apply(null, arguments);
+};
+
+var real__BinaryenCtzInt64 = asm["_BinaryenCtzInt64"]; asm["_BinaryenCtzInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCtzInt64.apply(null, arguments);
+};
+
+var real__BinaryenCurrentMemory = asm["_BinaryenCurrentMemory"]; asm["_BinaryenCurrentMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenCurrentMemory.apply(null, arguments);
+};
+
+var real__BinaryenDemoteFloat64 = asm["_BinaryenDemoteFloat64"]; asm["_BinaryenDemoteFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDemoteFloat64.apply(null, arguments);
+};
+
+var real__BinaryenDivFloat32 = asm["_BinaryenDivFloat32"]; asm["_BinaryenDivFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivFloat32.apply(null, arguments);
+};
+
+var real__BinaryenDivFloat64 = asm["_BinaryenDivFloat64"]; asm["_BinaryenDivFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivFloat64.apply(null, arguments);
+};
+
+var real__BinaryenDivSInt32 = asm["_BinaryenDivSInt32"]; asm["_BinaryenDivSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivSInt32.apply(null, arguments);
+};
+
+var real__BinaryenDivSInt64 = asm["_BinaryenDivSInt64"]; asm["_BinaryenDivSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivSInt64.apply(null, arguments);
+};
+
+var real__BinaryenDivUInt32 = asm["_BinaryenDivUInt32"]; asm["_BinaryenDivUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivUInt32.apply(null, arguments);
+};
+
+var real__BinaryenDivUInt64 = asm["_BinaryenDivUInt64"]; asm["_BinaryenDivUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDivUInt64.apply(null, arguments);
+};
+
+var real__BinaryenDrop = asm["_BinaryenDrop"]; asm["_BinaryenDrop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDrop.apply(null, arguments);
+};
+
+var real__BinaryenDropGetValue = asm["_BinaryenDropGetValue"]; asm["_BinaryenDropGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDropGetValue.apply(null, arguments);
+};
+
+var real__BinaryenDropId = asm["_BinaryenDropId"]; asm["_BinaryenDropId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenDropId.apply(null, arguments);
+};
+
+var real__BinaryenEqFloat32 = asm["_BinaryenEqFloat32"]; asm["_BinaryenEqFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqFloat32.apply(null, arguments);
+};
+
+var real__BinaryenEqFloat64 = asm["_BinaryenEqFloat64"]; asm["_BinaryenEqFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqFloat64.apply(null, arguments);
+};
+
+var real__BinaryenEqInt32 = asm["_BinaryenEqInt32"]; asm["_BinaryenEqInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqInt32.apply(null, arguments);
+};
+
+var real__BinaryenEqInt64 = asm["_BinaryenEqInt64"]; asm["_BinaryenEqInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqInt64.apply(null, arguments);
+};
+
+var real__BinaryenEqZInt32 = asm["_BinaryenEqZInt32"]; asm["_BinaryenEqZInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqZInt32.apply(null, arguments);
+};
+
+var real__BinaryenEqZInt64 = asm["_BinaryenEqZInt64"]; asm["_BinaryenEqZInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenEqZInt64.apply(null, arguments);
+};
+
+var real__BinaryenExportGetKind = asm["_BinaryenExportGetKind"]; asm["_BinaryenExportGetKind"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExportGetKind.apply(null, arguments);
+};
+
+var real__BinaryenExportGetName = asm["_BinaryenExportGetName"]; asm["_BinaryenExportGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExportGetName.apply(null, arguments);
+};
+
+var real__BinaryenExportGetValue = asm["_BinaryenExportGetValue"]; asm["_BinaryenExportGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExportGetValue.apply(null, arguments);
+};
+
+var real__BinaryenExpressionGetId = asm["_BinaryenExpressionGetId"]; asm["_BinaryenExpressionGetId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExpressionGetId.apply(null, arguments);
+};
+
+var real__BinaryenExpressionGetType = asm["_BinaryenExpressionGetType"]; asm["_BinaryenExpressionGetType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExpressionGetType.apply(null, arguments);
+};
+
+var real__BinaryenExpressionPrint = asm["_BinaryenExpressionPrint"]; asm["_BinaryenExpressionPrint"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExpressionPrint.apply(null, arguments);
+};
+
+var real__BinaryenExtendSInt32 = asm["_BinaryenExtendSInt32"]; asm["_BinaryenExtendSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExtendSInt32.apply(null, arguments);
+};
+
+var real__BinaryenExtendUInt32 = asm["_BinaryenExtendUInt32"]; asm["_BinaryenExtendUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExtendUInt32.apply(null, arguments);
+};
+
+var real__BinaryenExternalFunction = asm["_BinaryenExternalFunction"]; asm["_BinaryenExternalFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExternalFunction.apply(null, arguments);
+};
+
+var real__BinaryenExternalGlobal = asm["_BinaryenExternalGlobal"]; asm["_BinaryenExternalGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExternalGlobal.apply(null, arguments);
+};
+
+var real__BinaryenExternalMemory = asm["_BinaryenExternalMemory"]; asm["_BinaryenExternalMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExternalMemory.apply(null, arguments);
+};
+
+var real__BinaryenExternalTable = asm["_BinaryenExternalTable"]; asm["_BinaryenExternalTable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenExternalTable.apply(null, arguments);
+};
+
+var real__BinaryenFloat32 = asm["_BinaryenFloat32"]; asm["_BinaryenFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFloat32.apply(null, arguments);
+};
+
+var real__BinaryenFloat64 = asm["_BinaryenFloat64"]; asm["_BinaryenFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFloat64.apply(null, arguments);
+};
+
+var real__BinaryenFloorFloat32 = asm["_BinaryenFloorFloat32"]; asm["_BinaryenFloorFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFloorFloat32.apply(null, arguments);
+};
+
+var real__BinaryenFloorFloat64 = asm["_BinaryenFloorFloat64"]; asm["_BinaryenFloorFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFloorFloat64.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetBody = asm["_BinaryenFunctionGetBody"]; asm["_BinaryenFunctionGetBody"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetBody.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetName = asm["_BinaryenFunctionGetName"]; asm["_BinaryenFunctionGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetName.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetNumParams = asm["_BinaryenFunctionGetNumParams"]; asm["_BinaryenFunctionGetNumParams"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetNumParams.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetNumVars = asm["_BinaryenFunctionGetNumVars"]; asm["_BinaryenFunctionGetNumVars"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetNumVars.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetParam = asm["_BinaryenFunctionGetParam"]; asm["_BinaryenFunctionGetParam"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetParam.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetResult = asm["_BinaryenFunctionGetResult"]; asm["_BinaryenFunctionGetResult"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetResult.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetType = asm["_BinaryenFunctionGetType"]; asm["_BinaryenFunctionGetType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetType.apply(null, arguments);
+};
+
+var real__BinaryenFunctionGetVar = asm["_BinaryenFunctionGetVar"]; asm["_BinaryenFunctionGetVar"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionGetVar.apply(null, arguments);
+};
+
+var real__BinaryenFunctionOptimize = asm["_BinaryenFunctionOptimize"]; asm["_BinaryenFunctionOptimize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionOptimize.apply(null, arguments);
+};
+
+var real__BinaryenFunctionRunPasses = asm["_BinaryenFunctionRunPasses"]; asm["_BinaryenFunctionRunPasses"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionRunPasses.apply(null, arguments);
+};
+
+var real__BinaryenFunctionSetDebugLocation = asm["_BinaryenFunctionSetDebugLocation"]; asm["_BinaryenFunctionSetDebugLocation"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionSetDebugLocation.apply(null, arguments);
+};
+
+var real__BinaryenFunctionTypeGetName = asm["_BinaryenFunctionTypeGetName"]; asm["_BinaryenFunctionTypeGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionTypeGetName.apply(null, arguments);
+};
+
+var real__BinaryenFunctionTypeGetNumParams = asm["_BinaryenFunctionTypeGetNumParams"]; asm["_BinaryenFunctionTypeGetNumParams"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionTypeGetNumParams.apply(null, arguments);
+};
+
+var real__BinaryenFunctionTypeGetParam = asm["_BinaryenFunctionTypeGetParam"]; asm["_BinaryenFunctionTypeGetParam"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionTypeGetParam.apply(null, arguments);
+};
+
+var real__BinaryenFunctionTypeGetResult = asm["_BinaryenFunctionTypeGetResult"]; asm["_BinaryenFunctionTypeGetResult"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenFunctionTypeGetResult.apply(null, arguments);
+};
+
+var real__BinaryenGeFloat32 = asm["_BinaryenGeFloat32"]; asm["_BinaryenGeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeFloat32.apply(null, arguments);
+};
+
+var real__BinaryenGeFloat64 = asm["_BinaryenGeFloat64"]; asm["_BinaryenGeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeFloat64.apply(null, arguments);
+};
+
+var real__BinaryenGeSInt32 = asm["_BinaryenGeSInt32"]; asm["_BinaryenGeSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeSInt32.apply(null, arguments);
+};
+
+var real__BinaryenGeSInt64 = asm["_BinaryenGeSInt64"]; asm["_BinaryenGeSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeSInt64.apply(null, arguments);
+};
+
+var real__BinaryenGeUInt32 = asm["_BinaryenGeUInt32"]; asm["_BinaryenGeUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeUInt32.apply(null, arguments);
+};
+
+var real__BinaryenGeUInt64 = asm["_BinaryenGeUInt64"]; asm["_BinaryenGeUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGeUInt64.apply(null, arguments);
+};
+
+var real__BinaryenGetDebugInfo = asm["_BinaryenGetDebugInfo"]; asm["_BinaryenGetDebugInfo"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetDebugInfo.apply(null, arguments);
+};
+
+var real__BinaryenGetFunction = asm["_BinaryenGetFunction"]; asm["_BinaryenGetFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetFunction.apply(null, arguments);
+};
+
+var real__BinaryenGetFunctionTypeBySignature = asm["_BinaryenGetFunctionTypeBySignature"]; asm["_BinaryenGetFunctionTypeBySignature"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetFunctionTypeBySignature.apply(null, arguments);
+};
+
+var real__BinaryenGetGlobal = asm["_BinaryenGetGlobal"]; asm["_BinaryenGetGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetGlobal.apply(null, arguments);
+};
+
+var real__BinaryenGetGlobalGetName = asm["_BinaryenGetGlobalGetName"]; asm["_BinaryenGetGlobalGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetGlobalGetName.apply(null, arguments);
+};
+
+var real__BinaryenGetGlobalId = asm["_BinaryenGetGlobalId"]; asm["_BinaryenGetGlobalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetGlobalId.apply(null, arguments);
+};
+
+var real__BinaryenGetLocal = asm["_BinaryenGetLocal"]; asm["_BinaryenGetLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetLocal.apply(null, arguments);
+};
+
+var real__BinaryenGetLocalGetIndex = asm["_BinaryenGetLocalGetIndex"]; asm["_BinaryenGetLocalGetIndex"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetLocalGetIndex.apply(null, arguments);
+};
+
+var real__BinaryenGetLocalId = asm["_BinaryenGetLocalId"]; asm["_BinaryenGetLocalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetLocalId.apply(null, arguments);
+};
+
+var real__BinaryenGetOptimizeLevel = asm["_BinaryenGetOptimizeLevel"]; asm["_BinaryenGetOptimizeLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetOptimizeLevel.apply(null, arguments);
+};
+
+var real__BinaryenGetShrinkLevel = asm["_BinaryenGetShrinkLevel"]; asm["_BinaryenGetShrinkLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGetShrinkLevel.apply(null, arguments);
+};
+
+var real__BinaryenGrowMemory = asm["_BinaryenGrowMemory"]; asm["_BinaryenGrowMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGrowMemory.apply(null, arguments);
+};
+
+var real__BinaryenGtFloat32 = asm["_BinaryenGtFloat32"]; asm["_BinaryenGtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtFloat32.apply(null, arguments);
+};
+
+var real__BinaryenGtFloat64 = asm["_BinaryenGtFloat64"]; asm["_BinaryenGtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtFloat64.apply(null, arguments);
+};
+
+var real__BinaryenGtSInt32 = asm["_BinaryenGtSInt32"]; asm["_BinaryenGtSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtSInt32.apply(null, arguments);
+};
+
+var real__BinaryenGtSInt64 = asm["_BinaryenGtSInt64"]; asm["_BinaryenGtSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtSInt64.apply(null, arguments);
+};
+
+var real__BinaryenGtUInt32 = asm["_BinaryenGtUInt32"]; asm["_BinaryenGtUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtUInt32.apply(null, arguments);
+};
+
+var real__BinaryenGtUInt64 = asm["_BinaryenGtUInt64"]; asm["_BinaryenGtUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenGtUInt64.apply(null, arguments);
+};
+
+var real__BinaryenHasFeature = asm["_BinaryenHasFeature"]; asm["_BinaryenHasFeature"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHasFeature.apply(null, arguments);
+};
+
+var real__BinaryenHost = asm["_BinaryenHost"]; asm["_BinaryenHost"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHost.apply(null, arguments);
+};
+
+var real__BinaryenHostGetNameOperand = asm["_BinaryenHostGetNameOperand"]; asm["_BinaryenHostGetNameOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHostGetNameOperand.apply(null, arguments);
+};
+
+var real__BinaryenHostGetNumOperands = asm["_BinaryenHostGetNumOperands"]; asm["_BinaryenHostGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHostGetNumOperands.apply(null, arguments);
+};
+
+var real__BinaryenHostGetOp = asm["_BinaryenHostGetOp"]; asm["_BinaryenHostGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHostGetOp.apply(null, arguments);
+};
+
+var real__BinaryenHostGetOperand = asm["_BinaryenHostGetOperand"]; asm["_BinaryenHostGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHostGetOperand.apply(null, arguments);
+};
+
+var real__BinaryenHostId = asm["_BinaryenHostId"]; asm["_BinaryenHostId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenHostId.apply(null, arguments);
+};
+
+var real__BinaryenIf = asm["_BinaryenIf"]; asm["_BinaryenIf"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenIf.apply(null, arguments);
+};
+
+var real__BinaryenIfGetCondition = asm["_BinaryenIfGetCondition"]; asm["_BinaryenIfGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenIfGetCondition.apply(null, arguments);
+};
+
+var real__BinaryenIfGetIfFalse = asm["_BinaryenIfGetIfFalse"]; asm["_BinaryenIfGetIfFalse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenIfGetIfFalse.apply(null, arguments);
+};
+
+var real__BinaryenIfGetIfTrue = asm["_BinaryenIfGetIfTrue"]; asm["_BinaryenIfGetIfTrue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenIfGetIfTrue.apply(null, arguments);
+};
+
+var real__BinaryenIfId = asm["_BinaryenIfId"]; asm["_BinaryenIfId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenIfId.apply(null, arguments);
+};
+
+var real__BinaryenImportGetBase = asm["_BinaryenImportGetBase"]; asm["_BinaryenImportGetBase"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetBase.apply(null, arguments);
+};
+
+var real__BinaryenImportGetFunctionType = asm["_BinaryenImportGetFunctionType"]; asm["_BinaryenImportGetFunctionType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetFunctionType.apply(null, arguments);
+};
+
+var real__BinaryenImportGetGlobalType = asm["_BinaryenImportGetGlobalType"]; asm["_BinaryenImportGetGlobalType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetGlobalType.apply(null, arguments);
+};
+
+var real__BinaryenImportGetKind = asm["_BinaryenImportGetKind"]; asm["_BinaryenImportGetKind"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetKind.apply(null, arguments);
+};
+
+var real__BinaryenImportGetModule = asm["_BinaryenImportGetModule"]; asm["_BinaryenImportGetModule"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetModule.apply(null, arguments);
+};
+
+var real__BinaryenImportGetName = asm["_BinaryenImportGetName"]; asm["_BinaryenImportGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenImportGetName.apply(null, arguments);
+};
+
+var real__BinaryenInt32 = asm["_BinaryenInt32"]; asm["_BinaryenInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenInt32.apply(null, arguments);
+};
+
+var real__BinaryenInt64 = asm["_BinaryenInt64"]; asm["_BinaryenInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenInt64.apply(null, arguments);
+};
+
+var real__BinaryenInvalidId = asm["_BinaryenInvalidId"]; asm["_BinaryenInvalidId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenInvalidId.apply(null, arguments);
+};
+
+var real__BinaryenLeFloat32 = asm["_BinaryenLeFloat32"]; asm["_BinaryenLeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeFloat32.apply(null, arguments);
+};
+
+var real__BinaryenLeFloat64 = asm["_BinaryenLeFloat64"]; asm["_BinaryenLeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeFloat64.apply(null, arguments);
+};
+
+var real__BinaryenLeSInt32 = asm["_BinaryenLeSInt32"]; asm["_BinaryenLeSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeSInt32.apply(null, arguments);
+};
+
+var real__BinaryenLeSInt64 = asm["_BinaryenLeSInt64"]; asm["_BinaryenLeSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeSInt64.apply(null, arguments);
+};
+
+var real__BinaryenLeUInt32 = asm["_BinaryenLeUInt32"]; asm["_BinaryenLeUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeUInt32.apply(null, arguments);
+};
+
+var real__BinaryenLeUInt64 = asm["_BinaryenLeUInt64"]; asm["_BinaryenLeUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLeUInt64.apply(null, arguments);
+};
+
+var real__BinaryenLiteralFloat32 = asm["_BinaryenLiteralFloat32"]; asm["_BinaryenLiteralFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralFloat32.apply(null, arguments);
+};
+
+var real__BinaryenLiteralFloat32Bits = asm["_BinaryenLiteralFloat32Bits"]; asm["_BinaryenLiteralFloat32Bits"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralFloat32Bits.apply(null, arguments);
+};
+
+var real__BinaryenLiteralFloat64 = asm["_BinaryenLiteralFloat64"]; asm["_BinaryenLiteralFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralFloat64.apply(null, arguments);
+};
+
+var real__BinaryenLiteralFloat64Bits = asm["_BinaryenLiteralFloat64Bits"]; asm["_BinaryenLiteralFloat64Bits"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralFloat64Bits.apply(null, arguments);
+};
+
+var real__BinaryenLiteralInt32 = asm["_BinaryenLiteralInt32"]; asm["_BinaryenLiteralInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralInt32.apply(null, arguments);
+};
+
+var real__BinaryenLiteralInt64 = asm["_BinaryenLiteralInt64"]; asm["_BinaryenLiteralInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLiteralInt64.apply(null, arguments);
+};
+
+var real__BinaryenLoad = asm["_BinaryenLoad"]; asm["_BinaryenLoad"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoad.apply(null, arguments);
+};
+
+var real__BinaryenLoadGetAlign = asm["_BinaryenLoadGetAlign"]; asm["_BinaryenLoadGetAlign"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadGetAlign.apply(null, arguments);
+};
+
+var real__BinaryenLoadGetBytes = asm["_BinaryenLoadGetBytes"]; asm["_BinaryenLoadGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadGetBytes.apply(null, arguments);
+};
+
+var real__BinaryenLoadGetOffset = asm["_BinaryenLoadGetOffset"]; asm["_BinaryenLoadGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadGetOffset.apply(null, arguments);
+};
+
+var real__BinaryenLoadGetPtr = asm["_BinaryenLoadGetPtr"]; asm["_BinaryenLoadGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenLoadId = asm["_BinaryenLoadId"]; asm["_BinaryenLoadId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadId.apply(null, arguments);
+};
+
+var real__BinaryenLoadIsAtomic = asm["_BinaryenLoadIsAtomic"]; asm["_BinaryenLoadIsAtomic"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadIsAtomic.apply(null, arguments);
+};
+
+var real__BinaryenLoadIsSigned = asm["_BinaryenLoadIsSigned"]; asm["_BinaryenLoadIsSigned"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoadIsSigned.apply(null, arguments);
+};
+
+var real__BinaryenLoop = asm["_BinaryenLoop"]; asm["_BinaryenLoop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoop.apply(null, arguments);
+};
+
+var real__BinaryenLoopGetBody = asm["_BinaryenLoopGetBody"]; asm["_BinaryenLoopGetBody"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoopGetBody.apply(null, arguments);
+};
+
+var real__BinaryenLoopGetName = asm["_BinaryenLoopGetName"]; asm["_BinaryenLoopGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoopGetName.apply(null, arguments);
+};
+
+var real__BinaryenLoopId = asm["_BinaryenLoopId"]; asm["_BinaryenLoopId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLoopId.apply(null, arguments);
+};
+
+var real__BinaryenLtFloat32 = asm["_BinaryenLtFloat32"]; asm["_BinaryenLtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtFloat32.apply(null, arguments);
+};
+
+var real__BinaryenLtFloat64 = asm["_BinaryenLtFloat64"]; asm["_BinaryenLtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtFloat64.apply(null, arguments);
+};
+
+var real__BinaryenLtSInt32 = asm["_BinaryenLtSInt32"]; asm["_BinaryenLtSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtSInt32.apply(null, arguments);
+};
+
+var real__BinaryenLtSInt64 = asm["_BinaryenLtSInt64"]; asm["_BinaryenLtSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtSInt64.apply(null, arguments);
+};
+
+var real__BinaryenLtUInt32 = asm["_BinaryenLtUInt32"]; asm["_BinaryenLtUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtUInt32.apply(null, arguments);
+};
+
+var real__BinaryenLtUInt64 = asm["_BinaryenLtUInt64"]; asm["_BinaryenLtUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenLtUInt64.apply(null, arguments);
+};
+
+var real__BinaryenMaxFloat32 = asm["_BinaryenMaxFloat32"]; asm["_BinaryenMaxFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMaxFloat32.apply(null, arguments);
+};
+
+var real__BinaryenMaxFloat64 = asm["_BinaryenMaxFloat64"]; asm["_BinaryenMaxFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMaxFloat64.apply(null, arguments);
+};
+
+var real__BinaryenMinFloat32 = asm["_BinaryenMinFloat32"]; asm["_BinaryenMinFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMinFloat32.apply(null, arguments);
+};
+
+var real__BinaryenMinFloat64 = asm["_BinaryenMinFloat64"]; asm["_BinaryenMinFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMinFloat64.apply(null, arguments);
+};
+
+var real__BinaryenModuleAddDebugInfoFileName = asm["_BinaryenModuleAddDebugInfoFileName"]; asm["_BinaryenModuleAddDebugInfoFileName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleAddDebugInfoFileName.apply(null, arguments);
+};
+
+var real__BinaryenModuleAllocateAndWrite = asm["_BinaryenModuleAllocateAndWrite"]; asm["_BinaryenModuleAllocateAndWrite"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleAllocateAndWrite.apply(null, arguments);
+};
+
+var real__BinaryenModuleAutoDrop = asm["_BinaryenModuleAutoDrop"]; asm["_BinaryenModuleAutoDrop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleAutoDrop.apply(null, arguments);
+};
+
+var real__BinaryenModuleCreate = asm["_BinaryenModuleCreate"]; asm["_BinaryenModuleCreate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleCreate.apply(null, arguments);
+};
+
+var real__BinaryenModuleDispose = asm["_BinaryenModuleDispose"]; asm["_BinaryenModuleDispose"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleDispose.apply(null, arguments);
+};
+
+var real__BinaryenModuleGetDebugInfoFileName = asm["_BinaryenModuleGetDebugInfoFileName"]; asm["_BinaryenModuleGetDebugInfoFileName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleGetDebugInfoFileName.apply(null, arguments);
+};
+
+var real__BinaryenModuleInterpret = asm["_BinaryenModuleInterpret"]; asm["_BinaryenModuleInterpret"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleInterpret.apply(null, arguments);
+};
+
+var real__BinaryenModuleOptimize = asm["_BinaryenModuleOptimize"]; asm["_BinaryenModuleOptimize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleOptimize.apply(null, arguments);
+};
+
+var real__BinaryenModuleParse = asm["_BinaryenModuleParse"]; asm["_BinaryenModuleParse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleParse.apply(null, arguments);
+};
+
+var real__BinaryenModulePrint = asm["_BinaryenModulePrint"]; asm["_BinaryenModulePrint"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModulePrint.apply(null, arguments);
+};
+
+var real__BinaryenModulePrintAsmjs = asm["_BinaryenModulePrintAsmjs"]; asm["_BinaryenModulePrintAsmjs"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModulePrintAsmjs.apply(null, arguments);
+};
+
+var real__BinaryenModuleRead = asm["_BinaryenModuleRead"]; asm["_BinaryenModuleRead"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleRead.apply(null, arguments);
+};
+
+var real__BinaryenModuleRunPasses = asm["_BinaryenModuleRunPasses"]; asm["_BinaryenModuleRunPasses"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleRunPasses.apply(null, arguments);
+};
+
+var real__BinaryenModuleValidate = asm["_BinaryenModuleValidate"]; asm["_BinaryenModuleValidate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleValidate.apply(null, arguments);
+};
+
+var real__BinaryenModuleWrite = asm["_BinaryenModuleWrite"]; asm["_BinaryenModuleWrite"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleWrite.apply(null, arguments);
+};
+
+var real__BinaryenModuleWriteWithSourceMap = asm["_BinaryenModuleWriteWithSourceMap"]; asm["_BinaryenModuleWriteWithSourceMap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenModuleWriteWithSourceMap.apply(null, arguments);
+};
+
+var real__BinaryenMulFloat32 = asm["_BinaryenMulFloat32"]; asm["_BinaryenMulFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMulFloat32.apply(null, arguments);
+};
+
+var real__BinaryenMulFloat64 = asm["_BinaryenMulFloat64"]; asm["_BinaryenMulFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMulFloat64.apply(null, arguments);
+};
+
+var real__BinaryenMulInt32 = asm["_BinaryenMulInt32"]; asm["_BinaryenMulInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMulInt32.apply(null, arguments);
+};
+
+var real__BinaryenMulInt64 = asm["_BinaryenMulInt64"]; asm["_BinaryenMulInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenMulInt64.apply(null, arguments);
+};
+
+var real__BinaryenNeFloat32 = asm["_BinaryenNeFloat32"]; asm["_BinaryenNeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNeFloat32.apply(null, arguments);
+};
+
+var real__BinaryenNeFloat64 = asm["_BinaryenNeFloat64"]; asm["_BinaryenNeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNeFloat64.apply(null, arguments);
+};
+
+var real__BinaryenNeInt32 = asm["_BinaryenNeInt32"]; asm["_BinaryenNeInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNeInt32.apply(null, arguments);
+};
+
+var real__BinaryenNeInt64 = asm["_BinaryenNeInt64"]; asm["_BinaryenNeInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNeInt64.apply(null, arguments);
+};
+
+var real__BinaryenNearestFloat32 = asm["_BinaryenNearestFloat32"]; asm["_BinaryenNearestFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNearestFloat32.apply(null, arguments);
+};
+
+var real__BinaryenNearestFloat64 = asm["_BinaryenNearestFloat64"]; asm["_BinaryenNearestFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNearestFloat64.apply(null, arguments);
+};
+
+var real__BinaryenNegFloat32 = asm["_BinaryenNegFloat32"]; asm["_BinaryenNegFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNegFloat32.apply(null, arguments);
+};
+
+var real__BinaryenNegFloat64 = asm["_BinaryenNegFloat64"]; asm["_BinaryenNegFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNegFloat64.apply(null, arguments);
+};
+
+var real__BinaryenNone = asm["_BinaryenNone"]; asm["_BinaryenNone"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNone.apply(null, arguments);
+};
+
+var real__BinaryenNop = asm["_BinaryenNop"]; asm["_BinaryenNop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNop.apply(null, arguments);
+};
+
+var real__BinaryenNopId = asm["_BinaryenNopId"]; asm["_BinaryenNopId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenNopId.apply(null, arguments);
+};
+
+var real__BinaryenOrInt32 = asm["_BinaryenOrInt32"]; asm["_BinaryenOrInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenOrInt32.apply(null, arguments);
+};
+
+var real__BinaryenOrInt64 = asm["_BinaryenOrInt64"]; asm["_BinaryenOrInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenOrInt64.apply(null, arguments);
+};
+
+var real__BinaryenPageSize = asm["_BinaryenPageSize"]; asm["_BinaryenPageSize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenPageSize.apply(null, arguments);
+};
+
+var real__BinaryenPopcntInt32 = asm["_BinaryenPopcntInt32"]; asm["_BinaryenPopcntInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenPopcntInt32.apply(null, arguments);
+};
+
+var real__BinaryenPopcntInt64 = asm["_BinaryenPopcntInt64"]; asm["_BinaryenPopcntInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenPopcntInt64.apply(null, arguments);
+};
+
+var real__BinaryenPromoteFloat32 = asm["_BinaryenPromoteFloat32"]; asm["_BinaryenPromoteFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenPromoteFloat32.apply(null, arguments);
+};
+
+var real__BinaryenReinterpretFloat32 = asm["_BinaryenReinterpretFloat32"]; asm["_BinaryenReinterpretFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReinterpretFloat32.apply(null, arguments);
+};
+
+var real__BinaryenReinterpretFloat64 = asm["_BinaryenReinterpretFloat64"]; asm["_BinaryenReinterpretFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReinterpretFloat64.apply(null, arguments);
+};
+
+var real__BinaryenReinterpretInt32 = asm["_BinaryenReinterpretInt32"]; asm["_BinaryenReinterpretInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReinterpretInt32.apply(null, arguments);
+};
+
+var real__BinaryenReinterpretInt64 = asm["_BinaryenReinterpretInt64"]; asm["_BinaryenReinterpretInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReinterpretInt64.apply(null, arguments);
+};
+
+var real__BinaryenRemSInt32 = asm["_BinaryenRemSInt32"]; asm["_BinaryenRemSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemSInt32.apply(null, arguments);
+};
+
+var real__BinaryenRemSInt64 = asm["_BinaryenRemSInt64"]; asm["_BinaryenRemSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemSInt64.apply(null, arguments);
+};
+
+var real__BinaryenRemUInt32 = asm["_BinaryenRemUInt32"]; asm["_BinaryenRemUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemUInt32.apply(null, arguments);
+};
+
+var real__BinaryenRemUInt64 = asm["_BinaryenRemUInt64"]; asm["_BinaryenRemUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemUInt64.apply(null, arguments);
+};
+
+var real__BinaryenRemoveExport = asm["_BinaryenRemoveExport"]; asm["_BinaryenRemoveExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemoveExport.apply(null, arguments);
+};
+
+var real__BinaryenRemoveFunction = asm["_BinaryenRemoveFunction"]; asm["_BinaryenRemoveFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemoveFunction.apply(null, arguments);
+};
+
+var real__BinaryenRemoveImport = asm["_BinaryenRemoveImport"]; asm["_BinaryenRemoveImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRemoveImport.apply(null, arguments);
+};
+
+var real__BinaryenReturn = asm["_BinaryenReturn"]; asm["_BinaryenReturn"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReturn.apply(null, arguments);
+};
+
+var real__BinaryenReturnGetValue = asm["_BinaryenReturnGetValue"]; asm["_BinaryenReturnGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReturnGetValue.apply(null, arguments);
+};
+
+var real__BinaryenReturnId = asm["_BinaryenReturnId"]; asm["_BinaryenReturnId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenReturnId.apply(null, arguments);
+};
+
+var real__BinaryenRotLInt32 = asm["_BinaryenRotLInt32"]; asm["_BinaryenRotLInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRotLInt32.apply(null, arguments);
+};
+
+var real__BinaryenRotLInt64 = asm["_BinaryenRotLInt64"]; asm["_BinaryenRotLInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRotLInt64.apply(null, arguments);
+};
+
+var real__BinaryenRotRInt32 = asm["_BinaryenRotRInt32"]; asm["_BinaryenRotRInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRotRInt32.apply(null, arguments);
+};
+
+var real__BinaryenRotRInt64 = asm["_BinaryenRotRInt64"]; asm["_BinaryenRotRInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenRotRInt64.apply(null, arguments);
+};
+
+var real__BinaryenSelect = asm["_BinaryenSelect"]; asm["_BinaryenSelect"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSelect.apply(null, arguments);
+};
+
+var real__BinaryenSelectGetCondition = asm["_BinaryenSelectGetCondition"]; asm["_BinaryenSelectGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSelectGetCondition.apply(null, arguments);
+};
+
+var real__BinaryenSelectGetIfFalse = asm["_BinaryenSelectGetIfFalse"]; asm["_BinaryenSelectGetIfFalse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSelectGetIfFalse.apply(null, arguments);
+};
+
+var real__BinaryenSelectGetIfTrue = asm["_BinaryenSelectGetIfTrue"]; asm["_BinaryenSelectGetIfTrue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSelectGetIfTrue.apply(null, arguments);
+};
+
+var real__BinaryenSelectId = asm["_BinaryenSelectId"]; asm["_BinaryenSelectId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSelectId.apply(null, arguments);
+};
+
+var real__BinaryenSetAPITracing = asm["_BinaryenSetAPITracing"]; asm["_BinaryenSetAPITracing"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetAPITracing.apply(null, arguments);
+};
+
+var real__BinaryenSetDebugInfo = asm["_BinaryenSetDebugInfo"]; asm["_BinaryenSetDebugInfo"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetDebugInfo.apply(null, arguments);
+};
+
+var real__BinaryenSetFunctionTable = asm["_BinaryenSetFunctionTable"]; asm["_BinaryenSetFunctionTable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetFunctionTable.apply(null, arguments);
+};
+
+var real__BinaryenSetGlobal = asm["_BinaryenSetGlobal"]; asm["_BinaryenSetGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetGlobal.apply(null, arguments);
+};
+
+var real__BinaryenSetGlobalGetName = asm["_BinaryenSetGlobalGetName"]; asm["_BinaryenSetGlobalGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetGlobalGetName.apply(null, arguments);
+};
+
+var real__BinaryenSetGlobalGetValue = asm["_BinaryenSetGlobalGetValue"]; asm["_BinaryenSetGlobalGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetGlobalGetValue.apply(null, arguments);
+};
+
+var real__BinaryenSetGlobalId = asm["_BinaryenSetGlobalId"]; asm["_BinaryenSetGlobalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetGlobalId.apply(null, arguments);
+};
+
+var real__BinaryenSetLocal = asm["_BinaryenSetLocal"]; asm["_BinaryenSetLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetLocal.apply(null, arguments);
+};
+
+var real__BinaryenSetLocalGetIndex = asm["_BinaryenSetLocalGetIndex"]; asm["_BinaryenSetLocalGetIndex"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetLocalGetIndex.apply(null, arguments);
+};
+
+var real__BinaryenSetLocalGetValue = asm["_BinaryenSetLocalGetValue"]; asm["_BinaryenSetLocalGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetLocalGetValue.apply(null, arguments);
+};
+
+var real__BinaryenSetLocalId = asm["_BinaryenSetLocalId"]; asm["_BinaryenSetLocalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetLocalId.apply(null, arguments);
+};
+
+var real__BinaryenSetLocalIsTee = asm["_BinaryenSetLocalIsTee"]; asm["_BinaryenSetLocalIsTee"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetLocalIsTee.apply(null, arguments);
+};
+
+var real__BinaryenSetMemory = asm["_BinaryenSetMemory"]; asm["_BinaryenSetMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetMemory.apply(null, arguments);
+};
+
+var real__BinaryenSetOptimizeLevel = asm["_BinaryenSetOptimizeLevel"]; asm["_BinaryenSetOptimizeLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetOptimizeLevel.apply(null, arguments);
+};
+
+var real__BinaryenSetShrinkLevel = asm["_BinaryenSetShrinkLevel"]; asm["_BinaryenSetShrinkLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetShrinkLevel.apply(null, arguments);
+};
+
+var real__BinaryenSetStart = asm["_BinaryenSetStart"]; asm["_BinaryenSetStart"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSetStart.apply(null, arguments);
+};
+
+var real__BinaryenShlInt32 = asm["_BinaryenShlInt32"]; asm["_BinaryenShlInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShlInt32.apply(null, arguments);
+};
+
+var real__BinaryenShlInt64 = asm["_BinaryenShlInt64"]; asm["_BinaryenShlInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShlInt64.apply(null, arguments);
+};
+
+var real__BinaryenShrSInt32 = asm["_BinaryenShrSInt32"]; asm["_BinaryenShrSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShrSInt32.apply(null, arguments);
+};
+
+var real__BinaryenShrSInt64 = asm["_BinaryenShrSInt64"]; asm["_BinaryenShrSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShrSInt64.apply(null, arguments);
+};
+
+var real__BinaryenShrUInt32 = asm["_BinaryenShrUInt32"]; asm["_BinaryenShrUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShrUInt32.apply(null, arguments);
+};
+
+var real__BinaryenShrUInt64 = asm["_BinaryenShrUInt64"]; asm["_BinaryenShrUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenShrUInt64.apply(null, arguments);
+};
+
+var real__BinaryenSqrtFloat32 = asm["_BinaryenSqrtFloat32"]; asm["_BinaryenSqrtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSqrtFloat32.apply(null, arguments);
+};
+
+var real__BinaryenSqrtFloat64 = asm["_BinaryenSqrtFloat64"]; asm["_BinaryenSqrtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSqrtFloat64.apply(null, arguments);
+};
+
+var real__BinaryenStore = asm["_BinaryenStore"]; asm["_BinaryenStore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStore.apply(null, arguments);
+};
+
+var real__BinaryenStoreGetAlign = asm["_BinaryenStoreGetAlign"]; asm["_BinaryenStoreGetAlign"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreGetAlign.apply(null, arguments);
+};
+
+var real__BinaryenStoreGetBytes = asm["_BinaryenStoreGetBytes"]; asm["_BinaryenStoreGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreGetBytes.apply(null, arguments);
+};
+
+var real__BinaryenStoreGetOffset = asm["_BinaryenStoreGetOffset"]; asm["_BinaryenStoreGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreGetOffset.apply(null, arguments);
+};
+
+var real__BinaryenStoreGetPtr = asm["_BinaryenStoreGetPtr"]; asm["_BinaryenStoreGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreGetPtr.apply(null, arguments);
+};
+
+var real__BinaryenStoreGetValue = asm["_BinaryenStoreGetValue"]; asm["_BinaryenStoreGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreGetValue.apply(null, arguments);
+};
+
+var real__BinaryenStoreId = asm["_BinaryenStoreId"]; asm["_BinaryenStoreId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreId.apply(null, arguments);
+};
+
+var real__BinaryenStoreIsAtomic = asm["_BinaryenStoreIsAtomic"]; asm["_BinaryenStoreIsAtomic"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenStoreIsAtomic.apply(null, arguments);
+};
+
+var real__BinaryenSubFloat32 = asm["_BinaryenSubFloat32"]; asm["_BinaryenSubFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSubFloat32.apply(null, arguments);
+};
+
+var real__BinaryenSubFloat64 = asm["_BinaryenSubFloat64"]; asm["_BinaryenSubFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSubFloat64.apply(null, arguments);
+};
+
+var real__BinaryenSubInt32 = asm["_BinaryenSubInt32"]; asm["_BinaryenSubInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSubInt32.apply(null, arguments);
+};
+
+var real__BinaryenSubInt64 = asm["_BinaryenSubInt64"]; asm["_BinaryenSubInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSubInt64.apply(null, arguments);
+};
+
+var real__BinaryenSwitch = asm["_BinaryenSwitch"]; asm["_BinaryenSwitch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitch.apply(null, arguments);
+};
+
+var real__BinaryenSwitchGetCondition = asm["_BinaryenSwitchGetCondition"]; asm["_BinaryenSwitchGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchGetCondition.apply(null, arguments);
+};
+
+var real__BinaryenSwitchGetDefaultName = asm["_BinaryenSwitchGetDefaultName"]; asm["_BinaryenSwitchGetDefaultName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchGetDefaultName.apply(null, arguments);
+};
+
+var real__BinaryenSwitchGetName = asm["_BinaryenSwitchGetName"]; asm["_BinaryenSwitchGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchGetName.apply(null, arguments);
+};
+
+var real__BinaryenSwitchGetNumNames = asm["_BinaryenSwitchGetNumNames"]; asm["_BinaryenSwitchGetNumNames"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchGetNumNames.apply(null, arguments);
+};
+
+var real__BinaryenSwitchGetValue = asm["_BinaryenSwitchGetValue"]; asm["_BinaryenSwitchGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchGetValue.apply(null, arguments);
+};
+
+var real__BinaryenSwitchId = asm["_BinaryenSwitchId"]; asm["_BinaryenSwitchId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenSwitchId.apply(null, arguments);
+};
+
+var real__BinaryenTeeLocal = asm["_BinaryenTeeLocal"]; asm["_BinaryenTeeLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTeeLocal.apply(null, arguments);
+};
+
+var real__BinaryenTruncFloat32 = asm["_BinaryenTruncFloat32"]; asm["_BinaryenTruncFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncFloat32.apply(null, arguments);
+};
+
+var real__BinaryenTruncFloat64 = asm["_BinaryenTruncFloat64"]; asm["_BinaryenTruncFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncFloat64.apply(null, arguments);
+};
+
+var real__BinaryenTruncSFloat32ToInt32 = asm["_BinaryenTruncSFloat32ToInt32"]; asm["_BinaryenTruncSFloat32ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncSFloat32ToInt32.apply(null, arguments);
+};
+
+var real__BinaryenTruncSFloat32ToInt64 = asm["_BinaryenTruncSFloat32ToInt64"]; asm["_BinaryenTruncSFloat32ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncSFloat32ToInt64.apply(null, arguments);
+};
+
+var real__BinaryenTruncSFloat64ToInt32 = asm["_BinaryenTruncSFloat64ToInt32"]; asm["_BinaryenTruncSFloat64ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncSFloat64ToInt32.apply(null, arguments);
+};
+
+var real__BinaryenTruncSFloat64ToInt64 = asm["_BinaryenTruncSFloat64ToInt64"]; asm["_BinaryenTruncSFloat64ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncSFloat64ToInt64.apply(null, arguments);
+};
+
+var real__BinaryenTruncUFloat32ToInt32 = asm["_BinaryenTruncUFloat32ToInt32"]; asm["_BinaryenTruncUFloat32ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncUFloat32ToInt32.apply(null, arguments);
+};
+
+var real__BinaryenTruncUFloat32ToInt64 = asm["_BinaryenTruncUFloat32ToInt64"]; asm["_BinaryenTruncUFloat32ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncUFloat32ToInt64.apply(null, arguments);
+};
+
+var real__BinaryenTruncUFloat64ToInt32 = asm["_BinaryenTruncUFloat64ToInt32"]; asm["_BinaryenTruncUFloat64ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncUFloat64ToInt32.apply(null, arguments);
+};
+
+var real__BinaryenTruncUFloat64ToInt64 = asm["_BinaryenTruncUFloat64ToInt64"]; asm["_BinaryenTruncUFloat64ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTruncUFloat64ToInt64.apply(null, arguments);
+};
+
+var real__BinaryenTypeAuto = asm["_BinaryenTypeAuto"]; asm["_BinaryenTypeAuto"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeAuto.apply(null, arguments);
+};
+
+var real__BinaryenTypeFloat32 = asm["_BinaryenTypeFloat32"]; asm["_BinaryenTypeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeFloat32.apply(null, arguments);
+};
+
+var real__BinaryenTypeFloat64 = asm["_BinaryenTypeFloat64"]; asm["_BinaryenTypeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeFloat64.apply(null, arguments);
+};
+
+var real__BinaryenTypeInt32 = asm["_BinaryenTypeInt32"]; asm["_BinaryenTypeInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeInt32.apply(null, arguments);
+};
+
+var real__BinaryenTypeInt64 = asm["_BinaryenTypeInt64"]; asm["_BinaryenTypeInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeInt64.apply(null, arguments);
+};
+
+var real__BinaryenTypeNone = asm["_BinaryenTypeNone"]; asm["_BinaryenTypeNone"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeNone.apply(null, arguments);
+};
+
+var real__BinaryenTypeUnreachable = asm["_BinaryenTypeUnreachable"]; asm["_BinaryenTypeUnreachable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenTypeUnreachable.apply(null, arguments);
+};
+
+var real__BinaryenUnary = asm["_BinaryenUnary"]; asm["_BinaryenUnary"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnary.apply(null, arguments);
+};
+
+var real__BinaryenUnaryGetOp = asm["_BinaryenUnaryGetOp"]; asm["_BinaryenUnaryGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnaryGetOp.apply(null, arguments);
+};
+
+var real__BinaryenUnaryGetValue = asm["_BinaryenUnaryGetValue"]; asm["_BinaryenUnaryGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnaryGetValue.apply(null, arguments);
+};
+
+var real__BinaryenUnaryId = asm["_BinaryenUnaryId"]; asm["_BinaryenUnaryId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnaryId.apply(null, arguments);
+};
+
+var real__BinaryenUndefined = asm["_BinaryenUndefined"]; asm["_BinaryenUndefined"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUndefined.apply(null, arguments);
+};
+
+var real__BinaryenUnreachable = asm["_BinaryenUnreachable"]; asm["_BinaryenUnreachable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnreachable.apply(null, arguments);
+};
+
+var real__BinaryenUnreachableId = asm["_BinaryenUnreachableId"]; asm["_BinaryenUnreachableId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenUnreachableId.apply(null, arguments);
+};
+
+var real__BinaryenWrapInt64 = asm["_BinaryenWrapInt64"]; asm["_BinaryenWrapInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenWrapInt64.apply(null, arguments);
+};
+
+var real__BinaryenXorInt32 = asm["_BinaryenXorInt32"]; asm["_BinaryenXorInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenXorInt32.apply(null, arguments);
+};
+
+var real__BinaryenXorInt64 = asm["_BinaryenXorInt64"]; asm["_BinaryenXorInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__BinaryenXorInt64.apply(null, arguments);
+};
+
+var real___GLOBAL__I_000101 = asm["__GLOBAL__I_000101"]; asm["__GLOBAL__I_000101"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__I_000101.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_I64ToI32Lowering_cpp = asm["__GLOBAL__sub_I_I64ToI32Lowering_cpp"]; asm["__GLOBAL__sub_I_I64ToI32Lowering_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_I64ToI32Lowering_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_InstrumentLocals_cpp = asm["__GLOBAL__sub_I_InstrumentLocals_cpp"]; asm["__GLOBAL__sub_I_InstrumentLocals_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_InstrumentLocals_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_InstrumentMemory_cpp = asm["__GLOBAL__sub_I_InstrumentMemory_cpp"]; asm["__GLOBAL__sub_I_InstrumentMemory_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_InstrumentMemory_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_LegalizeJSInterface_cpp = asm["__GLOBAL__sub_I_LegalizeJSInterface_cpp"]; asm["__GLOBAL__sub_I_LegalizeJSInterface_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_LegalizeJSInterface_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_LogExecution_cpp = asm["__GLOBAL__sub_I_LogExecution_cpp"]; asm["__GLOBAL__sub_I_LogExecution_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_LogExecution_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_Metrics_cpp = asm["__GLOBAL__sub_I_Metrics_cpp"]; asm["__GLOBAL__sub_I_Metrics_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_Metrics_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_OptimizeInstructions_cpp = asm["__GLOBAL__sub_I_OptimizeInstructions_cpp"]; asm["__GLOBAL__sub_I_OptimizeInstructions_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_OptimizeInstructions_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_Precompute_cpp = asm["__GLOBAL__sub_I_Precompute_cpp"]; asm["__GLOBAL__sub_I_Precompute_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_Precompute_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_RelooperJumpThreading_cpp = asm["__GLOBAL__sub_I_RelooperJumpThreading_cpp"]; asm["__GLOBAL__sub_I_RelooperJumpThreading_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_RelooperJumpThreading_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_SSAify_cpp = asm["__GLOBAL__sub_I_SSAify_cpp"]; asm["__GLOBAL__sub_I_SSAify_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_SSAify_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_SafeHeap_cpp = asm["__GLOBAL__sub_I_SafeHeap_cpp"]; asm["__GLOBAL__sub_I_SafeHeap_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_SafeHeap_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_TrapMode_cpp = asm["__GLOBAL__sub_I_TrapMode_cpp"]; asm["__GLOBAL__sub_I_TrapMode_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_TrapMode_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_binaryen_c_cpp = asm["__GLOBAL__sub_I_binaryen_c_cpp"]; asm["__GLOBAL__sub_I_binaryen_c_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_binaryen_c_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_iostream_cpp = asm["__GLOBAL__sub_I_iostream_cpp"]; asm["__GLOBAL__sub_I_iostream_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_iostream_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_optimizer_shared_cpp = asm["__GLOBAL__sub_I_optimizer_shared_cpp"]; asm["__GLOBAL__sub_I_optimizer_shared_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_optimizer_shared_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_parser_cpp = asm["__GLOBAL__sub_I_parser_cpp"]; asm["__GLOBAL__sub_I_parser_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_parser_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_pass_cpp = asm["__GLOBAL__sub_I_pass_cpp"]; asm["__GLOBAL__sub_I_pass_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_pass_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_path_cpp = asm["__GLOBAL__sub_I_path_cpp"]; asm["__GLOBAL__sub_I_path_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_path_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_shared_constants_cpp = asm["__GLOBAL__sub_I_shared_constants_cpp"]; asm["__GLOBAL__sub_I_shared_constants_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_shared_constants_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_simple_ast_cpp = asm["__GLOBAL__sub_I_simple_ast_cpp"]; asm["__GLOBAL__sub_I_simple_ast_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_simple_ast_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_threads_cpp = asm["__GLOBAL__sub_I_threads_cpp"]; asm["__GLOBAL__sub_I_threads_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_threads_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_wasm_cpp = asm["__GLOBAL__sub_I_wasm_cpp"]; asm["__GLOBAL__sub_I_wasm_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_wasm_cpp.apply(null, arguments);
+};
+
+var real___GLOBAL__sub_I_wasm_emscripten_cpp = asm["__GLOBAL__sub_I_wasm_emscripten_cpp"]; asm["__GLOBAL__sub_I_wasm_emscripten_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___GLOBAL__sub_I_wasm_emscripten_cpp.apply(null, arguments);
+};
+
+var real____cxa_can_catch = asm["___cxa_can_catch"]; asm["___cxa_can_catch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____cxa_can_catch.apply(null, arguments);
+};
+
+var real____cxa_demangle = asm["___cxa_demangle"]; asm["___cxa_demangle"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____cxa_demangle.apply(null, arguments);
+};
+
+var real____cxa_is_pointer_type = asm["___cxa_is_pointer_type"]; asm["___cxa_is_pointer_type"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____cxa_is_pointer_type.apply(null, arguments);
+};
+
+var real____errno_location = asm["___errno_location"]; asm["___errno_location"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____errno_location.apply(null, arguments);
+};
+
+var real__fflush = asm["_fflush"]; asm["_fflush"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__fflush.apply(null, arguments);
+};
+
+var real__free = asm["_free"]; asm["_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__free.apply(null, arguments);
+};
+
+var real__llvm_bswap_i32 = asm["_llvm_bswap_i32"]; asm["_llvm_bswap_i32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__llvm_bswap_i32.apply(null, arguments);
+};
+
+var real__malloc = asm["_malloc"]; asm["_malloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__malloc.apply(null, arguments);
+};
+
+var real__memmove = asm["_memmove"]; asm["_memmove"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__memmove.apply(null, arguments);
+};
+
+var real__pthread_cond_broadcast = asm["_pthread_cond_broadcast"]; asm["_pthread_cond_broadcast"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__pthread_cond_broadcast.apply(null, arguments);
+};
+
+var real__pthread_mutex_lock = asm["_pthread_mutex_lock"]; asm["_pthread_mutex_lock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__pthread_mutex_lock.apply(null, arguments);
+};
+
+var real__pthread_mutex_unlock = asm["_pthread_mutex_unlock"]; asm["_pthread_mutex_unlock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__pthread_mutex_unlock.apply(null, arguments);
+};
+
+var real__rintf = asm["_rintf"]; asm["_rintf"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__rintf.apply(null, arguments);
+};
+
+var real__sbrk = asm["_sbrk"]; asm["_sbrk"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__sbrk.apply(null, arguments);
+};
+
+var real_establishStackSpace = asm["establishStackSpace"]; asm["establishStackSpace"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_establishStackSpace.apply(null, arguments);
+};
+
+var real_getTempRet0 = asm["getTempRet0"]; asm["getTempRet0"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_getTempRet0.apply(null, arguments);
+};
+
+var real_setTempRet0 = asm["setTempRet0"]; asm["setTempRet0"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_setTempRet0.apply(null, arguments);
+};
+
+var real_setThrew = asm["setThrew"]; asm["setThrew"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_setThrew.apply(null, arguments);
+};
+
+var real_stackAlloc = asm["stackAlloc"]; asm["stackAlloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackAlloc.apply(null, arguments);
+};
+
+var real_stackRestore = asm["stackRestore"]; asm["stackRestore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackRestore.apply(null, arguments);
+};
+
+var real_stackSave = asm["stackSave"]; asm["stackSave"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackSave.apply(null, arguments);
 };
 Module["asm"] = asm;
-var _BinaryenMulInt32 = Module["_BinaryenMulInt32"] = function() { return Module["asm"]["_BinaryenMulInt32"].apply(null, arguments) };
-var _BinaryenDivUInt64 = Module["_BinaryenDivUInt64"] = function() { return Module["asm"]["_BinaryenDivUInt64"].apply(null, arguments) };
-var _BinaryenCtzInt32 = Module["_BinaryenCtzInt32"] = function() { return Module["asm"]["_BinaryenCtzInt32"].apply(null, arguments) };
-var _BinaryenCopySignFloat64 = Module["_BinaryenCopySignFloat64"] = function() { return Module["asm"]["_BinaryenCopySignFloat64"].apply(null, arguments) };
-var _BinaryenCallIndirectGetTarget = Module["_BinaryenCallIndirectGetTarget"] = function() { return Module["asm"]["_BinaryenCallIndirectGetTarget"].apply(null, arguments) };
-var _BinaryenShlInt32 = Module["_BinaryenShlInt32"] = function() { return Module["asm"]["_BinaryenShlInt32"].apply(null, arguments) };
-var _BinaryenFunctionGetName = Module["_BinaryenFunctionGetName"] = function() { return Module["asm"]["_BinaryenFunctionGetName"].apply(null, arguments) };
-var _BinaryenTypeInt32 = Module["_BinaryenTypeInt32"] = function() { return Module["asm"]["_BinaryenTypeInt32"].apply(null, arguments) };
-var _BinaryenAtomicRMWId = Module["_BinaryenAtomicRMWId"] = function() { return Module["asm"]["_BinaryenAtomicRMWId"].apply(null, arguments) };
-var __GLOBAL__sub_I_path_cpp = Module["__GLOBAL__sub_I_path_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_path_cpp"].apply(null, arguments) };
-var _BinaryenExtendSInt32 = Module["_BinaryenExtendSInt32"] = function() { return Module["asm"]["_BinaryenExtendSInt32"].apply(null, arguments) };
-var _BinaryenRotLInt32 = Module["_BinaryenRotLInt32"] = function() { return Module["asm"]["_BinaryenRotLInt32"].apply(null, arguments) };
-var _BinaryenPromoteFloat32 = Module["_BinaryenPromoteFloat32"] = function() { return Module["asm"]["_BinaryenPromoteFloat32"].apply(null, arguments) };
-var _BinaryenTruncSFloat64ToInt32 = Module["_BinaryenTruncSFloat64ToInt32"] = function() { return Module["asm"]["_BinaryenTruncSFloat64ToInt32"].apply(null, arguments) };
-var _BinaryenSwitchGetCondition = Module["_BinaryenSwitchGetCondition"] = function() { return Module["asm"]["_BinaryenSwitchGetCondition"].apply(null, arguments) };
-var _BinaryenTruncSFloat32ToInt64 = Module["_BinaryenTruncSFloat32ToInt64"] = function() { return Module["asm"]["_BinaryenTruncSFloat32ToInt64"].apply(null, arguments) };
-var _BinaryenEqFloat64 = Module["_BinaryenEqFloat64"] = function() { return Module["asm"]["_BinaryenEqFloat64"].apply(null, arguments) };
-var _BinaryenModuleAutoDrop = Module["_BinaryenModuleAutoDrop"] = function() { return Module["asm"]["_BinaryenModuleAutoDrop"].apply(null, arguments) };
-var _BinaryenSubFloat32 = Module["_BinaryenSubFloat32"] = function() { return Module["asm"]["_BinaryenSubFloat32"].apply(null, arguments) };
-var _BinaryenHost = Module["_BinaryenHost"] = function() { return Module["asm"]["_BinaryenHost"].apply(null, arguments) };
-var __GLOBAL__sub_I_wasm_emscripten_cpp = Module["__GLOBAL__sub_I_wasm_emscripten_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_wasm_emscripten_cpp"].apply(null, arguments) };
-var stackSave = Module["stackSave"] = function() { return Module["asm"]["stackSave"].apply(null, arguments) };
-var _BinaryenSwitch = Module["_BinaryenSwitch"] = function() { return Module["asm"]["_BinaryenSwitch"].apply(null, arguments) };
-var _BinaryenModuleCreate = Module["_BinaryenModuleCreate"] = function() { return Module["asm"]["_BinaryenModuleCreate"].apply(null, arguments) };
-var _BinaryenLoadGetBytes = Module["_BinaryenLoadGetBytes"] = function() { return Module["asm"]["_BinaryenLoadGetBytes"].apply(null, arguments) };
-var _BinaryenClzInt32 = Module["_BinaryenClzInt32"] = function() { return Module["asm"]["_BinaryenClzInt32"].apply(null, arguments) };
-var _BinaryenFunctionTypeGetParam = Module["_BinaryenFunctionTypeGetParam"] = function() { return Module["asm"]["_BinaryenFunctionTypeGetParam"].apply(null, arguments) };
-var _BinaryenModuleInterpret = Module["_BinaryenModuleInterpret"] = function() { return Module["asm"]["_BinaryenModuleInterpret"].apply(null, arguments) };
-var _BinaryenNeInt64 = Module["_BinaryenNeInt64"] = function() { return Module["asm"]["_BinaryenNeInt64"].apply(null, arguments) };
-var _BinaryenSetGlobalId = Module["_BinaryenSetGlobalId"] = function() { return Module["asm"]["_BinaryenSetGlobalId"].apply(null, arguments) };
-var _BinaryenGetLocalId = Module["_BinaryenGetLocalId"] = function() { return Module["asm"]["_BinaryenGetLocalId"].apply(null, arguments) };
-var _BinaryenAtomicRMWXor = Module["_BinaryenAtomicRMWXor"] = function() { return Module["asm"]["_BinaryenAtomicRMWXor"].apply(null, arguments) };
-var _BinaryenAddTableImport = Module["_BinaryenAddTableImport"] = function() { return Module["asm"]["_BinaryenAddTableImport"].apply(null, arguments) };
-var _BinaryenSelectId = Module["_BinaryenSelectId"] = function() { return Module["asm"]["_BinaryenSelectId"].apply(null, arguments) };
-var setThrew = Module["setThrew"] = function() { return Module["asm"]["setThrew"].apply(null, arguments) };
-var _BinaryenRemUInt32 = Module["_BinaryenRemUInt32"] = function() { return Module["asm"]["_BinaryenRemUInt32"].apply(null, arguments) };
-var _BinaryenStoreId = Module["_BinaryenStoreId"] = function() { return Module["asm"]["_BinaryenStoreId"].apply(null, arguments) };
-var _malloc = Module["_malloc"] = function() { return Module["asm"]["_malloc"].apply(null, arguments) };
-var _BinaryenSubInt64 = Module["_BinaryenSubInt64"] = function() { return Module["asm"]["_BinaryenSubInt64"].apply(null, arguments) };
-var _BinaryenIfGetIfFalse = Module["_BinaryenIfGetIfFalse"] = function() { return Module["asm"]["_BinaryenIfGetIfFalse"].apply(null, arguments) };
-var _BinaryenFloat64 = Module["_BinaryenFloat64"] = function() { return Module["asm"]["_BinaryenFloat64"].apply(null, arguments) };
-var _BinaryenSetLocalGetIndex = Module["_BinaryenSetLocalGetIndex"] = function() { return Module["asm"]["_BinaryenSetLocalGetIndex"].apply(null, arguments) };
-var __GLOBAL__sub_I_wasm_cpp = Module["__GLOBAL__sub_I_wasm_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_wasm_cpp"].apply(null, arguments) };
-var _BinaryenSetGlobalGetName = Module["_BinaryenSetGlobalGetName"] = function() { return Module["asm"]["_BinaryenSetGlobalGetName"].apply(null, arguments) };
-var _BinaryenRemSInt32 = Module["_BinaryenRemSInt32"] = function() { return Module["asm"]["_BinaryenRemSInt32"].apply(null, arguments) };
-var _BinaryenEqZInt64 = Module["_BinaryenEqZInt64"] = function() { return Module["asm"]["_BinaryenEqZInt64"].apply(null, arguments) };
-var _BinaryenBlock = Module["_BinaryenBlock"] = function() { return Module["asm"]["_BinaryenBlock"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgGetOffset = Module["_BinaryenAtomicCmpxchgGetOffset"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgGetOffset"].apply(null, arguments) };
-var _BinaryenConvertUInt64ToFloat64 = Module["_BinaryenConvertUInt64ToFloat64"] = function() { return Module["asm"]["_BinaryenConvertUInt64ToFloat64"].apply(null, arguments) };
-var _BinaryenSetLocalGetValue = Module["_BinaryenSetLocalGetValue"] = function() { return Module["asm"]["_BinaryenSetLocalGetValue"].apply(null, arguments) };
-var _BinaryenCallImportGetOperand = Module["_BinaryenCallImportGetOperand"] = function() { return Module["asm"]["_BinaryenCallImportGetOperand"].apply(null, arguments) };
-var _BinaryenAtomicRMWAnd = Module["_BinaryenAtomicRMWAnd"] = function() { return Module["asm"]["_BinaryenAtomicRMWAnd"].apply(null, arguments) };
-var _BinaryenAddMemoryImport = Module["_BinaryenAddMemoryImport"] = function() { return Module["asm"]["_BinaryenAddMemoryImport"].apply(null, arguments) };
-var _BinaryenBinaryGetOp = Module["_BinaryenBinaryGetOp"] = function() { return Module["asm"]["_BinaryenBinaryGetOp"].apply(null, arguments) };
-var _BinaryenSetGlobal = Module["_BinaryenSetGlobal"] = function() { return Module["asm"]["_BinaryenSetGlobal"].apply(null, arguments) };
-var _BinaryenSelect = Module["_BinaryenSelect"] = function() { return Module["asm"]["_BinaryenSelect"].apply(null, arguments) };
-var _BinaryenStoreGetAlign = Module["_BinaryenStoreGetAlign"] = function() { return Module["asm"]["_BinaryenStoreGetAlign"].apply(null, arguments) };
-var __GLOBAL__sub_I_SafeHeap_cpp = Module["__GLOBAL__sub_I_SafeHeap_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_SafeHeap_cpp"].apply(null, arguments) };
-var __GLOBAL__sub_I_RelooperJumpThreading_cpp = Module["__GLOBAL__sub_I_RelooperJumpThreading_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_RelooperJumpThreading_cpp"].apply(null, arguments) };
-var _BinaryenDropId = Module["_BinaryenDropId"] = function() { return Module["asm"]["_BinaryenDropId"].apply(null, arguments) };
-var _BinaryenShlInt64 = Module["_BinaryenShlInt64"] = function() { return Module["asm"]["_BinaryenShlInt64"].apply(null, arguments) };
-var _BinaryenLoadIsSigned = Module["_BinaryenLoadIsSigned"] = function() { return Module["asm"]["_BinaryenLoadIsSigned"].apply(null, arguments) };
-var _BinaryenGeSInt64 = Module["_BinaryenGeSInt64"] = function() { return Module["asm"]["_BinaryenGeSInt64"].apply(null, arguments) };
-var _BinaryenModuleAllocateAndWrite = Module["_BinaryenModuleAllocateAndWrite"] = function() { return Module["asm"]["_BinaryenModuleAllocateAndWrite"].apply(null, arguments) };
-var __GLOBAL__sub_I_parser_cpp = Module["__GLOBAL__sub_I_parser_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_parser_cpp"].apply(null, arguments) };
-var _BinaryenGtUInt32 = Module["_BinaryenGtUInt32"] = function() { return Module["asm"]["_BinaryenGtUInt32"].apply(null, arguments) };
-var _BinaryenFunctionRunPasses = Module["_BinaryenFunctionRunPasses"] = function() { return Module["asm"]["_BinaryenFunctionRunPasses"].apply(null, arguments) };
-var _BinaryenTruncUFloat64ToInt64 = Module["_BinaryenTruncUFloat64ToInt64"] = function() { return Module["asm"]["_BinaryenTruncUFloat64ToInt64"].apply(null, arguments) };
-var _BinaryenIfId = Module["_BinaryenIfId"] = function() { return Module["asm"]["_BinaryenIfId"].apply(null, arguments) };
-var _BinaryenLoadIsAtomic = Module["_BinaryenLoadIsAtomic"] = function() { return Module["asm"]["_BinaryenLoadIsAtomic"].apply(null, arguments) };
-var _BinaryenLiteralInt64 = Module["_BinaryenLiteralInt64"] = function() { return Module["asm"]["_BinaryenLiteralInt64"].apply(null, arguments) };
-var _BinaryenGtSInt32 = Module["_BinaryenGtSInt32"] = function() { return Module["asm"]["_BinaryenGtSInt32"].apply(null, arguments) };
-var _BinaryenCtzInt64 = Module["_BinaryenCtzInt64"] = function() { return Module["asm"]["_BinaryenCtzInt64"].apply(null, arguments) };
-var _BinaryenLtSInt32 = Module["_BinaryenLtSInt32"] = function() { return Module["asm"]["_BinaryenLtSInt32"].apply(null, arguments) };
-var _BinaryenRemoveExport = Module["_BinaryenRemoveExport"] = function() { return Module["asm"]["_BinaryenRemoveExport"].apply(null, arguments) };
-var _BinaryenFunctionGetParam = Module["_BinaryenFunctionGetParam"] = function() { return Module["asm"]["_BinaryenFunctionGetParam"].apply(null, arguments) };
-var __GLOBAL__sub_I_InstrumentLocals_cpp = Module["__GLOBAL__sub_I_InstrumentLocals_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_InstrumentLocals_cpp"].apply(null, arguments) };
-var _BinaryenIfGetIfTrue = Module["_BinaryenIfGetIfTrue"] = function() { return Module["asm"]["_BinaryenIfGetIfTrue"].apply(null, arguments) };
-var _BinaryenClzInt64 = Module["_BinaryenClzInt64"] = function() { return Module["asm"]["_BinaryenClzInt64"].apply(null, arguments) };
-var _BinaryenImportGetModule = Module["_BinaryenImportGetModule"] = function() { return Module["asm"]["_BinaryenImportGetModule"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgGetExpected = Module["_BinaryenAtomicCmpxchgGetExpected"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgGetExpected"].apply(null, arguments) };
-var _BinaryenMaxFloat64 = Module["_BinaryenMaxFloat64"] = function() { return Module["asm"]["_BinaryenMaxFloat64"].apply(null, arguments) };
-var _emscripten_replace_memory = Module["_emscripten_replace_memory"] = function() { return Module["asm"]["_emscripten_replace_memory"].apply(null, arguments) };
-var _BinaryenFunctionTypeGetResult = Module["_BinaryenFunctionTypeGetResult"] = function() { return Module["asm"]["_BinaryenFunctionTypeGetResult"].apply(null, arguments) };
-var _BinaryenReturn = Module["_BinaryenReturn"] = function() { return Module["asm"]["_BinaryenReturn"].apply(null, arguments) };
-var _BinaryenAtomicRMWGetPtr = Module["_BinaryenAtomicRMWGetPtr"] = function() { return Module["asm"]["_BinaryenAtomicRMWGetPtr"].apply(null, arguments) };
-var _BinaryenUnaryGetValue = Module["_BinaryenUnaryGetValue"] = function() { return Module["asm"]["_BinaryenUnaryGetValue"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchg = Module["_BinaryenAtomicCmpxchg"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchg"].apply(null, arguments) };
-var _BinaryenUnreachable = Module["_BinaryenUnreachable"] = function() { return Module["asm"]["_BinaryenUnreachable"].apply(null, arguments) };
-var _BinaryenSubFloat64 = Module["_BinaryenSubFloat64"] = function() { return Module["asm"]["_BinaryenSubFloat64"].apply(null, arguments) };
-var _BinaryenEqInt32 = Module["_BinaryenEqInt32"] = function() { return Module["asm"]["_BinaryenEqInt32"].apply(null, arguments) };
-var _BinaryenShrSInt64 = Module["_BinaryenShrSInt64"] = function() { return Module["asm"]["_BinaryenShrSInt64"].apply(null, arguments) };
-var _BinaryenMulFloat32 = Module["_BinaryenMulFloat32"] = function() { return Module["asm"]["_BinaryenMulFloat32"].apply(null, arguments) };
-var _BinaryenCallIndirect = Module["_BinaryenCallIndirect"] = function() { return Module["asm"]["_BinaryenCallIndirect"].apply(null, arguments) };
-var _BinaryenAddFunctionImport = Module["_BinaryenAddFunctionImport"] = function() { return Module["asm"]["_BinaryenAddFunctionImport"].apply(null, arguments) };
-var _BinaryenGtFloat32 = Module["_BinaryenGtFloat32"] = function() { return Module["asm"]["_BinaryenGtFloat32"].apply(null, arguments) };
-var _BinaryenNone = Module["_BinaryenNone"] = function() { return Module["asm"]["_BinaryenNone"].apply(null, arguments) };
-var ___cxa_demangle = Module["___cxa_demangle"] = function() { return Module["asm"]["___cxa_demangle"].apply(null, arguments) };
-var _BinaryenSqrtFloat32 = Module["_BinaryenSqrtFloat32"] = function() { return Module["asm"]["_BinaryenSqrtFloat32"].apply(null, arguments) };
-var _BinaryenInvalidId = Module["_BinaryenInvalidId"] = function() { return Module["asm"]["_BinaryenInvalidId"].apply(null, arguments) };
-var _BinaryenOrInt32 = Module["_BinaryenOrInt32"] = function() { return Module["asm"]["_BinaryenOrInt32"].apply(null, arguments) };
-var _BinaryenModuleAddDebugInfoFileName = Module["_BinaryenModuleAddDebugInfoFileName"] = function() { return Module["asm"]["_BinaryenModuleAddDebugInfoFileName"].apply(null, arguments) };
-var _BinaryenFunctionGetVar = Module["_BinaryenFunctionGetVar"] = function() { return Module["asm"]["_BinaryenFunctionGetVar"].apply(null, arguments) };
-var _BinaryenHostGetNameOperand = Module["_BinaryenHostGetNameOperand"] = function() { return Module["asm"]["_BinaryenHostGetNameOperand"].apply(null, arguments) };
-var _BinaryenLiteralFloat32 = Module["_BinaryenLiteralFloat32"] = function() { return Module["asm"]["_BinaryenLiteralFloat32"].apply(null, arguments) };
-var _BinaryenAtomicWakeGetPtr = Module["_BinaryenAtomicWakeGetPtr"] = function() { return Module["asm"]["_BinaryenAtomicWakeGetPtr"].apply(null, arguments) };
-var _BinaryenBreakGetCondition = Module["_BinaryenBreakGetCondition"] = function() { return Module["asm"]["_BinaryenBreakGetCondition"].apply(null, arguments) };
-var _BinaryenAtomicWait = Module["_BinaryenAtomicWait"] = function() { return Module["asm"]["_BinaryenAtomicWait"].apply(null, arguments) };
-var _BinaryenNop = Module["_BinaryenNop"] = function() { return Module["asm"]["_BinaryenNop"].apply(null, arguments) };
-var stackRestore = Module["stackRestore"] = function() { return Module["asm"]["stackRestore"].apply(null, arguments) };
-var _BinaryenDrop = Module["_BinaryenDrop"] = function() { return Module["asm"]["_BinaryenDrop"].apply(null, arguments) };
-var __GLOBAL__I_000101 = Module["__GLOBAL__I_000101"] = function() { return Module["asm"]["__GLOBAL__I_000101"].apply(null, arguments) };
-var _BinaryenLoadId = Module["_BinaryenLoadId"] = function() { return Module["asm"]["_BinaryenLoadId"].apply(null, arguments) };
-var _BinaryenTeeLocal = Module["_BinaryenTeeLocal"] = function() { return Module["asm"]["_BinaryenTeeLocal"].apply(null, arguments) };
-var _BinaryenLoad = Module["_BinaryenLoad"] = function() { return Module["asm"]["_BinaryenLoad"].apply(null, arguments) };
-var _BinaryenFunctionGetResult = Module["_BinaryenFunctionGetResult"] = function() { return Module["asm"]["_BinaryenFunctionGetResult"].apply(null, arguments) };
-var _BinaryenAtomicRMWGetOp = Module["_BinaryenAtomicRMWGetOp"] = function() { return Module["asm"]["_BinaryenAtomicRMWGetOp"].apply(null, arguments) };
-var _BinaryenBlockId = Module["_BinaryenBlockId"] = function() { return Module["asm"]["_BinaryenBlockId"].apply(null, arguments) };
-var _BinaryenCall = Module["_BinaryenCall"] = function() { return Module["asm"]["_BinaryenCall"].apply(null, arguments) };
-var _BinaryenNegFloat32 = Module["_BinaryenNegFloat32"] = function() { return Module["asm"]["_BinaryenNegFloat32"].apply(null, arguments) };
-var _BinaryenAddFunctionExport = Module["_BinaryenAddFunctionExport"] = function() { return Module["asm"]["_BinaryenAddFunctionExport"].apply(null, arguments) };
-var _BinaryenNearestFloat32 = Module["_BinaryenNearestFloat32"] = function() { return Module["asm"]["_BinaryenNearestFloat32"].apply(null, arguments) };
-var __GLOBAL__sub_I_LogExecution_cpp = Module["__GLOBAL__sub_I_LogExecution_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_LogExecution_cpp"].apply(null, arguments) };
-var _BinaryenExternalMemory = Module["_BinaryenExternalMemory"] = function() { return Module["asm"]["_BinaryenExternalMemory"].apply(null, arguments) };
-var _BinaryenBinaryGetRight = Module["_BinaryenBinaryGetRight"] = function() { return Module["asm"]["_BinaryenBinaryGetRight"].apply(null, arguments) };
-var _BinaryenLeUInt32 = Module["_BinaryenLeUInt32"] = function() { return Module["asm"]["_BinaryenLeUInt32"].apply(null, arguments) };
-var _BinaryenNeFloat64 = Module["_BinaryenNeFloat64"] = function() { return Module["asm"]["_BinaryenNeFloat64"].apply(null, arguments) };
-var _BinaryenRemSInt64 = Module["_BinaryenRemSInt64"] = function() { return Module["asm"]["_BinaryenRemSInt64"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgGetReplacement = Module["_BinaryenAtomicCmpxchgGetReplacement"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgGetReplacement"].apply(null, arguments) };
-var _BinaryenFunctionGetType = Module["_BinaryenFunctionGetType"] = function() { return Module["asm"]["_BinaryenFunctionGetType"].apply(null, arguments) };
-var __GLOBAL__sub_I_OptimizeInstructions_cpp = Module["__GLOBAL__sub_I_OptimizeInstructions_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_OptimizeInstructions_cpp"].apply(null, arguments) };
-var _BinaryenConstGetValueF32 = Module["_BinaryenConstGetValueF32"] = function() { return Module["asm"]["_BinaryenConstGetValueF32"].apply(null, arguments) };
-var _BinaryenCeilFloat64 = Module["_BinaryenCeilFloat64"] = function() { return Module["asm"]["_BinaryenCeilFloat64"].apply(null, arguments) };
-var _BinaryenLeFloat32 = Module["_BinaryenLeFloat32"] = function() { return Module["asm"]["_BinaryenLeFloat32"].apply(null, arguments) };
-var _free = Module["_free"] = function() { return Module["asm"]["_free"].apply(null, arguments) };
-var _BinaryenUndefined = Module["_BinaryenUndefined"] = function() { return Module["asm"]["_BinaryenUndefined"].apply(null, arguments) };
-var _BinaryenLtFloat32 = Module["_BinaryenLtFloat32"] = function() { return Module["asm"]["_BinaryenLtFloat32"].apply(null, arguments) };
-var _BinaryenAbsFloat64 = Module["_BinaryenAbsFloat64"] = function() { return Module["asm"]["_BinaryenAbsFloat64"].apply(null, arguments) };
-var _BinaryenLtSInt64 = Module["_BinaryenLtSInt64"] = function() { return Module["asm"]["_BinaryenLtSInt64"].apply(null, arguments) };
-var _BinaryenHostGetOp = Module["_BinaryenHostGetOp"] = function() { return Module["asm"]["_BinaryenHostGetOp"].apply(null, arguments) };
-var _BinaryenAtomicRMWGetValue = Module["_BinaryenAtomicRMWGetValue"] = function() { return Module["asm"]["_BinaryenAtomicRMWGetValue"].apply(null, arguments) };
-var __GLOBAL__sub_I_TrapMode_cpp = Module["__GLOBAL__sub_I_TrapMode_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_TrapMode_cpp"].apply(null, arguments) };
-var _BinaryenLiteralFloat64Bits = Module["_BinaryenLiteralFloat64Bits"] = function() { return Module["asm"]["_BinaryenLiteralFloat64Bits"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgId = Module["_BinaryenAtomicCmpxchgId"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgId"].apply(null, arguments) };
-var __GLOBAL__sub_I_optimizer_shared_cpp = Module["__GLOBAL__sub_I_optimizer_shared_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_optimizer_shared_cpp"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgGetPtr = Module["_BinaryenAtomicCmpxchgGetPtr"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgGetPtr"].apply(null, arguments) };
-var _BinaryenBinaryId = Module["_BinaryenBinaryId"] = function() { return Module["asm"]["_BinaryenBinaryId"].apply(null, arguments) };
-var _BinaryenAddFunctionType = Module["_BinaryenAddFunctionType"] = function() { return Module["asm"]["_BinaryenAddFunctionType"].apply(null, arguments) };
-var _BinaryenSwitchGetValue = Module["_BinaryenSwitchGetValue"] = function() { return Module["asm"]["_BinaryenSwitchGetValue"].apply(null, arguments) };
-var _BinaryenModuleRead = Module["_BinaryenModuleRead"] = function() { return Module["asm"]["_BinaryenModuleRead"].apply(null, arguments) };
-var _BinaryenSetLocal = Module["_BinaryenSetLocal"] = function() { return Module["asm"]["_BinaryenSetLocal"].apply(null, arguments) };
-var _BinaryenExportGetValue = Module["_BinaryenExportGetValue"] = function() { return Module["asm"]["_BinaryenExportGetValue"].apply(null, arguments) };
-var _BinaryenReinterpretInt64 = Module["_BinaryenReinterpretInt64"] = function() { return Module["asm"]["_BinaryenReinterpretInt64"].apply(null, arguments) };
-var _BinaryenOrInt64 = Module["_BinaryenOrInt64"] = function() { return Module["asm"]["_BinaryenOrInt64"].apply(null, arguments) };
-var _BinaryenSwitchGetName = Module["_BinaryenSwitchGetName"] = function() { return Module["asm"]["_BinaryenSwitchGetName"].apply(null, arguments) };
-var _BinaryenFunctionTypeGetName = Module["_BinaryenFunctionTypeGetName"] = function() { return Module["asm"]["_BinaryenFunctionTypeGetName"].apply(null, arguments) };
-var _BinaryenExpressionPrint = Module["_BinaryenExpressionPrint"] = function() { return Module["asm"]["_BinaryenExpressionPrint"].apply(null, arguments) };
-var _BinaryenGeFloat32 = Module["_BinaryenGeFloat32"] = function() { return Module["asm"]["_BinaryenGeFloat32"].apply(null, arguments) };
-var _BinaryenRemUInt64 = Module["_BinaryenRemUInt64"] = function() { return Module["asm"]["_BinaryenRemUInt64"].apply(null, arguments) };
-var _BinaryenBreakId = Module["_BinaryenBreakId"] = function() { return Module["asm"]["_BinaryenBreakId"].apply(null, arguments) };
-var _BinaryenXorInt32 = Module["_BinaryenXorInt32"] = function() { return Module["asm"]["_BinaryenXorInt32"].apply(null, arguments) };
-var _BinaryenTypeFloat32 = Module["_BinaryenTypeFloat32"] = function() { return Module["asm"]["_BinaryenTypeFloat32"].apply(null, arguments) };
-var _BinaryenTruncFloat32 = Module["_BinaryenTruncFloat32"] = function() { return Module["asm"]["_BinaryenTruncFloat32"].apply(null, arguments) };
-var _BinaryenGetOptimizeLevel = Module["_BinaryenGetOptimizeLevel"] = function() { return Module["asm"]["_BinaryenGetOptimizeLevel"].apply(null, arguments) };
-var _BinaryenSelectGetIfFalse = Module["_BinaryenSelectGetIfFalse"] = function() { return Module["asm"]["_BinaryenSelectGetIfFalse"].apply(null, arguments) };
-var __GLOBAL__sub_I_pass_cpp = Module["__GLOBAL__sub_I_pass_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_pass_cpp"].apply(null, arguments) };
-var __GLOBAL__sub_I_simple_ast_cpp = Module["__GLOBAL__sub_I_simple_ast_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_simple_ast_cpp"].apply(null, arguments) };
-var _BinaryenHostGetNumOperands = Module["_BinaryenHostGetNumOperands"] = function() { return Module["asm"]["_BinaryenHostGetNumOperands"].apply(null, arguments) };
-var _BinaryenBreakGetName = Module["_BinaryenBreakGetName"] = function() { return Module["asm"]["_BinaryenBreakGetName"].apply(null, arguments) };
-var setTempRet0 = Module["setTempRet0"] = function() { return Module["asm"]["setTempRet0"].apply(null, arguments) };
-var _BinaryenNearestFloat64 = Module["_BinaryenNearestFloat64"] = function() { return Module["asm"]["_BinaryenNearestFloat64"].apply(null, arguments) };
-var _BinaryenConvertSInt64ToFloat32 = Module["_BinaryenConvertSInt64ToFloat32"] = function() { return Module["asm"]["_BinaryenConvertSInt64ToFloat32"].apply(null, arguments) };
-var _BinaryenGetFunction = Module["_BinaryenGetFunction"] = function() { return Module["asm"]["_BinaryenGetFunction"].apply(null, arguments) };
-var _BinaryenTruncUFloat32ToInt32 = Module["_BinaryenTruncUFloat32ToInt32"] = function() { return Module["asm"]["_BinaryenTruncUFloat32ToInt32"].apply(null, arguments) };
-var __GLOBAL__sub_I_iostream_cpp = Module["__GLOBAL__sub_I_iostream_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_iostream_cpp"].apply(null, arguments) };
-var _BinaryenDivUInt32 = Module["_BinaryenDivUInt32"] = function() { return Module["asm"]["_BinaryenDivUInt32"].apply(null, arguments) };
-var _BinaryenMinFloat64 = Module["_BinaryenMinFloat64"] = function() { return Module["asm"]["_BinaryenMinFloat64"].apply(null, arguments) };
-var _BinaryenAtomicWakeGetWakeCount = Module["_BinaryenAtomicWakeGetWakeCount"] = function() { return Module["asm"]["_BinaryenAtomicWakeGetWakeCount"].apply(null, arguments) };
-var _BinaryenNeFloat32 = Module["_BinaryenNeFloat32"] = function() { return Module["asm"]["_BinaryenNeFloat32"].apply(null, arguments) };
-var _BinaryenModuleWriteWithSourceMap = Module["_BinaryenModuleWriteWithSourceMap"] = function() { return Module["asm"]["_BinaryenModuleWriteWithSourceMap"].apply(null, arguments) };
-var _BinaryenAtomicWaitGetExpectedType = Module["_BinaryenAtomicWaitGetExpectedType"] = function() { return Module["asm"]["_BinaryenAtomicWaitGetExpectedType"].apply(null, arguments) };
-var __GLOBAL__sub_I_LegalizeJSInterface_cpp = Module["__GLOBAL__sub_I_LegalizeJSInterface_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_LegalizeJSInterface_cpp"].apply(null, arguments) };
-var _BinaryenExpressionGetId = Module["_BinaryenExpressionGetId"] = function() { return Module["asm"]["_BinaryenExpressionGetId"].apply(null, arguments) };
-var _BinaryenBlockGetChild = Module["_BinaryenBlockGetChild"] = function() { return Module["asm"]["_BinaryenBlockGetChild"].apply(null, arguments) };
-var _BinaryenCallGetOperand = Module["_BinaryenCallGetOperand"] = function() { return Module["asm"]["_BinaryenCallGetOperand"].apply(null, arguments) };
-var _BinaryenModulePrint = Module["_BinaryenModulePrint"] = function() { return Module["asm"]["_BinaryenModulePrint"].apply(null, arguments) };
-var _BinaryenAtomicRMWSub = Module["_BinaryenAtomicRMWSub"] = function() { return Module["asm"]["_BinaryenAtomicRMWSub"].apply(null, arguments) };
-var _BinaryenLeSInt64 = Module["_BinaryenLeSInt64"] = function() { return Module["asm"]["_BinaryenLeSInt64"].apply(null, arguments) };
-var _BinaryenExportGetKind = Module["_BinaryenExportGetKind"] = function() { return Module["asm"]["_BinaryenExportGetKind"].apply(null, arguments) };
-var _BinaryenAtomicLoad = Module["_BinaryenAtomicLoad"] = function() { return Module["asm"]["_BinaryenAtomicLoad"].apply(null, arguments) };
-var _BinaryenTruncUFloat32ToInt64 = Module["_BinaryenTruncUFloat32ToInt64"] = function() { return Module["asm"]["_BinaryenTruncUFloat32ToInt64"].apply(null, arguments) };
-var _BinaryenRotLInt64 = Module["_BinaryenRotLInt64"] = function() { return Module["asm"]["_BinaryenRotLInt64"].apply(null, arguments) };
-var _BinaryenSetStart = Module["_BinaryenSetStart"] = function() { return Module["asm"]["_BinaryenSetStart"].apply(null, arguments) };
-var _BinaryenSqrtFloat64 = Module["_BinaryenSqrtFloat64"] = function() { return Module["asm"]["_BinaryenSqrtFloat64"].apply(null, arguments) };
-var _BinaryenSwitchId = Module["_BinaryenSwitchId"] = function() { return Module["asm"]["_BinaryenSwitchId"].apply(null, arguments) };
-var _BinaryenStoreGetValue = Module["_BinaryenStoreGetValue"] = function() { return Module["asm"]["_BinaryenStoreGetValue"].apply(null, arguments) };
-var _fflush = Module["_fflush"] = function() { return Module["asm"]["_fflush"].apply(null, arguments) };
-var _BinaryenCallGetTarget = Module["_BinaryenCallGetTarget"] = function() { return Module["asm"]["_BinaryenCallGetTarget"].apply(null, arguments) };
-var _BinaryenPopcntInt64 = Module["_BinaryenPopcntInt64"] = function() { return Module["asm"]["_BinaryenPopcntInt64"].apply(null, arguments) };
-var _BinaryenRotRInt32 = Module["_BinaryenRotRInt32"] = function() { return Module["asm"]["_BinaryenRotRInt32"].apply(null, arguments) };
-var _BinaryenConvertSInt32ToFloat64 = Module["_BinaryenConvertSInt32ToFloat64"] = function() { return Module["asm"]["_BinaryenConvertSInt32ToFloat64"].apply(null, arguments) };
-var _BinaryenGtSInt64 = Module["_BinaryenGtSInt64"] = function() { return Module["asm"]["_BinaryenGtSInt64"].apply(null, arguments) };
-var _BinaryenLoadGetAlign = Module["_BinaryenLoadGetAlign"] = function() { return Module["asm"]["_BinaryenLoadGetAlign"].apply(null, arguments) };
-var _pthread_mutex_unlock = Module["_pthread_mutex_unlock"] = function() { return Module["asm"]["_pthread_mutex_unlock"].apply(null, arguments) };
-var _BinaryenFunctionGetBody = Module["_BinaryenFunctionGetBody"] = function() { return Module["asm"]["_BinaryenFunctionGetBody"].apply(null, arguments) };
-var _BinaryenDropGetValue = Module["_BinaryenDropGetValue"] = function() { return Module["asm"]["_BinaryenDropGetValue"].apply(null, arguments) };
-var _BinaryenAndInt32 = Module["_BinaryenAndInt32"] = function() { return Module["asm"]["_BinaryenAndInt32"].apply(null, arguments) };
-var _BinaryenFunctionSetDebugLocation = Module["_BinaryenFunctionSetDebugLocation"] = function() { return Module["asm"]["_BinaryenFunctionSetDebugLocation"].apply(null, arguments) };
-var ___errno_location = Module["___errno_location"] = function() { return Module["asm"]["___errno_location"].apply(null, arguments) };
-var _memmove = Module["_memmove"] = function() { return Module["asm"]["_memmove"].apply(null, arguments) };
-var _BinaryenSelectGetIfTrue = Module["_BinaryenSelectGetIfTrue"] = function() { return Module["asm"]["_BinaryenSelectGetIfTrue"].apply(null, arguments) };
-var ___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = function() { return Module["asm"]["___cxa_is_pointer_type"].apply(null, arguments) };
-var _BinaryenLoadGetPtr = Module["_BinaryenLoadGetPtr"] = function() { return Module["asm"]["_BinaryenLoadGetPtr"].apply(null, arguments) };
-var _BinaryenGrowMemory = Module["_BinaryenGrowMemory"] = function() { return Module["asm"]["_BinaryenGrowMemory"].apply(null, arguments) };
-var _BinaryenRemoveFunction = Module["_BinaryenRemoveFunction"] = function() { return Module["asm"]["_BinaryenRemoveFunction"].apply(null, arguments) };
-var _BinaryenSubInt32 = Module["_BinaryenSubInt32"] = function() { return Module["asm"]["_BinaryenSubInt32"].apply(null, arguments) };
-var _BinaryenFunctionGetNumParams = Module["_BinaryenFunctionGetNumParams"] = function() { return Module["asm"]["_BinaryenFunctionGetNumParams"].apply(null, arguments) };
-var _BinaryenTypeUnreachable = Module["_BinaryenTypeUnreachable"] = function() { return Module["asm"]["_BinaryenTypeUnreachable"].apply(null, arguments) };
-var _BinaryenEqZInt32 = Module["_BinaryenEqZInt32"] = function() { return Module["asm"]["_BinaryenEqZInt32"].apply(null, arguments) };
-var _BinaryenAddGlobalExport = Module["_BinaryenAddGlobalExport"] = function() { return Module["asm"]["_BinaryenAddGlobalExport"].apply(null, arguments) };
-var _BinaryenAtomicWaitGetPtr = Module["_BinaryenAtomicWaitGetPtr"] = function() { return Module["asm"]["_BinaryenAtomicWaitGetPtr"].apply(null, arguments) };
-var _BinaryenDivFloat64 = Module["_BinaryenDivFloat64"] = function() { return Module["asm"]["_BinaryenDivFloat64"].apply(null, arguments) };
-var _BinaryenAddExport = Module["_BinaryenAddExport"] = function() { return Module["asm"]["_BinaryenAddExport"].apply(null, arguments) };
-var _BinaryenAtomicRMWGetOffset = Module["_BinaryenAtomicRMWGetOffset"] = function() { return Module["asm"]["_BinaryenAtomicRMWGetOffset"].apply(null, arguments) };
-var _BinaryenReturnId = Module["_BinaryenReturnId"] = function() { return Module["asm"]["_BinaryenReturnId"].apply(null, arguments) };
-var stackAlloc = Module["stackAlloc"] = function() { return Module["asm"]["stackAlloc"].apply(null, arguments) };
-var _BinaryenCallImportGetNumOperands = Module["_BinaryenCallImportGetNumOperands"] = function() { return Module["asm"]["_BinaryenCallImportGetNumOperands"].apply(null, arguments) };
-var _BinaryenCallIndirectGetOperand = Module["_BinaryenCallIndirectGetOperand"] = function() { return Module["asm"]["_BinaryenCallIndirectGetOperand"].apply(null, arguments) };
-var _BinaryenXorInt64 = Module["_BinaryenXorInt64"] = function() { return Module["asm"]["_BinaryenXorInt64"].apply(null, arguments) };
-var _BinaryenCurrentMemory = Module["_BinaryenCurrentMemory"] = function() { return Module["asm"]["_BinaryenCurrentMemory"].apply(null, arguments) };
-var _BinaryenReturnGetValue = Module["_BinaryenReturnGetValue"] = function() { return Module["asm"]["_BinaryenReturnGetValue"].apply(null, arguments) };
-var _BinaryenConst = Module["_BinaryenConst"] = function() { return Module["asm"]["_BinaryenConst"].apply(null, arguments) };
-var _BinaryenAtomicWakeId = Module["_BinaryenAtomicWakeId"] = function() { return Module["asm"]["_BinaryenAtomicWakeId"].apply(null, arguments) };
-var _BinaryenCallImport = Module["_BinaryenCallImport"] = function() { return Module["asm"]["_BinaryenCallImport"].apply(null, arguments) };
-var ___cxa_can_catch = Module["___cxa_can_catch"] = function() { return Module["asm"]["___cxa_can_catch"].apply(null, arguments) };
-var __GLOBAL__sub_I_threads_cpp = Module["__GLOBAL__sub_I_threads_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_threads_cpp"].apply(null, arguments) };
-var _BinaryenAddFloat32 = Module["_BinaryenAddFloat32"] = function() { return Module["asm"]["_BinaryenAddFloat32"].apply(null, arguments) };
-var _BinaryenSetOptimizeLevel = Module["_BinaryenSetOptimizeLevel"] = function() { return Module["asm"]["_BinaryenSetOptimizeLevel"].apply(null, arguments) };
-var _BinaryenTruncUFloat64ToInt32 = Module["_BinaryenTruncUFloat64ToInt32"] = function() { return Module["asm"]["_BinaryenTruncUFloat64ToInt32"].apply(null, arguments) };
-var _BinaryenModulePrintAsmjs = Module["_BinaryenModulePrintAsmjs"] = function() { return Module["asm"]["_BinaryenModulePrintAsmjs"].apply(null, arguments) };
-var _BinaryenTypeNone = Module["_BinaryenTypeNone"] = function() { return Module["asm"]["_BinaryenTypeNone"].apply(null, arguments) };
-var _BinaryenAddInt32 = Module["_BinaryenAddInt32"] = function() { return Module["asm"]["_BinaryenAddInt32"].apply(null, arguments) };
-var _BinaryenShrUInt32 = Module["_BinaryenShrUInt32"] = function() { return Module["asm"]["_BinaryenShrUInt32"].apply(null, arguments) };
-var _BinaryenConvertSInt64ToFloat64 = Module["_BinaryenConvertSInt64ToFloat64"] = function() { return Module["asm"]["_BinaryenConvertSInt64ToFloat64"].apply(null, arguments) };
-var _BinaryenHostGetOperand = Module["_BinaryenHostGetOperand"] = function() { return Module["asm"]["_BinaryenHostGetOperand"].apply(null, arguments) };
-var _BinaryenExternalFunction = Module["_BinaryenExternalFunction"] = function() { return Module["asm"]["_BinaryenExternalFunction"].apply(null, arguments) };
-var _BinaryenCallId = Module["_BinaryenCallId"] = function() { return Module["asm"]["_BinaryenCallId"].apply(null, arguments) };
-var _BinaryenDivSInt64 = Module["_BinaryenDivSInt64"] = function() { return Module["asm"]["_BinaryenDivSInt64"].apply(null, arguments) };
-var _BinaryenSetAPITracing = Module["_BinaryenSetAPITracing"] = function() { return Module["asm"]["_BinaryenSetAPITracing"].apply(null, arguments) };
-var _BinaryenAddFunction = Module["_BinaryenAddFunction"] = function() { return Module["asm"]["_BinaryenAddFunction"].apply(null, arguments) };
-var _BinaryenLtUInt32 = Module["_BinaryenLtUInt32"] = function() { return Module["asm"]["_BinaryenLtUInt32"].apply(null, arguments) };
-var getTempRet0 = Module["getTempRet0"] = function() { return Module["asm"]["getTempRet0"].apply(null, arguments) };
-var _BinaryenSetMemory = Module["_BinaryenSetMemory"] = function() { return Module["asm"]["_BinaryenSetMemory"].apply(null, arguments) };
-var _BinaryenGetLocalGetIndex = Module["_BinaryenGetLocalGetIndex"] = function() { return Module["asm"]["_BinaryenGetLocalGetIndex"].apply(null, arguments) };
-var _BinaryenUnreachableId = Module["_BinaryenUnreachableId"] = function() { return Module["asm"]["_BinaryenUnreachableId"].apply(null, arguments) };
-var _BinaryenPopcntInt32 = Module["_BinaryenPopcntInt32"] = function() { return Module["asm"]["_BinaryenPopcntInt32"].apply(null, arguments) };
-var _BinaryenMulFloat64 = Module["_BinaryenMulFloat64"] = function() { return Module["asm"]["_BinaryenMulFloat64"].apply(null, arguments) };
-var _BinaryenStoreIsAtomic = Module["_BinaryenStoreIsAtomic"] = function() { return Module["asm"]["_BinaryenStoreIsAtomic"].apply(null, arguments) };
-var _BinaryenCallIndirectGetNumOperands = Module["_BinaryenCallIndirectGetNumOperands"] = function() { return Module["asm"]["_BinaryenCallIndirectGetNumOperands"].apply(null, arguments) };
-var _BinaryenShrSInt32 = Module["_BinaryenShrSInt32"] = function() { return Module["asm"]["_BinaryenShrSInt32"].apply(null, arguments) };
-var __GLOBAL__sub_I_Precompute_cpp = Module["__GLOBAL__sub_I_Precompute_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_Precompute_cpp"].apply(null, arguments) };
-var _BinaryenConstGetValueI64 = Module["_BinaryenConstGetValueI64"] = function() { return Module["asm"]["_BinaryenConstGetValueI64"].apply(null, arguments) };
-var _BinaryenSetGlobalGetValue = Module["_BinaryenSetGlobalGetValue"] = function() { return Module["asm"]["_BinaryenSetGlobalGetValue"].apply(null, arguments) };
-var _BinaryenLoadGetOffset = Module["_BinaryenLoadGetOffset"] = function() { return Module["asm"]["_BinaryenLoadGetOffset"].apply(null, arguments) };
-var _BinaryenGeUInt32 = Module["_BinaryenGeUInt32"] = function() { return Module["asm"]["_BinaryenGeUInt32"].apply(null, arguments) };
-var _BinaryenLoop = Module["_BinaryenLoop"] = function() { return Module["asm"]["_BinaryenLoop"].apply(null, arguments) };
-var _BinaryenConstGetValueI64High = Module["_BinaryenConstGetValueI64High"] = function() { return Module["asm"]["_BinaryenConstGetValueI64High"].apply(null, arguments) };
-var _BinaryenExternalGlobal = Module["_BinaryenExternalGlobal"] = function() { return Module["asm"]["_BinaryenExternalGlobal"].apply(null, arguments) };
-var _BinaryenAddImport = Module["_BinaryenAddImport"] = function() { return Module["asm"]["_BinaryenAddImport"].apply(null, arguments) };
-var _BinaryenImportGetFunctionType = Module["_BinaryenImportGetFunctionType"] = function() { return Module["asm"]["_BinaryenImportGetFunctionType"].apply(null, arguments) };
-var _BinaryenTruncSFloat64ToInt64 = Module["_BinaryenTruncSFloat64ToInt64"] = function() { return Module["asm"]["_BinaryenTruncSFloat64ToInt64"].apply(null, arguments) };
-var _BinaryenNeInt32 = Module["_BinaryenNeInt32"] = function() { return Module["asm"]["_BinaryenNeInt32"].apply(null, arguments) };
-var _BinaryenTruncSFloat32ToInt32 = Module["_BinaryenTruncSFloat32ToInt32"] = function() { return Module["asm"]["_BinaryenTruncSFloat32ToInt32"].apply(null, arguments) };
-var _BinaryenGetGlobalId = Module["_BinaryenGetGlobalId"] = function() { return Module["asm"]["_BinaryenGetGlobalId"].apply(null, arguments) };
-var _BinaryenGtFloat64 = Module["_BinaryenGtFloat64"] = function() { return Module["asm"]["_BinaryenGtFloat64"].apply(null, arguments) };
-var _BinaryenFunctionTypeGetNumParams = Module["_BinaryenFunctionTypeGetNumParams"] = function() { return Module["asm"]["_BinaryenFunctionTypeGetNumParams"].apply(null, arguments) };
-var _BinaryenRemoveImport = Module["_BinaryenRemoveImport"] = function() { return Module["asm"]["_BinaryenRemoveImport"].apply(null, arguments) };
-var _BinaryenAtomicWake = Module["_BinaryenAtomicWake"] = function() { return Module["asm"]["_BinaryenAtomicWake"].apply(null, arguments) };
-var _BinaryenNegFloat64 = Module["_BinaryenNegFloat64"] = function() { return Module["asm"]["_BinaryenNegFloat64"].apply(null, arguments) };
-var _BinaryenFloat32 = Module["_BinaryenFloat32"] = function() { return Module["asm"]["_BinaryenFloat32"].apply(null, arguments) };
-var __GLOBAL__sub_I_Metrics_cpp = Module["__GLOBAL__sub_I_Metrics_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_Metrics_cpp"].apply(null, arguments) };
-var _BinaryenExtendUInt32 = Module["_BinaryenExtendUInt32"] = function() { return Module["asm"]["_BinaryenExtendUInt32"].apply(null, arguments) };
-var _BinaryenCallIndirectId = Module["_BinaryenCallIndirectId"] = function() { return Module["asm"]["_BinaryenCallIndirectId"].apply(null, arguments) };
-var _BinaryenAtomicRMWXchg = Module["_BinaryenAtomicRMWXchg"] = function() { return Module["asm"]["_BinaryenAtomicRMWXchg"].apply(null, arguments) };
-var _BinaryenGetGlobal = Module["_BinaryenGetGlobal"] = function() { return Module["asm"]["_BinaryenGetGlobal"].apply(null, arguments) };
-var _BinaryenLtFloat64 = Module["_BinaryenLtFloat64"] = function() { return Module["asm"]["_BinaryenLtFloat64"].apply(null, arguments) };
-var _BinaryenAddTableExport = Module["_BinaryenAddTableExport"] = function() { return Module["asm"]["_BinaryenAddTableExport"].apply(null, arguments) };
-var _BinaryenSetShrinkLevel = Module["_BinaryenSetShrinkLevel"] = function() { return Module["asm"]["_BinaryenSetShrinkLevel"].apply(null, arguments) };
-var _BinaryenGtUInt64 = Module["_BinaryenGtUInt64"] = function() { return Module["asm"]["_BinaryenGtUInt64"].apply(null, arguments) };
-var _BinaryenAtomicCmpxchgGetBytes = Module["_BinaryenAtomicCmpxchgGetBytes"] = function() { return Module["asm"]["_BinaryenAtomicCmpxchgGetBytes"].apply(null, arguments) };
-var _llvm_bswap_i32 = Module["_llvm_bswap_i32"] = function() { return Module["asm"]["_llvm_bswap_i32"].apply(null, arguments) };
-var __GLOBAL__sub_I_InstrumentMemory_cpp = Module["__GLOBAL__sub_I_InstrumentMemory_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_InstrumentMemory_cpp"].apply(null, arguments) };
-var _BinaryenAtomicRMW = Module["_BinaryenAtomicRMW"] = function() { return Module["asm"]["_BinaryenAtomicRMW"].apply(null, arguments) };
-var _BinaryenLiteralFloat32Bits = Module["_BinaryenLiteralFloat32Bits"] = function() { return Module["asm"]["_BinaryenLiteralFloat32Bits"].apply(null, arguments) };
-var _pthread_mutex_lock = Module["_pthread_mutex_lock"] = function() { return Module["asm"]["_pthread_mutex_lock"].apply(null, arguments) };
-var _BinaryenModuleRunPasses = Module["_BinaryenModuleRunPasses"] = function() { return Module["asm"]["_BinaryenModuleRunPasses"].apply(null, arguments) };
-var _BinaryenWrapInt64 = Module["_BinaryenWrapInt64"] = function() { return Module["asm"]["_BinaryenWrapInt64"].apply(null, arguments) };
-var _BinaryenIf = Module["_BinaryenIf"] = function() { return Module["asm"]["_BinaryenIf"].apply(null, arguments) };
-var _BinaryenAtomicRMWOr = Module["_BinaryenAtomicRMWOr"] = function() { return Module["asm"]["_BinaryenAtomicRMWOr"].apply(null, arguments) };
-var _BinaryenImportGetName = Module["_BinaryenImportGetName"] = function() { return Module["asm"]["_BinaryenImportGetName"].apply(null, arguments) };
-var _BinaryenAtomicRMWGetBytes = Module["_BinaryenAtomicRMWGetBytes"] = function() { return Module["asm"]["_BinaryenAtomicRMWGetBytes"].apply(null, arguments) };
-var _BinaryenCeilFloat32 = Module["_BinaryenCeilFloat32"] = function() { return Module["asm"]["_BinaryenCeilFloat32"].apply(null, arguments) };
-var _BinaryenConstGetValueF64 = Module["_BinaryenConstGetValueF64"] = function() { return Module["asm"]["_BinaryenConstGetValueF64"].apply(null, arguments) };
-var _BinaryenLtUInt64 = Module["_BinaryenLtUInt64"] = function() { return Module["asm"]["_BinaryenLtUInt64"].apply(null, arguments) };
-var _BinaryenSetFunctionTable = Module["_BinaryenSetFunctionTable"] = function() { return Module["asm"]["_BinaryenSetFunctionTable"].apply(null, arguments) };
-var _BinaryenAtomicStore = Module["_BinaryenAtomicStore"] = function() { return Module["asm"]["_BinaryenAtomicStore"].apply(null, arguments) };
-var _BinaryenGetGlobalGetName = Module["_BinaryenGetGlobalGetName"] = function() { return Module["asm"]["_BinaryenGetGlobalGetName"].apply(null, arguments) };
-var _BinaryenGetFunctionTypeBySignature = Module["_BinaryenGetFunctionTypeBySignature"] = function() { return Module["asm"]["_BinaryenGetFunctionTypeBySignature"].apply(null, arguments) };
-var _BinaryenTypeAuto = Module["_BinaryenTypeAuto"] = function() { return Module["asm"]["_BinaryenTypeAuto"].apply(null, arguments) };
-var _BinaryenBreak = Module["_BinaryenBreak"] = function() { return Module["asm"]["_BinaryenBreak"].apply(null, arguments) };
-var _BinaryenUnaryGetOp = Module["_BinaryenUnaryGetOp"] = function() { return Module["asm"]["_BinaryenUnaryGetOp"].apply(null, arguments) };
-var _BinaryenExportGetName = Module["_BinaryenExportGetName"] = function() { return Module["asm"]["_BinaryenExportGetName"].apply(null, arguments) };
-var _BinaryenUnary = Module["_BinaryenUnary"] = function() { return Module["asm"]["_BinaryenUnary"].apply(null, arguments) };
-var _BinaryenMaxFloat32 = Module["_BinaryenMaxFloat32"] = function() { return Module["asm"]["_BinaryenMaxFloat32"].apply(null, arguments) };
-var _BinaryenLoopId = Module["_BinaryenLoopId"] = function() { return Module["asm"]["_BinaryenLoopId"].apply(null, arguments) };
-var _sbrk = Module["_sbrk"] = function() { return Module["asm"]["_sbrk"].apply(null, arguments) };
-var _memcpy = Module["_memcpy"] = function() { return Module["asm"]["_memcpy"].apply(null, arguments) };
-var _BinaryenAddFloat64 = Module["_BinaryenAddFloat64"] = function() { return Module["asm"]["_BinaryenAddFloat64"].apply(null, arguments) };
-var _BinaryenExternalTable = Module["_BinaryenExternalTable"] = function() { return Module["asm"]["_BinaryenExternalTable"].apply(null, arguments) };
-var _BinaryenImportGetKind = Module["_BinaryenImportGetKind"] = function() { return Module["asm"]["_BinaryenImportGetKind"].apply(null, arguments) };
-var _BinaryenReinterpretInt32 = Module["_BinaryenReinterpretInt32"] = function() { return Module["asm"]["_BinaryenReinterpretInt32"].apply(null, arguments) };
-var _BinaryenFloorFloat32 = Module["_BinaryenFloorFloat32"] = function() { return Module["asm"]["_BinaryenFloorFloat32"].apply(null, arguments) };
-var _BinaryenConstGetValueI32 = Module["_BinaryenConstGetValueI32"] = function() { return Module["asm"]["_BinaryenConstGetValueI32"].apply(null, arguments) };
-var _BinaryenEqInt64 = Module["_BinaryenEqInt64"] = function() { return Module["asm"]["_BinaryenEqInt64"].apply(null, arguments) };
-var _BinaryenGeFloat64 = Module["_BinaryenGeFloat64"] = function() { return Module["asm"]["_BinaryenGeFloat64"].apply(null, arguments) };
-var _emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = function() { return Module["asm"]["_emscripten_get_global_libc"].apply(null, arguments) };
-var runPostSets = Module["runPostSets"] = function() { return Module["asm"]["runPostSets"].apply(null, arguments) };
-var _BinaryenSelectGetCondition = Module["_BinaryenSelectGetCondition"] = function() { return Module["asm"]["_BinaryenSelectGetCondition"].apply(null, arguments) };
-var _BinaryenModuleGetDebugInfoFileName = Module["_BinaryenModuleGetDebugInfoFileName"] = function() { return Module["asm"]["_BinaryenModuleGetDebugInfoFileName"].apply(null, arguments) };
-var _BinaryenSetLocalId = Module["_BinaryenSetLocalId"] = function() { return Module["asm"]["_BinaryenSetLocalId"].apply(null, arguments) };
-var _BinaryenGeUInt64 = Module["_BinaryenGeUInt64"] = function() { return Module["asm"]["_BinaryenGeUInt64"].apply(null, arguments) };
-var _BinaryenConvertUInt32ToFloat64 = Module["_BinaryenConvertUInt32ToFloat64"] = function() { return Module["asm"]["_BinaryenConvertUInt32ToFloat64"].apply(null, arguments) };
-var _BinaryenBlockGetName = Module["_BinaryenBlockGetName"] = function() { return Module["asm"]["_BinaryenBlockGetName"].apply(null, arguments) };
-var _BinaryenReinterpretFloat32 = Module["_BinaryenReinterpretFloat32"] = function() { return Module["asm"]["_BinaryenReinterpretFloat32"].apply(null, arguments) };
-var _BinaryenIfGetCondition = Module["_BinaryenIfGetCondition"] = function() { return Module["asm"]["_BinaryenIfGetCondition"].apply(null, arguments) };
-var _BinaryenFunctionOptimize = Module["_BinaryenFunctionOptimize"] = function() { return Module["asm"]["_BinaryenFunctionOptimize"].apply(null, arguments) };
-var _BinaryenHostId = Module["_BinaryenHostId"] = function() { return Module["asm"]["_BinaryenHostId"].apply(null, arguments) };
-var _BinaryenTruncFloat64 = Module["_BinaryenTruncFloat64"] = function() { return Module["asm"]["_BinaryenTruncFloat64"].apply(null, arguments) };
-var _BinaryenTypeFloat64 = Module["_BinaryenTypeFloat64"] = function() { return Module["asm"]["_BinaryenTypeFloat64"].apply(null, arguments) };
-var _BinaryenAtomicRMWAdd = Module["_BinaryenAtomicRMWAdd"] = function() { return Module["asm"]["_BinaryenAtomicRMWAdd"].apply(null, arguments) };
-var _BinaryenLiteralFloat64 = Module["_BinaryenLiteralFloat64"] = function() { return Module["asm"]["_BinaryenLiteralFloat64"].apply(null, arguments) };
-var _BinaryenCallGetNumOperands = Module["_BinaryenCallGetNumOperands"] = function() { return Module["asm"]["_BinaryenCallGetNumOperands"].apply(null, arguments) };
-var _BinaryenHasFeature = Module["_BinaryenHasFeature"] = function() { return Module["asm"]["_BinaryenHasFeature"].apply(null, arguments) };
-var _BinaryenSwitchGetDefaultName = Module["_BinaryenSwitchGetDefaultName"] = function() { return Module["asm"]["_BinaryenSwitchGetDefaultName"].apply(null, arguments) };
-var _BinaryenSetLocalIsTee = Module["_BinaryenSetLocalIsTee"] = function() { return Module["asm"]["_BinaryenSetLocalIsTee"].apply(null, arguments) };
-var _BinaryenTypeInt64 = Module["_BinaryenTypeInt64"] = function() { return Module["asm"]["_BinaryenTypeInt64"].apply(null, arguments) };
-var _BinaryenModuleValidate = Module["_BinaryenModuleValidate"] = function() { return Module["asm"]["_BinaryenModuleValidate"].apply(null, arguments) };
-var _BinaryenUnaryId = Module["_BinaryenUnaryId"] = function() { return Module["asm"]["_BinaryenUnaryId"].apply(null, arguments) };
-var _BinaryenStoreGetOffset = Module["_BinaryenStoreGetOffset"] = function() { return Module["asm"]["_BinaryenStoreGetOffset"].apply(null, arguments) };
-var _BinaryenLeSInt32 = Module["_BinaryenLeSInt32"] = function() { return Module["asm"]["_BinaryenLeSInt32"].apply(null, arguments) };
-var _BinaryenMulInt64 = Module["_BinaryenMulInt64"] = function() { return Module["asm"]["_BinaryenMulInt64"].apply(null, arguments) };
-var _BinaryenCopySignFloat32 = Module["_BinaryenCopySignFloat32"] = function() { return Module["asm"]["_BinaryenCopySignFloat32"].apply(null, arguments) };
-var _BinaryenGetShrinkLevel = Module["_BinaryenGetShrinkLevel"] = function() { return Module["asm"]["_BinaryenGetShrinkLevel"].apply(null, arguments) };
-var _BinaryenCallImportGetTarget = Module["_BinaryenCallImportGetTarget"] = function() { return Module["asm"]["_BinaryenCallImportGetTarget"].apply(null, arguments) };
-var _BinaryenStore = Module["_BinaryenStore"] = function() { return Module["asm"]["_BinaryenStore"].apply(null, arguments) };
-var _BinaryenBinary = Module["_BinaryenBinary"] = function() { return Module["asm"]["_BinaryenBinary"].apply(null, arguments) };
-var _BinaryenLeUInt64 = Module["_BinaryenLeUInt64"] = function() { return Module["asm"]["_BinaryenLeUInt64"].apply(null, arguments) };
-var establishStackSpace = Module["establishStackSpace"] = function() { return Module["asm"]["establishStackSpace"].apply(null, arguments) };
-var _BinaryenModuleDispose = Module["_BinaryenModuleDispose"] = function() { return Module["asm"]["_BinaryenModuleDispose"].apply(null, arguments) };
-var _BinaryenCallImportId = Module["_BinaryenCallImportId"] = function() { return Module["asm"]["_BinaryenCallImportId"].apply(null, arguments) };
-var _BinaryenAddMemoryExport = Module["_BinaryenAddMemoryExport"] = function() { return Module["asm"]["_BinaryenAddMemoryExport"].apply(null, arguments) };
-var _BinaryenStoreGetBytes = Module["_BinaryenStoreGetBytes"] = function() { return Module["asm"]["_BinaryenStoreGetBytes"].apply(null, arguments) };
-var __GLOBAL__sub_I_SSAify_cpp = Module["__GLOBAL__sub_I_SSAify_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_SSAify_cpp"].apply(null, arguments) };
-var _BinaryenRotRInt64 = Module["_BinaryenRotRInt64"] = function() { return Module["asm"]["_BinaryenRotRInt64"].apply(null, arguments) };
-var _BinaryenImportGetGlobalType = Module["_BinaryenImportGetGlobalType"] = function() { return Module["asm"]["_BinaryenImportGetGlobalType"].apply(null, arguments) };
-var _BinaryenDemoteFloat64 = Module["_BinaryenDemoteFloat64"] = function() { return Module["asm"]["_BinaryenDemoteFloat64"].apply(null, arguments) };
-var _BinaryenModuleWrite = Module["_BinaryenModuleWrite"] = function() { return Module["asm"]["_BinaryenModuleWrite"].apply(null, arguments) };
-var _BinaryenAddGlobalImport = Module["_BinaryenAddGlobalImport"] = function() { return Module["asm"]["_BinaryenAddGlobalImport"].apply(null, arguments) };
-var _BinaryenLeFloat64 = Module["_BinaryenLeFloat64"] = function() { return Module["asm"]["_BinaryenLeFloat64"].apply(null, arguments) };
-var _BinaryenEqFloat32 = Module["_BinaryenEqFloat32"] = function() { return Module["asm"]["_BinaryenEqFloat32"].apply(null, arguments) };
-var _BinaryenAtomicWaitGetTimeout = Module["_BinaryenAtomicWaitGetTimeout"] = function() { return Module["asm"]["_BinaryenAtomicWaitGetTimeout"].apply(null, arguments) };
-var _BinaryenAtomicWaitId = Module["_BinaryenAtomicWaitId"] = function() { return Module["asm"]["_BinaryenAtomicWaitId"].apply(null, arguments) };
-var _memset = Module["_memset"] = function() { return Module["asm"]["_memset"].apply(null, arguments) };
-var _BinaryenLoopGetName = Module["_BinaryenLoopGetName"] = function() { return Module["asm"]["_BinaryenLoopGetName"].apply(null, arguments) };
-var __GLOBAL__sub_I_binaryen_c_cpp = Module["__GLOBAL__sub_I_binaryen_c_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_binaryen_c_cpp"].apply(null, arguments) };
-var _BinaryenPageSize = Module["_BinaryenPageSize"] = function() { return Module["asm"]["_BinaryenPageSize"].apply(null, arguments) };
-var _BinaryenLoopGetBody = Module["_BinaryenLoopGetBody"] = function() { return Module["asm"]["_BinaryenLoopGetBody"].apply(null, arguments) };
-var _BinaryenExpressionGetType = Module["_BinaryenExpressionGetType"] = function() { return Module["asm"]["_BinaryenExpressionGetType"].apply(null, arguments) };
-var _BinaryenSwitchGetNumNames = Module["_BinaryenSwitchGetNumNames"] = function() { return Module["asm"]["_BinaryenSwitchGetNumNames"].apply(null, arguments) };
-var _pthread_cond_broadcast = Module["_pthread_cond_broadcast"] = function() { return Module["asm"]["_pthread_cond_broadcast"].apply(null, arguments) };
-var _BinaryenAndInt64 = Module["_BinaryenAndInt64"] = function() { return Module["asm"]["_BinaryenAndInt64"].apply(null, arguments) };
-var _BinaryenInt64 = Module["_BinaryenInt64"] = function() { return Module["asm"]["_BinaryenInt64"].apply(null, arguments) };
-var _BinaryenImportGetBase = Module["_BinaryenImportGetBase"] = function() { return Module["asm"]["_BinaryenImportGetBase"].apply(null, arguments) };
-var _BinaryenConvertSInt32ToFloat32 = Module["_BinaryenConvertSInt32ToFloat32"] = function() { return Module["asm"]["_BinaryenConvertSInt32ToFloat32"].apply(null, arguments) };
-var _BinaryenGetLocal = Module["_BinaryenGetLocal"] = function() { return Module["asm"]["_BinaryenGetLocal"].apply(null, arguments) };
-var _BinaryenAbsFloat32 = Module["_BinaryenAbsFloat32"] = function() { return Module["asm"]["_BinaryenAbsFloat32"].apply(null, arguments) };
-var _BinaryenDivFloat32 = Module["_BinaryenDivFloat32"] = function() { return Module["asm"]["_BinaryenDivFloat32"].apply(null, arguments) };
-var _BinaryenConstGetValueI64Low = Module["_BinaryenConstGetValueI64Low"] = function() { return Module["asm"]["_BinaryenConstGetValueI64Low"].apply(null, arguments) };
-var _BinaryenBinaryGetLeft = Module["_BinaryenBinaryGetLeft"] = function() { return Module["asm"]["_BinaryenBinaryGetLeft"].apply(null, arguments) };
-var _BinaryenConvertUInt64ToFloat32 = Module["_BinaryenConvertUInt64ToFloat32"] = function() { return Module["asm"]["_BinaryenConvertUInt64ToFloat32"].apply(null, arguments) };
-var _BinaryenAddGlobal = Module["_BinaryenAddGlobal"] = function() { return Module["asm"]["_BinaryenAddGlobal"].apply(null, arguments) };
-var _BinaryenGetDebugInfo = Module["_BinaryenGetDebugInfo"] = function() { return Module["asm"]["_BinaryenGetDebugInfo"].apply(null, arguments) };
-var _BinaryenStoreGetPtr = Module["_BinaryenStoreGetPtr"] = function() { return Module["asm"]["_BinaryenStoreGetPtr"].apply(null, arguments) };
-var _BinaryenFunctionGetNumVars = Module["_BinaryenFunctionGetNumVars"] = function() { return Module["asm"]["_BinaryenFunctionGetNumVars"].apply(null, arguments) };
-var __GLOBAL__sub_I_shared_constants_cpp = Module["__GLOBAL__sub_I_shared_constants_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_shared_constants_cpp"].apply(null, arguments) };
-var _BinaryenSetDebugInfo = Module["_BinaryenSetDebugInfo"] = function() { return Module["asm"]["_BinaryenSetDebugInfo"].apply(null, arguments) };
-var _BinaryenShrUInt64 = Module["_BinaryenShrUInt64"] = function() { return Module["asm"]["_BinaryenShrUInt64"].apply(null, arguments) };
-var _BinaryenModuleParse = Module["_BinaryenModuleParse"] = function() { return Module["asm"]["_BinaryenModuleParse"].apply(null, arguments) };
-var _BinaryenBreakGetValue = Module["_BinaryenBreakGetValue"] = function() { return Module["asm"]["_BinaryenBreakGetValue"].apply(null, arguments) };
-var __GLOBAL__sub_I_I64ToI32Lowering_cpp = Module["__GLOBAL__sub_I_I64ToI32Lowering_cpp"] = function() { return Module["asm"]["__GLOBAL__sub_I_I64ToI32Lowering_cpp"].apply(null, arguments) };
-var _BinaryenFloorFloat64 = Module["_BinaryenFloorFloat64"] = function() { return Module["asm"]["_BinaryenFloorFloat64"].apply(null, arguments) };
-var _BinaryenModuleOptimize = Module["_BinaryenModuleOptimize"] = function() { return Module["asm"]["_BinaryenModuleOptimize"].apply(null, arguments) };
-var _BinaryenNopId = Module["_BinaryenNopId"] = function() { return Module["asm"]["_BinaryenNopId"].apply(null, arguments) };
-var _BinaryenLiteralInt32 = Module["_BinaryenLiteralInt32"] = function() { return Module["asm"]["_BinaryenLiteralInt32"].apply(null, arguments) };
-var _BinaryenReinterpretFloat64 = Module["_BinaryenReinterpretFloat64"] = function() { return Module["asm"]["_BinaryenReinterpretFloat64"].apply(null, arguments) };
-var _BinaryenConvertUInt32ToFloat32 = Module["_BinaryenConvertUInt32ToFloat32"] = function() { return Module["asm"]["_BinaryenConvertUInt32ToFloat32"].apply(null, arguments) };
-var _BinaryenAddInt64 = Module["_BinaryenAddInt64"] = function() { return Module["asm"]["_BinaryenAddInt64"].apply(null, arguments) };
-var _BinaryenGeSInt32 = Module["_BinaryenGeSInt32"] = function() { return Module["asm"]["_BinaryenGeSInt32"].apply(null, arguments) };
-var _BinaryenInt32 = Module["_BinaryenInt32"] = function() { return Module["asm"]["_BinaryenInt32"].apply(null, arguments) };
-var _BinaryenBlockGetNumChildren = Module["_BinaryenBlockGetNumChildren"] = function() { return Module["asm"]["_BinaryenBlockGetNumChildren"].apply(null, arguments) };
-var _BinaryenMinFloat32 = Module["_BinaryenMinFloat32"] = function() { return Module["asm"]["_BinaryenMinFloat32"].apply(null, arguments) };
-var _BinaryenAtomicWaitGetExpected = Module["_BinaryenAtomicWaitGetExpected"] = function() { return Module["asm"]["_BinaryenAtomicWaitGetExpected"].apply(null, arguments) };
-var _BinaryenDivSInt32 = Module["_BinaryenDivSInt32"] = function() { return Module["asm"]["_BinaryenDivSInt32"].apply(null, arguments) };
-var _BinaryenConstId = Module["_BinaryenConstId"] = function() { return Module["asm"]["_BinaryenConstId"].apply(null, arguments) };
-var dynCall_iiiiiiii = Module["dynCall_iiiiiiii"] = function() { return Module["asm"]["dynCall_iiiiiiii"].apply(null, arguments) };
-var dynCall_iiiiiid = Module["dynCall_iiiiiid"] = function() { return Module["asm"]["dynCall_iiiiiid"].apply(null, arguments) };
-var dynCall_viiiii = Module["dynCall_viiiii"] = function() { return Module["asm"]["dynCall_viiiii"].apply(null, arguments) };
-var dynCall_vij = Module["dynCall_vij"] = function() { return Module["asm"]["dynCall_vij"].apply(null, arguments) };
-var dynCall_vi = Module["dynCall_vi"] = function() { return Module["asm"]["dynCall_vi"].apply(null, arguments) };
-var dynCall_vii = Module["dynCall_vii"] = function() { return Module["asm"]["dynCall_vii"].apply(null, arguments) };
-var dynCall_iiiiiii = Module["dynCall_iiiiiii"] = function() { return Module["asm"]["dynCall_iiiiiii"].apply(null, arguments) };
-var dynCall_ii = Module["dynCall_ii"] = function() { return Module["asm"]["dynCall_ii"].apply(null, arguments) };
-var dynCall_viijii = Module["dynCall_viijii"] = function() { return Module["asm"]["dynCall_viijii"].apply(null, arguments) };
-var dynCall_id = Module["dynCall_id"] = function() { return Module["asm"]["dynCall_id"].apply(null, arguments) };
-var dynCall_iiiiiiiiiiii = Module["dynCall_iiiiiiiiiiii"] = function() { return Module["asm"]["dynCall_iiiiiiiiiiii"].apply(null, arguments) };
-var dynCall_jii = Module["dynCall_jii"] = function() { return Module["asm"]["dynCall_jii"].apply(null, arguments) };
-var dynCall_iiii = Module["dynCall_iiii"] = function() { return Module["asm"]["dynCall_iiii"].apply(null, arguments) };
-var dynCall_viiiiiiiiiiiiiii = Module["dynCall_viiiiiiiiiiiiiii"] = function() { return Module["asm"]["dynCall_viiiiiiiiiiiiiii"].apply(null, arguments) };
-var dynCall_viiiiii = Module["dynCall_viiiiii"] = function() { return Module["asm"]["dynCall_viiiiii"].apply(null, arguments) };
-var dynCall_iiiiiiiiiiiii = Module["dynCall_iiiiiiiiiiiii"] = function() { return Module["asm"]["dynCall_iiiiiiiiiiiii"].apply(null, arguments) };
-var dynCall_iid = Module["dynCall_iid"] = function() { return Module["asm"]["dynCall_iid"].apply(null, arguments) };
-var dynCall_ji = Module["dynCall_ji"] = function() { return Module["asm"]["dynCall_ji"].apply(null, arguments) };
-var dynCall_viiiiiiiiii = Module["dynCall_viiiiiiiiii"] = function() { return Module["asm"]["dynCall_viiiiiiiiii"].apply(null, arguments) };
-var dynCall_iii = Module["dynCall_iii"] = function() { return Module["asm"]["dynCall_iii"].apply(null, arguments) };
-var dynCall_iiiiii = Module["dynCall_iiiiii"] = function() { return Module["asm"]["dynCall_iiiiii"].apply(null, arguments) };
-var dynCall_iij = Module["dynCall_iij"] = function() { return Module["asm"]["dynCall_iij"].apply(null, arguments) };
-var dynCall_viiiiiii = Module["dynCall_viiiiiii"] = function() { return Module["asm"]["dynCall_viiiiiii"].apply(null, arguments) };
-var dynCall_i = Module["dynCall_i"] = function() { return Module["asm"]["dynCall_i"].apply(null, arguments) };
-var dynCall_iiiii = Module["dynCall_iiiii"] = function() { return Module["asm"]["dynCall_iiiii"].apply(null, arguments) };
-var dynCall_iiiiij = Module["dynCall_iiiiij"] = function() { return Module["asm"]["dynCall_iiiiij"].apply(null, arguments) };
-var dynCall_viii = Module["dynCall_viii"] = function() { return Module["asm"]["dynCall_viii"].apply(null, arguments) };
-var dynCall_viij = Module["dynCall_viij"] = function() { return Module["asm"]["dynCall_viij"].apply(null, arguments) };
-var dynCall_v = Module["dynCall_v"] = function() { return Module["asm"]["dynCall_v"].apply(null, arguments) };
-var dynCall_iiiiiiiii = Module["dynCall_iiiiiiiii"] = function() { return Module["asm"]["dynCall_iiiiiiiii"].apply(null, arguments) };
-var dynCall_iiiiid = Module["dynCall_iiiiid"] = function() { return Module["asm"]["dynCall_iiiiid"].apply(null, arguments) };
-var dynCall_viiii = Module["dynCall_viiii"] = function() { return Module["asm"]["dynCall_viiii"].apply(null, arguments) };
+var _BinaryenAbsFloat32 = Module["_BinaryenAbsFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAbsFloat32"].apply(null, arguments) };
+var _BinaryenAbsFloat64 = Module["_BinaryenAbsFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAbsFloat64"].apply(null, arguments) };
+var _BinaryenAddExport = Module["_BinaryenAddExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddExport"].apply(null, arguments) };
+var _BinaryenAddFloat32 = Module["_BinaryenAddFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFloat32"].apply(null, arguments) };
+var _BinaryenAddFloat64 = Module["_BinaryenAddFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFloat64"].apply(null, arguments) };
+var _BinaryenAddFunction = Module["_BinaryenAddFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFunction"].apply(null, arguments) };
+var _BinaryenAddFunctionExport = Module["_BinaryenAddFunctionExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFunctionExport"].apply(null, arguments) };
+var _BinaryenAddFunctionImport = Module["_BinaryenAddFunctionImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFunctionImport"].apply(null, arguments) };
+var _BinaryenAddFunctionType = Module["_BinaryenAddFunctionType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddFunctionType"].apply(null, arguments) };
+var _BinaryenAddGlobal = Module["_BinaryenAddGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddGlobal"].apply(null, arguments) };
+var _BinaryenAddGlobalExport = Module["_BinaryenAddGlobalExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddGlobalExport"].apply(null, arguments) };
+var _BinaryenAddGlobalImport = Module["_BinaryenAddGlobalImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddGlobalImport"].apply(null, arguments) };
+var _BinaryenAddImport = Module["_BinaryenAddImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddImport"].apply(null, arguments) };
+var _BinaryenAddInt32 = Module["_BinaryenAddInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddInt32"].apply(null, arguments) };
+var _BinaryenAddInt64 = Module["_BinaryenAddInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddInt64"].apply(null, arguments) };
+var _BinaryenAddMemoryExport = Module["_BinaryenAddMemoryExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddMemoryExport"].apply(null, arguments) };
+var _BinaryenAddMemoryImport = Module["_BinaryenAddMemoryImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddMemoryImport"].apply(null, arguments) };
+var _BinaryenAddTableExport = Module["_BinaryenAddTableExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddTableExport"].apply(null, arguments) };
+var _BinaryenAddTableImport = Module["_BinaryenAddTableImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAddTableImport"].apply(null, arguments) };
+var _BinaryenAndInt32 = Module["_BinaryenAndInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAndInt32"].apply(null, arguments) };
+var _BinaryenAndInt64 = Module["_BinaryenAndInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAndInt64"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchg = Module["_BinaryenAtomicCmpxchg"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchg"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgGetBytes = Module["_BinaryenAtomicCmpxchgGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgGetBytes"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgGetExpected = Module["_BinaryenAtomicCmpxchgGetExpected"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgGetExpected"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgGetOffset = Module["_BinaryenAtomicCmpxchgGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgGetOffset"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgGetPtr = Module["_BinaryenAtomicCmpxchgGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgGetPtr"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgGetReplacement = Module["_BinaryenAtomicCmpxchgGetReplacement"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgGetReplacement"].apply(null, arguments) };
+var _BinaryenAtomicCmpxchgId = Module["_BinaryenAtomicCmpxchgId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicCmpxchgId"].apply(null, arguments) };
+var _BinaryenAtomicLoad = Module["_BinaryenAtomicLoad"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicLoad"].apply(null, arguments) };
+var _BinaryenAtomicRMW = Module["_BinaryenAtomicRMW"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMW"].apply(null, arguments) };
+var _BinaryenAtomicRMWAdd = Module["_BinaryenAtomicRMWAdd"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWAdd"].apply(null, arguments) };
+var _BinaryenAtomicRMWAnd = Module["_BinaryenAtomicRMWAnd"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWAnd"].apply(null, arguments) };
+var _BinaryenAtomicRMWGetBytes = Module["_BinaryenAtomicRMWGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWGetBytes"].apply(null, arguments) };
+var _BinaryenAtomicRMWGetOffset = Module["_BinaryenAtomicRMWGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWGetOffset"].apply(null, arguments) };
+var _BinaryenAtomicRMWGetOp = Module["_BinaryenAtomicRMWGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWGetOp"].apply(null, arguments) };
+var _BinaryenAtomicRMWGetPtr = Module["_BinaryenAtomicRMWGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWGetPtr"].apply(null, arguments) };
+var _BinaryenAtomicRMWGetValue = Module["_BinaryenAtomicRMWGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWGetValue"].apply(null, arguments) };
+var _BinaryenAtomicRMWId = Module["_BinaryenAtomicRMWId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWId"].apply(null, arguments) };
+var _BinaryenAtomicRMWOr = Module["_BinaryenAtomicRMWOr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWOr"].apply(null, arguments) };
+var _BinaryenAtomicRMWSub = Module["_BinaryenAtomicRMWSub"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWSub"].apply(null, arguments) };
+var _BinaryenAtomicRMWXchg = Module["_BinaryenAtomicRMWXchg"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWXchg"].apply(null, arguments) };
+var _BinaryenAtomicRMWXor = Module["_BinaryenAtomicRMWXor"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicRMWXor"].apply(null, arguments) };
+var _BinaryenAtomicStore = Module["_BinaryenAtomicStore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicStore"].apply(null, arguments) };
+var _BinaryenAtomicWait = Module["_BinaryenAtomicWait"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWait"].apply(null, arguments) };
+var _BinaryenAtomicWaitGetExpected = Module["_BinaryenAtomicWaitGetExpected"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWaitGetExpected"].apply(null, arguments) };
+var _BinaryenAtomicWaitGetExpectedType = Module["_BinaryenAtomicWaitGetExpectedType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWaitGetExpectedType"].apply(null, arguments) };
+var _BinaryenAtomicWaitGetPtr = Module["_BinaryenAtomicWaitGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWaitGetPtr"].apply(null, arguments) };
+var _BinaryenAtomicWaitGetTimeout = Module["_BinaryenAtomicWaitGetTimeout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWaitGetTimeout"].apply(null, arguments) };
+var _BinaryenAtomicWaitId = Module["_BinaryenAtomicWaitId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWaitId"].apply(null, arguments) };
+var _BinaryenAtomicWake = Module["_BinaryenAtomicWake"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWake"].apply(null, arguments) };
+var _BinaryenAtomicWakeGetPtr = Module["_BinaryenAtomicWakeGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWakeGetPtr"].apply(null, arguments) };
+var _BinaryenAtomicWakeGetWakeCount = Module["_BinaryenAtomicWakeGetWakeCount"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWakeGetWakeCount"].apply(null, arguments) };
+var _BinaryenAtomicWakeId = Module["_BinaryenAtomicWakeId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenAtomicWakeId"].apply(null, arguments) };
+var _BinaryenBinary = Module["_BinaryenBinary"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBinary"].apply(null, arguments) };
+var _BinaryenBinaryGetLeft = Module["_BinaryenBinaryGetLeft"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBinaryGetLeft"].apply(null, arguments) };
+var _BinaryenBinaryGetOp = Module["_BinaryenBinaryGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBinaryGetOp"].apply(null, arguments) };
+var _BinaryenBinaryGetRight = Module["_BinaryenBinaryGetRight"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBinaryGetRight"].apply(null, arguments) };
+var _BinaryenBinaryId = Module["_BinaryenBinaryId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBinaryId"].apply(null, arguments) };
+var _BinaryenBlock = Module["_BinaryenBlock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBlock"].apply(null, arguments) };
+var _BinaryenBlockGetChild = Module["_BinaryenBlockGetChild"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBlockGetChild"].apply(null, arguments) };
+var _BinaryenBlockGetName = Module["_BinaryenBlockGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBlockGetName"].apply(null, arguments) };
+var _BinaryenBlockGetNumChildren = Module["_BinaryenBlockGetNumChildren"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBlockGetNumChildren"].apply(null, arguments) };
+var _BinaryenBlockId = Module["_BinaryenBlockId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBlockId"].apply(null, arguments) };
+var _BinaryenBreak = Module["_BinaryenBreak"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBreak"].apply(null, arguments) };
+var _BinaryenBreakGetCondition = Module["_BinaryenBreakGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBreakGetCondition"].apply(null, arguments) };
+var _BinaryenBreakGetName = Module["_BinaryenBreakGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBreakGetName"].apply(null, arguments) };
+var _BinaryenBreakGetValue = Module["_BinaryenBreakGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBreakGetValue"].apply(null, arguments) };
+var _BinaryenBreakId = Module["_BinaryenBreakId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenBreakId"].apply(null, arguments) };
+var _BinaryenCall = Module["_BinaryenCall"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCall"].apply(null, arguments) };
+var _BinaryenCallGetNumOperands = Module["_BinaryenCallGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallGetNumOperands"].apply(null, arguments) };
+var _BinaryenCallGetOperand = Module["_BinaryenCallGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallGetOperand"].apply(null, arguments) };
+var _BinaryenCallGetTarget = Module["_BinaryenCallGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallGetTarget"].apply(null, arguments) };
+var _BinaryenCallId = Module["_BinaryenCallId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallId"].apply(null, arguments) };
+var _BinaryenCallImport = Module["_BinaryenCallImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallImport"].apply(null, arguments) };
+var _BinaryenCallImportGetNumOperands = Module["_BinaryenCallImportGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallImportGetNumOperands"].apply(null, arguments) };
+var _BinaryenCallImportGetOperand = Module["_BinaryenCallImportGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallImportGetOperand"].apply(null, arguments) };
+var _BinaryenCallImportGetTarget = Module["_BinaryenCallImportGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallImportGetTarget"].apply(null, arguments) };
+var _BinaryenCallImportId = Module["_BinaryenCallImportId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallImportId"].apply(null, arguments) };
+var _BinaryenCallIndirect = Module["_BinaryenCallIndirect"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallIndirect"].apply(null, arguments) };
+var _BinaryenCallIndirectGetNumOperands = Module["_BinaryenCallIndirectGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallIndirectGetNumOperands"].apply(null, arguments) };
+var _BinaryenCallIndirectGetOperand = Module["_BinaryenCallIndirectGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallIndirectGetOperand"].apply(null, arguments) };
+var _BinaryenCallIndirectGetTarget = Module["_BinaryenCallIndirectGetTarget"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallIndirectGetTarget"].apply(null, arguments) };
+var _BinaryenCallIndirectId = Module["_BinaryenCallIndirectId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCallIndirectId"].apply(null, arguments) };
+var _BinaryenCeilFloat32 = Module["_BinaryenCeilFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCeilFloat32"].apply(null, arguments) };
+var _BinaryenCeilFloat64 = Module["_BinaryenCeilFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCeilFloat64"].apply(null, arguments) };
+var _BinaryenClzInt32 = Module["_BinaryenClzInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenClzInt32"].apply(null, arguments) };
+var _BinaryenClzInt64 = Module["_BinaryenClzInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenClzInt64"].apply(null, arguments) };
+var _BinaryenConst = Module["_BinaryenConst"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConst"].apply(null, arguments) };
+var _BinaryenConstGetValueF32 = Module["_BinaryenConstGetValueF32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueF32"].apply(null, arguments) };
+var _BinaryenConstGetValueF64 = Module["_BinaryenConstGetValueF64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueF64"].apply(null, arguments) };
+var _BinaryenConstGetValueI32 = Module["_BinaryenConstGetValueI32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueI32"].apply(null, arguments) };
+var _BinaryenConstGetValueI64 = Module["_BinaryenConstGetValueI64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueI64"].apply(null, arguments) };
+var _BinaryenConstGetValueI64High = Module["_BinaryenConstGetValueI64High"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueI64High"].apply(null, arguments) };
+var _BinaryenConstGetValueI64Low = Module["_BinaryenConstGetValueI64Low"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstGetValueI64Low"].apply(null, arguments) };
+var _BinaryenConstId = Module["_BinaryenConstId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConstId"].apply(null, arguments) };
+var _BinaryenConvertSInt32ToFloat32 = Module["_BinaryenConvertSInt32ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertSInt32ToFloat32"].apply(null, arguments) };
+var _BinaryenConvertSInt32ToFloat64 = Module["_BinaryenConvertSInt32ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertSInt32ToFloat64"].apply(null, arguments) };
+var _BinaryenConvertSInt64ToFloat32 = Module["_BinaryenConvertSInt64ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertSInt64ToFloat32"].apply(null, arguments) };
+var _BinaryenConvertSInt64ToFloat64 = Module["_BinaryenConvertSInt64ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertSInt64ToFloat64"].apply(null, arguments) };
+var _BinaryenConvertUInt32ToFloat32 = Module["_BinaryenConvertUInt32ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertUInt32ToFloat32"].apply(null, arguments) };
+var _BinaryenConvertUInt32ToFloat64 = Module["_BinaryenConvertUInt32ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertUInt32ToFloat64"].apply(null, arguments) };
+var _BinaryenConvertUInt64ToFloat32 = Module["_BinaryenConvertUInt64ToFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertUInt64ToFloat32"].apply(null, arguments) };
+var _BinaryenConvertUInt64ToFloat64 = Module["_BinaryenConvertUInt64ToFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenConvertUInt64ToFloat64"].apply(null, arguments) };
+var _BinaryenCopySignFloat32 = Module["_BinaryenCopySignFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCopySignFloat32"].apply(null, arguments) };
+var _BinaryenCopySignFloat64 = Module["_BinaryenCopySignFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCopySignFloat64"].apply(null, arguments) };
+var _BinaryenCtzInt32 = Module["_BinaryenCtzInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCtzInt32"].apply(null, arguments) };
+var _BinaryenCtzInt64 = Module["_BinaryenCtzInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCtzInt64"].apply(null, arguments) };
+var _BinaryenCurrentMemory = Module["_BinaryenCurrentMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenCurrentMemory"].apply(null, arguments) };
+var _BinaryenDemoteFloat64 = Module["_BinaryenDemoteFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDemoteFloat64"].apply(null, arguments) };
+var _BinaryenDivFloat32 = Module["_BinaryenDivFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivFloat32"].apply(null, arguments) };
+var _BinaryenDivFloat64 = Module["_BinaryenDivFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivFloat64"].apply(null, arguments) };
+var _BinaryenDivSInt32 = Module["_BinaryenDivSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivSInt32"].apply(null, arguments) };
+var _BinaryenDivSInt64 = Module["_BinaryenDivSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivSInt64"].apply(null, arguments) };
+var _BinaryenDivUInt32 = Module["_BinaryenDivUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivUInt32"].apply(null, arguments) };
+var _BinaryenDivUInt64 = Module["_BinaryenDivUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDivUInt64"].apply(null, arguments) };
+var _BinaryenDrop = Module["_BinaryenDrop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDrop"].apply(null, arguments) };
+var _BinaryenDropGetValue = Module["_BinaryenDropGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDropGetValue"].apply(null, arguments) };
+var _BinaryenDropId = Module["_BinaryenDropId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenDropId"].apply(null, arguments) };
+var _BinaryenEqFloat32 = Module["_BinaryenEqFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqFloat32"].apply(null, arguments) };
+var _BinaryenEqFloat64 = Module["_BinaryenEqFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqFloat64"].apply(null, arguments) };
+var _BinaryenEqInt32 = Module["_BinaryenEqInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqInt32"].apply(null, arguments) };
+var _BinaryenEqInt64 = Module["_BinaryenEqInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqInt64"].apply(null, arguments) };
+var _BinaryenEqZInt32 = Module["_BinaryenEqZInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqZInt32"].apply(null, arguments) };
+var _BinaryenEqZInt64 = Module["_BinaryenEqZInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenEqZInt64"].apply(null, arguments) };
+var _BinaryenExportGetKind = Module["_BinaryenExportGetKind"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExportGetKind"].apply(null, arguments) };
+var _BinaryenExportGetName = Module["_BinaryenExportGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExportGetName"].apply(null, arguments) };
+var _BinaryenExportGetValue = Module["_BinaryenExportGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExportGetValue"].apply(null, arguments) };
+var _BinaryenExpressionGetId = Module["_BinaryenExpressionGetId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExpressionGetId"].apply(null, arguments) };
+var _BinaryenExpressionGetType = Module["_BinaryenExpressionGetType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExpressionGetType"].apply(null, arguments) };
+var _BinaryenExpressionPrint = Module["_BinaryenExpressionPrint"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExpressionPrint"].apply(null, arguments) };
+var _BinaryenExtendSInt32 = Module["_BinaryenExtendSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExtendSInt32"].apply(null, arguments) };
+var _BinaryenExtendUInt32 = Module["_BinaryenExtendUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExtendUInt32"].apply(null, arguments) };
+var _BinaryenExternalFunction = Module["_BinaryenExternalFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExternalFunction"].apply(null, arguments) };
+var _BinaryenExternalGlobal = Module["_BinaryenExternalGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExternalGlobal"].apply(null, arguments) };
+var _BinaryenExternalMemory = Module["_BinaryenExternalMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExternalMemory"].apply(null, arguments) };
+var _BinaryenExternalTable = Module["_BinaryenExternalTable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenExternalTable"].apply(null, arguments) };
+var _BinaryenFloat32 = Module["_BinaryenFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFloat32"].apply(null, arguments) };
+var _BinaryenFloat64 = Module["_BinaryenFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFloat64"].apply(null, arguments) };
+var _BinaryenFloorFloat32 = Module["_BinaryenFloorFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFloorFloat32"].apply(null, arguments) };
+var _BinaryenFloorFloat64 = Module["_BinaryenFloorFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFloorFloat64"].apply(null, arguments) };
+var _BinaryenFunctionGetBody = Module["_BinaryenFunctionGetBody"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetBody"].apply(null, arguments) };
+var _BinaryenFunctionGetName = Module["_BinaryenFunctionGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetName"].apply(null, arguments) };
+var _BinaryenFunctionGetNumParams = Module["_BinaryenFunctionGetNumParams"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetNumParams"].apply(null, arguments) };
+var _BinaryenFunctionGetNumVars = Module["_BinaryenFunctionGetNumVars"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetNumVars"].apply(null, arguments) };
+var _BinaryenFunctionGetParam = Module["_BinaryenFunctionGetParam"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetParam"].apply(null, arguments) };
+var _BinaryenFunctionGetResult = Module["_BinaryenFunctionGetResult"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetResult"].apply(null, arguments) };
+var _BinaryenFunctionGetType = Module["_BinaryenFunctionGetType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetType"].apply(null, arguments) };
+var _BinaryenFunctionGetVar = Module["_BinaryenFunctionGetVar"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionGetVar"].apply(null, arguments) };
+var _BinaryenFunctionOptimize = Module["_BinaryenFunctionOptimize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionOptimize"].apply(null, arguments) };
+var _BinaryenFunctionRunPasses = Module["_BinaryenFunctionRunPasses"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionRunPasses"].apply(null, arguments) };
+var _BinaryenFunctionSetDebugLocation = Module["_BinaryenFunctionSetDebugLocation"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionSetDebugLocation"].apply(null, arguments) };
+var _BinaryenFunctionTypeGetName = Module["_BinaryenFunctionTypeGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionTypeGetName"].apply(null, arguments) };
+var _BinaryenFunctionTypeGetNumParams = Module["_BinaryenFunctionTypeGetNumParams"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionTypeGetNumParams"].apply(null, arguments) };
+var _BinaryenFunctionTypeGetParam = Module["_BinaryenFunctionTypeGetParam"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionTypeGetParam"].apply(null, arguments) };
+var _BinaryenFunctionTypeGetResult = Module["_BinaryenFunctionTypeGetResult"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenFunctionTypeGetResult"].apply(null, arguments) };
+var _BinaryenGeFloat32 = Module["_BinaryenGeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeFloat32"].apply(null, arguments) };
+var _BinaryenGeFloat64 = Module["_BinaryenGeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeFloat64"].apply(null, arguments) };
+var _BinaryenGeSInt32 = Module["_BinaryenGeSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeSInt32"].apply(null, arguments) };
+var _BinaryenGeSInt64 = Module["_BinaryenGeSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeSInt64"].apply(null, arguments) };
+var _BinaryenGeUInt32 = Module["_BinaryenGeUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeUInt32"].apply(null, arguments) };
+var _BinaryenGeUInt64 = Module["_BinaryenGeUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGeUInt64"].apply(null, arguments) };
+var _BinaryenGetDebugInfo = Module["_BinaryenGetDebugInfo"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetDebugInfo"].apply(null, arguments) };
+var _BinaryenGetFunction = Module["_BinaryenGetFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetFunction"].apply(null, arguments) };
+var _BinaryenGetFunctionTypeBySignature = Module["_BinaryenGetFunctionTypeBySignature"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetFunctionTypeBySignature"].apply(null, arguments) };
+var _BinaryenGetGlobal = Module["_BinaryenGetGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetGlobal"].apply(null, arguments) };
+var _BinaryenGetGlobalGetName = Module["_BinaryenGetGlobalGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetGlobalGetName"].apply(null, arguments) };
+var _BinaryenGetGlobalId = Module["_BinaryenGetGlobalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetGlobalId"].apply(null, arguments) };
+var _BinaryenGetLocal = Module["_BinaryenGetLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetLocal"].apply(null, arguments) };
+var _BinaryenGetLocalGetIndex = Module["_BinaryenGetLocalGetIndex"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetLocalGetIndex"].apply(null, arguments) };
+var _BinaryenGetLocalId = Module["_BinaryenGetLocalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetLocalId"].apply(null, arguments) };
+var _BinaryenGetOptimizeLevel = Module["_BinaryenGetOptimizeLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetOptimizeLevel"].apply(null, arguments) };
+var _BinaryenGetShrinkLevel = Module["_BinaryenGetShrinkLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGetShrinkLevel"].apply(null, arguments) };
+var _BinaryenGrowMemory = Module["_BinaryenGrowMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGrowMemory"].apply(null, arguments) };
+var _BinaryenGtFloat32 = Module["_BinaryenGtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtFloat32"].apply(null, arguments) };
+var _BinaryenGtFloat64 = Module["_BinaryenGtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtFloat64"].apply(null, arguments) };
+var _BinaryenGtSInt32 = Module["_BinaryenGtSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtSInt32"].apply(null, arguments) };
+var _BinaryenGtSInt64 = Module["_BinaryenGtSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtSInt64"].apply(null, arguments) };
+var _BinaryenGtUInt32 = Module["_BinaryenGtUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtUInt32"].apply(null, arguments) };
+var _BinaryenGtUInt64 = Module["_BinaryenGtUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenGtUInt64"].apply(null, arguments) };
+var _BinaryenHasFeature = Module["_BinaryenHasFeature"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHasFeature"].apply(null, arguments) };
+var _BinaryenHost = Module["_BinaryenHost"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHost"].apply(null, arguments) };
+var _BinaryenHostGetNameOperand = Module["_BinaryenHostGetNameOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHostGetNameOperand"].apply(null, arguments) };
+var _BinaryenHostGetNumOperands = Module["_BinaryenHostGetNumOperands"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHostGetNumOperands"].apply(null, arguments) };
+var _BinaryenHostGetOp = Module["_BinaryenHostGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHostGetOp"].apply(null, arguments) };
+var _BinaryenHostGetOperand = Module["_BinaryenHostGetOperand"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHostGetOperand"].apply(null, arguments) };
+var _BinaryenHostId = Module["_BinaryenHostId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenHostId"].apply(null, arguments) };
+var _BinaryenIf = Module["_BinaryenIf"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenIf"].apply(null, arguments) };
+var _BinaryenIfGetCondition = Module["_BinaryenIfGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenIfGetCondition"].apply(null, arguments) };
+var _BinaryenIfGetIfFalse = Module["_BinaryenIfGetIfFalse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenIfGetIfFalse"].apply(null, arguments) };
+var _BinaryenIfGetIfTrue = Module["_BinaryenIfGetIfTrue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenIfGetIfTrue"].apply(null, arguments) };
+var _BinaryenIfId = Module["_BinaryenIfId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenIfId"].apply(null, arguments) };
+var _BinaryenImportGetBase = Module["_BinaryenImportGetBase"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetBase"].apply(null, arguments) };
+var _BinaryenImportGetFunctionType = Module["_BinaryenImportGetFunctionType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetFunctionType"].apply(null, arguments) };
+var _BinaryenImportGetGlobalType = Module["_BinaryenImportGetGlobalType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetGlobalType"].apply(null, arguments) };
+var _BinaryenImportGetKind = Module["_BinaryenImportGetKind"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetKind"].apply(null, arguments) };
+var _BinaryenImportGetModule = Module["_BinaryenImportGetModule"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetModule"].apply(null, arguments) };
+var _BinaryenImportGetName = Module["_BinaryenImportGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenImportGetName"].apply(null, arguments) };
+var _BinaryenInt32 = Module["_BinaryenInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenInt32"].apply(null, arguments) };
+var _BinaryenInt64 = Module["_BinaryenInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenInt64"].apply(null, arguments) };
+var _BinaryenInvalidId = Module["_BinaryenInvalidId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenInvalidId"].apply(null, arguments) };
+var _BinaryenLeFloat32 = Module["_BinaryenLeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeFloat32"].apply(null, arguments) };
+var _BinaryenLeFloat64 = Module["_BinaryenLeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeFloat64"].apply(null, arguments) };
+var _BinaryenLeSInt32 = Module["_BinaryenLeSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeSInt32"].apply(null, arguments) };
+var _BinaryenLeSInt64 = Module["_BinaryenLeSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeSInt64"].apply(null, arguments) };
+var _BinaryenLeUInt32 = Module["_BinaryenLeUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeUInt32"].apply(null, arguments) };
+var _BinaryenLeUInt64 = Module["_BinaryenLeUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLeUInt64"].apply(null, arguments) };
+var _BinaryenLiteralFloat32 = Module["_BinaryenLiteralFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralFloat32"].apply(null, arguments) };
+var _BinaryenLiteralFloat32Bits = Module["_BinaryenLiteralFloat32Bits"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralFloat32Bits"].apply(null, arguments) };
+var _BinaryenLiteralFloat64 = Module["_BinaryenLiteralFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralFloat64"].apply(null, arguments) };
+var _BinaryenLiteralFloat64Bits = Module["_BinaryenLiteralFloat64Bits"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralFloat64Bits"].apply(null, arguments) };
+var _BinaryenLiteralInt32 = Module["_BinaryenLiteralInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralInt32"].apply(null, arguments) };
+var _BinaryenLiteralInt64 = Module["_BinaryenLiteralInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLiteralInt64"].apply(null, arguments) };
+var _BinaryenLoad = Module["_BinaryenLoad"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoad"].apply(null, arguments) };
+var _BinaryenLoadGetAlign = Module["_BinaryenLoadGetAlign"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadGetAlign"].apply(null, arguments) };
+var _BinaryenLoadGetBytes = Module["_BinaryenLoadGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadGetBytes"].apply(null, arguments) };
+var _BinaryenLoadGetOffset = Module["_BinaryenLoadGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadGetOffset"].apply(null, arguments) };
+var _BinaryenLoadGetPtr = Module["_BinaryenLoadGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadGetPtr"].apply(null, arguments) };
+var _BinaryenLoadId = Module["_BinaryenLoadId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadId"].apply(null, arguments) };
+var _BinaryenLoadIsAtomic = Module["_BinaryenLoadIsAtomic"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadIsAtomic"].apply(null, arguments) };
+var _BinaryenLoadIsSigned = Module["_BinaryenLoadIsSigned"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoadIsSigned"].apply(null, arguments) };
+var _BinaryenLoop = Module["_BinaryenLoop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoop"].apply(null, arguments) };
+var _BinaryenLoopGetBody = Module["_BinaryenLoopGetBody"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoopGetBody"].apply(null, arguments) };
+var _BinaryenLoopGetName = Module["_BinaryenLoopGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoopGetName"].apply(null, arguments) };
+var _BinaryenLoopId = Module["_BinaryenLoopId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLoopId"].apply(null, arguments) };
+var _BinaryenLtFloat32 = Module["_BinaryenLtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtFloat32"].apply(null, arguments) };
+var _BinaryenLtFloat64 = Module["_BinaryenLtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtFloat64"].apply(null, arguments) };
+var _BinaryenLtSInt32 = Module["_BinaryenLtSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtSInt32"].apply(null, arguments) };
+var _BinaryenLtSInt64 = Module["_BinaryenLtSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtSInt64"].apply(null, arguments) };
+var _BinaryenLtUInt32 = Module["_BinaryenLtUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtUInt32"].apply(null, arguments) };
+var _BinaryenLtUInt64 = Module["_BinaryenLtUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenLtUInt64"].apply(null, arguments) };
+var _BinaryenMaxFloat32 = Module["_BinaryenMaxFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMaxFloat32"].apply(null, arguments) };
+var _BinaryenMaxFloat64 = Module["_BinaryenMaxFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMaxFloat64"].apply(null, arguments) };
+var _BinaryenMinFloat32 = Module["_BinaryenMinFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMinFloat32"].apply(null, arguments) };
+var _BinaryenMinFloat64 = Module["_BinaryenMinFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMinFloat64"].apply(null, arguments) };
+var _BinaryenModuleAddDebugInfoFileName = Module["_BinaryenModuleAddDebugInfoFileName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleAddDebugInfoFileName"].apply(null, arguments) };
+var _BinaryenModuleAllocateAndWrite = Module["_BinaryenModuleAllocateAndWrite"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleAllocateAndWrite"].apply(null, arguments) };
+var _BinaryenModuleAutoDrop = Module["_BinaryenModuleAutoDrop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleAutoDrop"].apply(null, arguments) };
+var _BinaryenModuleCreate = Module["_BinaryenModuleCreate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleCreate"].apply(null, arguments) };
+var _BinaryenModuleDispose = Module["_BinaryenModuleDispose"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleDispose"].apply(null, arguments) };
+var _BinaryenModuleGetDebugInfoFileName = Module["_BinaryenModuleGetDebugInfoFileName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleGetDebugInfoFileName"].apply(null, arguments) };
+var _BinaryenModuleInterpret = Module["_BinaryenModuleInterpret"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleInterpret"].apply(null, arguments) };
+var _BinaryenModuleOptimize = Module["_BinaryenModuleOptimize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleOptimize"].apply(null, arguments) };
+var _BinaryenModuleParse = Module["_BinaryenModuleParse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleParse"].apply(null, arguments) };
+var _BinaryenModulePrint = Module["_BinaryenModulePrint"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModulePrint"].apply(null, arguments) };
+var _BinaryenModulePrintAsmjs = Module["_BinaryenModulePrintAsmjs"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModulePrintAsmjs"].apply(null, arguments) };
+var _BinaryenModuleRead = Module["_BinaryenModuleRead"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleRead"].apply(null, arguments) };
+var _BinaryenModuleRunPasses = Module["_BinaryenModuleRunPasses"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleRunPasses"].apply(null, arguments) };
+var _BinaryenModuleValidate = Module["_BinaryenModuleValidate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleValidate"].apply(null, arguments) };
+var _BinaryenModuleWrite = Module["_BinaryenModuleWrite"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleWrite"].apply(null, arguments) };
+var _BinaryenModuleWriteWithSourceMap = Module["_BinaryenModuleWriteWithSourceMap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenModuleWriteWithSourceMap"].apply(null, arguments) };
+var _BinaryenMulFloat32 = Module["_BinaryenMulFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMulFloat32"].apply(null, arguments) };
+var _BinaryenMulFloat64 = Module["_BinaryenMulFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMulFloat64"].apply(null, arguments) };
+var _BinaryenMulInt32 = Module["_BinaryenMulInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMulInt32"].apply(null, arguments) };
+var _BinaryenMulInt64 = Module["_BinaryenMulInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenMulInt64"].apply(null, arguments) };
+var _BinaryenNeFloat32 = Module["_BinaryenNeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNeFloat32"].apply(null, arguments) };
+var _BinaryenNeFloat64 = Module["_BinaryenNeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNeFloat64"].apply(null, arguments) };
+var _BinaryenNeInt32 = Module["_BinaryenNeInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNeInt32"].apply(null, arguments) };
+var _BinaryenNeInt64 = Module["_BinaryenNeInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNeInt64"].apply(null, arguments) };
+var _BinaryenNearestFloat32 = Module["_BinaryenNearestFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNearestFloat32"].apply(null, arguments) };
+var _BinaryenNearestFloat64 = Module["_BinaryenNearestFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNearestFloat64"].apply(null, arguments) };
+var _BinaryenNegFloat32 = Module["_BinaryenNegFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNegFloat32"].apply(null, arguments) };
+var _BinaryenNegFloat64 = Module["_BinaryenNegFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNegFloat64"].apply(null, arguments) };
+var _BinaryenNone = Module["_BinaryenNone"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNone"].apply(null, arguments) };
+var _BinaryenNop = Module["_BinaryenNop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNop"].apply(null, arguments) };
+var _BinaryenNopId = Module["_BinaryenNopId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenNopId"].apply(null, arguments) };
+var _BinaryenOrInt32 = Module["_BinaryenOrInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenOrInt32"].apply(null, arguments) };
+var _BinaryenOrInt64 = Module["_BinaryenOrInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenOrInt64"].apply(null, arguments) };
+var _BinaryenPageSize = Module["_BinaryenPageSize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenPageSize"].apply(null, arguments) };
+var _BinaryenPopcntInt32 = Module["_BinaryenPopcntInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenPopcntInt32"].apply(null, arguments) };
+var _BinaryenPopcntInt64 = Module["_BinaryenPopcntInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenPopcntInt64"].apply(null, arguments) };
+var _BinaryenPromoteFloat32 = Module["_BinaryenPromoteFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenPromoteFloat32"].apply(null, arguments) };
+var _BinaryenReinterpretFloat32 = Module["_BinaryenReinterpretFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReinterpretFloat32"].apply(null, arguments) };
+var _BinaryenReinterpretFloat64 = Module["_BinaryenReinterpretFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReinterpretFloat64"].apply(null, arguments) };
+var _BinaryenReinterpretInt32 = Module["_BinaryenReinterpretInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReinterpretInt32"].apply(null, arguments) };
+var _BinaryenReinterpretInt64 = Module["_BinaryenReinterpretInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReinterpretInt64"].apply(null, arguments) };
+var _BinaryenRemSInt32 = Module["_BinaryenRemSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemSInt32"].apply(null, arguments) };
+var _BinaryenRemSInt64 = Module["_BinaryenRemSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemSInt64"].apply(null, arguments) };
+var _BinaryenRemUInt32 = Module["_BinaryenRemUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemUInt32"].apply(null, arguments) };
+var _BinaryenRemUInt64 = Module["_BinaryenRemUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemUInt64"].apply(null, arguments) };
+var _BinaryenRemoveExport = Module["_BinaryenRemoveExport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemoveExport"].apply(null, arguments) };
+var _BinaryenRemoveFunction = Module["_BinaryenRemoveFunction"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemoveFunction"].apply(null, arguments) };
+var _BinaryenRemoveImport = Module["_BinaryenRemoveImport"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRemoveImport"].apply(null, arguments) };
+var _BinaryenReturn = Module["_BinaryenReturn"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReturn"].apply(null, arguments) };
+var _BinaryenReturnGetValue = Module["_BinaryenReturnGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReturnGetValue"].apply(null, arguments) };
+var _BinaryenReturnId = Module["_BinaryenReturnId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenReturnId"].apply(null, arguments) };
+var _BinaryenRotLInt32 = Module["_BinaryenRotLInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRotLInt32"].apply(null, arguments) };
+var _BinaryenRotLInt64 = Module["_BinaryenRotLInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRotLInt64"].apply(null, arguments) };
+var _BinaryenRotRInt32 = Module["_BinaryenRotRInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRotRInt32"].apply(null, arguments) };
+var _BinaryenRotRInt64 = Module["_BinaryenRotRInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenRotRInt64"].apply(null, arguments) };
+var _BinaryenSelect = Module["_BinaryenSelect"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSelect"].apply(null, arguments) };
+var _BinaryenSelectGetCondition = Module["_BinaryenSelectGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSelectGetCondition"].apply(null, arguments) };
+var _BinaryenSelectGetIfFalse = Module["_BinaryenSelectGetIfFalse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSelectGetIfFalse"].apply(null, arguments) };
+var _BinaryenSelectGetIfTrue = Module["_BinaryenSelectGetIfTrue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSelectGetIfTrue"].apply(null, arguments) };
+var _BinaryenSelectId = Module["_BinaryenSelectId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSelectId"].apply(null, arguments) };
+var _BinaryenSetAPITracing = Module["_BinaryenSetAPITracing"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetAPITracing"].apply(null, arguments) };
+var _BinaryenSetDebugInfo = Module["_BinaryenSetDebugInfo"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetDebugInfo"].apply(null, arguments) };
+var _BinaryenSetFunctionTable = Module["_BinaryenSetFunctionTable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetFunctionTable"].apply(null, arguments) };
+var _BinaryenSetGlobal = Module["_BinaryenSetGlobal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetGlobal"].apply(null, arguments) };
+var _BinaryenSetGlobalGetName = Module["_BinaryenSetGlobalGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetGlobalGetName"].apply(null, arguments) };
+var _BinaryenSetGlobalGetValue = Module["_BinaryenSetGlobalGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetGlobalGetValue"].apply(null, arguments) };
+var _BinaryenSetGlobalId = Module["_BinaryenSetGlobalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetGlobalId"].apply(null, arguments) };
+var _BinaryenSetLocal = Module["_BinaryenSetLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetLocal"].apply(null, arguments) };
+var _BinaryenSetLocalGetIndex = Module["_BinaryenSetLocalGetIndex"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetLocalGetIndex"].apply(null, arguments) };
+var _BinaryenSetLocalGetValue = Module["_BinaryenSetLocalGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetLocalGetValue"].apply(null, arguments) };
+var _BinaryenSetLocalId = Module["_BinaryenSetLocalId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetLocalId"].apply(null, arguments) };
+var _BinaryenSetLocalIsTee = Module["_BinaryenSetLocalIsTee"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetLocalIsTee"].apply(null, arguments) };
+var _BinaryenSetMemory = Module["_BinaryenSetMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetMemory"].apply(null, arguments) };
+var _BinaryenSetOptimizeLevel = Module["_BinaryenSetOptimizeLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetOptimizeLevel"].apply(null, arguments) };
+var _BinaryenSetShrinkLevel = Module["_BinaryenSetShrinkLevel"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetShrinkLevel"].apply(null, arguments) };
+var _BinaryenSetStart = Module["_BinaryenSetStart"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSetStart"].apply(null, arguments) };
+var _BinaryenShlInt32 = Module["_BinaryenShlInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShlInt32"].apply(null, arguments) };
+var _BinaryenShlInt64 = Module["_BinaryenShlInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShlInt64"].apply(null, arguments) };
+var _BinaryenShrSInt32 = Module["_BinaryenShrSInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShrSInt32"].apply(null, arguments) };
+var _BinaryenShrSInt64 = Module["_BinaryenShrSInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShrSInt64"].apply(null, arguments) };
+var _BinaryenShrUInt32 = Module["_BinaryenShrUInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShrUInt32"].apply(null, arguments) };
+var _BinaryenShrUInt64 = Module["_BinaryenShrUInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenShrUInt64"].apply(null, arguments) };
+var _BinaryenSqrtFloat32 = Module["_BinaryenSqrtFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSqrtFloat32"].apply(null, arguments) };
+var _BinaryenSqrtFloat64 = Module["_BinaryenSqrtFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSqrtFloat64"].apply(null, arguments) };
+var _BinaryenStore = Module["_BinaryenStore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStore"].apply(null, arguments) };
+var _BinaryenStoreGetAlign = Module["_BinaryenStoreGetAlign"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreGetAlign"].apply(null, arguments) };
+var _BinaryenStoreGetBytes = Module["_BinaryenStoreGetBytes"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreGetBytes"].apply(null, arguments) };
+var _BinaryenStoreGetOffset = Module["_BinaryenStoreGetOffset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreGetOffset"].apply(null, arguments) };
+var _BinaryenStoreGetPtr = Module["_BinaryenStoreGetPtr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreGetPtr"].apply(null, arguments) };
+var _BinaryenStoreGetValue = Module["_BinaryenStoreGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreGetValue"].apply(null, arguments) };
+var _BinaryenStoreId = Module["_BinaryenStoreId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreId"].apply(null, arguments) };
+var _BinaryenStoreIsAtomic = Module["_BinaryenStoreIsAtomic"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenStoreIsAtomic"].apply(null, arguments) };
+var _BinaryenSubFloat32 = Module["_BinaryenSubFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSubFloat32"].apply(null, arguments) };
+var _BinaryenSubFloat64 = Module["_BinaryenSubFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSubFloat64"].apply(null, arguments) };
+var _BinaryenSubInt32 = Module["_BinaryenSubInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSubInt32"].apply(null, arguments) };
+var _BinaryenSubInt64 = Module["_BinaryenSubInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSubInt64"].apply(null, arguments) };
+var _BinaryenSwitch = Module["_BinaryenSwitch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitch"].apply(null, arguments) };
+var _BinaryenSwitchGetCondition = Module["_BinaryenSwitchGetCondition"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchGetCondition"].apply(null, arguments) };
+var _BinaryenSwitchGetDefaultName = Module["_BinaryenSwitchGetDefaultName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchGetDefaultName"].apply(null, arguments) };
+var _BinaryenSwitchGetName = Module["_BinaryenSwitchGetName"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchGetName"].apply(null, arguments) };
+var _BinaryenSwitchGetNumNames = Module["_BinaryenSwitchGetNumNames"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchGetNumNames"].apply(null, arguments) };
+var _BinaryenSwitchGetValue = Module["_BinaryenSwitchGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchGetValue"].apply(null, arguments) };
+var _BinaryenSwitchId = Module["_BinaryenSwitchId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenSwitchId"].apply(null, arguments) };
+var _BinaryenTeeLocal = Module["_BinaryenTeeLocal"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTeeLocal"].apply(null, arguments) };
+var _BinaryenTruncFloat32 = Module["_BinaryenTruncFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncFloat32"].apply(null, arguments) };
+var _BinaryenTruncFloat64 = Module["_BinaryenTruncFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncFloat64"].apply(null, arguments) };
+var _BinaryenTruncSFloat32ToInt32 = Module["_BinaryenTruncSFloat32ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncSFloat32ToInt32"].apply(null, arguments) };
+var _BinaryenTruncSFloat32ToInt64 = Module["_BinaryenTruncSFloat32ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncSFloat32ToInt64"].apply(null, arguments) };
+var _BinaryenTruncSFloat64ToInt32 = Module["_BinaryenTruncSFloat64ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncSFloat64ToInt32"].apply(null, arguments) };
+var _BinaryenTruncSFloat64ToInt64 = Module["_BinaryenTruncSFloat64ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncSFloat64ToInt64"].apply(null, arguments) };
+var _BinaryenTruncUFloat32ToInt32 = Module["_BinaryenTruncUFloat32ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncUFloat32ToInt32"].apply(null, arguments) };
+var _BinaryenTruncUFloat32ToInt64 = Module["_BinaryenTruncUFloat32ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncUFloat32ToInt64"].apply(null, arguments) };
+var _BinaryenTruncUFloat64ToInt32 = Module["_BinaryenTruncUFloat64ToInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncUFloat64ToInt32"].apply(null, arguments) };
+var _BinaryenTruncUFloat64ToInt64 = Module["_BinaryenTruncUFloat64ToInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTruncUFloat64ToInt64"].apply(null, arguments) };
+var _BinaryenTypeAuto = Module["_BinaryenTypeAuto"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeAuto"].apply(null, arguments) };
+var _BinaryenTypeFloat32 = Module["_BinaryenTypeFloat32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeFloat32"].apply(null, arguments) };
+var _BinaryenTypeFloat64 = Module["_BinaryenTypeFloat64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeFloat64"].apply(null, arguments) };
+var _BinaryenTypeInt32 = Module["_BinaryenTypeInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeInt32"].apply(null, arguments) };
+var _BinaryenTypeInt64 = Module["_BinaryenTypeInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeInt64"].apply(null, arguments) };
+var _BinaryenTypeNone = Module["_BinaryenTypeNone"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeNone"].apply(null, arguments) };
+var _BinaryenTypeUnreachable = Module["_BinaryenTypeUnreachable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenTypeUnreachable"].apply(null, arguments) };
+var _BinaryenUnary = Module["_BinaryenUnary"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnary"].apply(null, arguments) };
+var _BinaryenUnaryGetOp = Module["_BinaryenUnaryGetOp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnaryGetOp"].apply(null, arguments) };
+var _BinaryenUnaryGetValue = Module["_BinaryenUnaryGetValue"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnaryGetValue"].apply(null, arguments) };
+var _BinaryenUnaryId = Module["_BinaryenUnaryId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnaryId"].apply(null, arguments) };
+var _BinaryenUndefined = Module["_BinaryenUndefined"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUndefined"].apply(null, arguments) };
+var _BinaryenUnreachable = Module["_BinaryenUnreachable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnreachable"].apply(null, arguments) };
+var _BinaryenUnreachableId = Module["_BinaryenUnreachableId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenUnreachableId"].apply(null, arguments) };
+var _BinaryenWrapInt64 = Module["_BinaryenWrapInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenWrapInt64"].apply(null, arguments) };
+var _BinaryenXorInt32 = Module["_BinaryenXorInt32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenXorInt32"].apply(null, arguments) };
+var _BinaryenXorInt64 = Module["_BinaryenXorInt64"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_BinaryenXorInt64"].apply(null, arguments) };
+var __GLOBAL__I_000101 = Module["__GLOBAL__I_000101"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__I_000101"].apply(null, arguments) };
+var __GLOBAL__sub_I_I64ToI32Lowering_cpp = Module["__GLOBAL__sub_I_I64ToI32Lowering_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_I64ToI32Lowering_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_InstrumentLocals_cpp = Module["__GLOBAL__sub_I_InstrumentLocals_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_InstrumentLocals_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_InstrumentMemory_cpp = Module["__GLOBAL__sub_I_InstrumentMemory_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_InstrumentMemory_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_LegalizeJSInterface_cpp = Module["__GLOBAL__sub_I_LegalizeJSInterface_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_LegalizeJSInterface_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_LogExecution_cpp = Module["__GLOBAL__sub_I_LogExecution_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_LogExecution_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_Metrics_cpp = Module["__GLOBAL__sub_I_Metrics_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_Metrics_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_OptimizeInstructions_cpp = Module["__GLOBAL__sub_I_OptimizeInstructions_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_OptimizeInstructions_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_Precompute_cpp = Module["__GLOBAL__sub_I_Precompute_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_Precompute_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_RelooperJumpThreading_cpp = Module["__GLOBAL__sub_I_RelooperJumpThreading_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_RelooperJumpThreading_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_SSAify_cpp = Module["__GLOBAL__sub_I_SSAify_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_SSAify_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_SafeHeap_cpp = Module["__GLOBAL__sub_I_SafeHeap_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_SafeHeap_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_TrapMode_cpp = Module["__GLOBAL__sub_I_TrapMode_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_TrapMode_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_binaryen_c_cpp = Module["__GLOBAL__sub_I_binaryen_c_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_binaryen_c_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_iostream_cpp = Module["__GLOBAL__sub_I_iostream_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_iostream_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_optimizer_shared_cpp = Module["__GLOBAL__sub_I_optimizer_shared_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_optimizer_shared_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_parser_cpp = Module["__GLOBAL__sub_I_parser_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_parser_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_pass_cpp = Module["__GLOBAL__sub_I_pass_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_pass_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_path_cpp = Module["__GLOBAL__sub_I_path_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_path_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_shared_constants_cpp = Module["__GLOBAL__sub_I_shared_constants_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_shared_constants_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_simple_ast_cpp = Module["__GLOBAL__sub_I_simple_ast_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_simple_ast_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_threads_cpp = Module["__GLOBAL__sub_I_threads_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_threads_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_wasm_cpp = Module["__GLOBAL__sub_I_wasm_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_wasm_cpp"].apply(null, arguments) };
+var __GLOBAL__sub_I_wasm_emscripten_cpp = Module["__GLOBAL__sub_I_wasm_emscripten_cpp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__GLOBAL__sub_I_wasm_emscripten_cpp"].apply(null, arguments) };
+var ___cxa_can_catch = Module["___cxa_can_catch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___cxa_can_catch"].apply(null, arguments) };
+var ___cxa_demangle = Module["___cxa_demangle"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___cxa_demangle"].apply(null, arguments) };
+var ___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___cxa_is_pointer_type"].apply(null, arguments) };
+var ___errno_location = Module["___errno_location"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___errno_location"].apply(null, arguments) };
+var _emscripten_replace_memory = Module["_emscripten_replace_memory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_emscripten_replace_memory"].apply(null, arguments) };
+var _fflush = Module["_fflush"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_fflush"].apply(null, arguments) };
+var _free = Module["_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_free"].apply(null, arguments) };
+var _llvm_bswap_i32 = Module["_llvm_bswap_i32"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_llvm_bswap_i32"].apply(null, arguments) };
+var _malloc = Module["_malloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_malloc"].apply(null, arguments) };
+var _memcpy = Module["_memcpy"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_memcpy"].apply(null, arguments) };
+var _memmove = Module["_memmove"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_memmove"].apply(null, arguments) };
+var _memset = Module["_memset"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_memset"].apply(null, arguments) };
+var _pthread_cond_broadcast = Module["_pthread_cond_broadcast"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_pthread_cond_broadcast"].apply(null, arguments) };
+var _pthread_mutex_lock = Module["_pthread_mutex_lock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_pthread_mutex_lock"].apply(null, arguments) };
+var _pthread_mutex_unlock = Module["_pthread_mutex_unlock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_pthread_mutex_unlock"].apply(null, arguments) };
+var _rintf = Module["_rintf"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_rintf"].apply(null, arguments) };
+var _sbrk = Module["_sbrk"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_sbrk"].apply(null, arguments) };
+var establishStackSpace = Module["establishStackSpace"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["establishStackSpace"].apply(null, arguments) };
+var getTempRet0 = Module["getTempRet0"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["getTempRet0"].apply(null, arguments) };
+var runPostSets = Module["runPostSets"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["runPostSets"].apply(null, arguments) };
+var setTempRet0 = Module["setTempRet0"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["setTempRet0"].apply(null, arguments) };
+var setThrew = Module["setThrew"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["setThrew"].apply(null, arguments) };
+var stackAlloc = Module["stackAlloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["stackAlloc"].apply(null, arguments) };
+var stackRestore = Module["stackRestore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["stackRestore"].apply(null, arguments) };
+var stackSave = Module["stackSave"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["stackSave"].apply(null, arguments) };
+var dynCall_i = Module["dynCall_i"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_i"].apply(null, arguments) };
+var dynCall_id = Module["dynCall_id"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_id"].apply(null, arguments) };
+var dynCall_ii = Module["dynCall_ii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_ii"].apply(null, arguments) };
+var dynCall_iid = Module["dynCall_iid"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iid"].apply(null, arguments) };
+var dynCall_iii = Module["dynCall_iii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iii"].apply(null, arguments) };
+var dynCall_iiii = Module["dynCall_iiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiii"].apply(null, arguments) };
+var dynCall_iiiii = Module["dynCall_iiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiii"].apply(null, arguments) };
+var dynCall_iiiiid = Module["dynCall_iiiiid"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiid"].apply(null, arguments) };
+var dynCall_iiiiii = Module["dynCall_iiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiii"].apply(null, arguments) };
+var dynCall_iiiiiid = Module["dynCall_iiiiiid"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiid"].apply(null, arguments) };
+var dynCall_iiiiiii = Module["dynCall_iiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiii"].apply(null, arguments) };
+var dynCall_iiiiiiii = Module["dynCall_iiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiiii"].apply(null, arguments) };
+var dynCall_iiiiiiiii = Module["dynCall_iiiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiiiii"].apply(null, arguments) };
+var dynCall_iiiiiiiiiiii = Module["dynCall_iiiiiiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiiiiiiii"].apply(null, arguments) };
+var dynCall_iiiiiiiiiiiii = Module["dynCall_iiiiiiiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiiiiiiiii"].apply(null, arguments) };
+var dynCall_iiiiij = Module["dynCall_iiiiij"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiij"].apply(null, arguments) };
+var dynCall_iij = Module["dynCall_iij"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iij"].apply(null, arguments) };
+var dynCall_ji = Module["dynCall_ji"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_ji"].apply(null, arguments) };
+var dynCall_jii = Module["dynCall_jii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_jii"].apply(null, arguments) };
+var dynCall_v = Module["dynCall_v"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_v"].apply(null, arguments) };
+var dynCall_vi = Module["dynCall_vi"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_vi"].apply(null, arguments) };
+var dynCall_vii = Module["dynCall_vii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_vii"].apply(null, arguments) };
+var dynCall_viii = Module["dynCall_viii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viii"].apply(null, arguments) };
+var dynCall_viiii = Module["dynCall_viiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiii"].apply(null, arguments) };
+var dynCall_viiiii = Module["dynCall_viiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiiii"].apply(null, arguments) };
+var dynCall_viiiiii = Module["dynCall_viiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiiiii"].apply(null, arguments) };
+var dynCall_viiiiiii = Module["dynCall_viiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiiiiii"].apply(null, arguments) };
+var dynCall_viiiiiiiiii = Module["dynCall_viiiiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiiiiiiiii"].apply(null, arguments) };
+var dynCall_viiiiiiiiiiiiiii = Module["dynCall_viiiiiiiiiiiiiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viiiiiiiiiiiiiii"].apply(null, arguments) };
+var dynCall_viij = Module["dynCall_viij"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viij"].apply(null, arguments) };
+var dynCall_viijii = Module["dynCall_viijii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_viijii"].apply(null, arguments) };
+var dynCall_vij = Module["dynCall_vij"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_vij"].apply(null, arguments) };
 ;
-Runtime.stackAlloc = Module['stackAlloc'];
-Runtime.stackSave = Module['stackSave'];
-Runtime.stackRestore = Module['stackRestore'];
-Runtime.establishStackSpace = Module['establishStackSpace'];
-Runtime.setTempRet0 = Module['setTempRet0'];
-Runtime.getTempRet0 = Module['getTempRet0'];
+
 
 
 // === Auto-generated postamble setup entry stuff ===
 
 Module['asm'] = asm;
 
+if (!Module["intArrayFromString"]) Module["intArrayFromString"] = function() { abort("'intArrayFromString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["intArrayToString"]) Module["intArrayToString"] = function() { abort("'intArrayToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["ccall"]) Module["ccall"] = function() { abort("'ccall' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["cwrap"]) Module["cwrap"] = function() { abort("'cwrap' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["setValue"]) Module["setValue"] = function() { abort("'setValue' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getValue"]) Module["getValue"] = function() { abort("'getValue' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["allocate"]) Module["allocate"] = function() { abort("'allocate' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getMemory"]) Module["getMemory"] = function() { abort("'getMemory' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["Pointer_stringify"]) Module["Pointer_stringify"] = function() { abort("'Pointer_stringify' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["AsciiToString"]) Module["AsciiToString"] = function() { abort("'AsciiToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stringToAscii"]) Module["stringToAscii"] = function() { abort("'stringToAscii' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["UTF8ArrayToString"]) Module["UTF8ArrayToString"] = function() { abort("'UTF8ArrayToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["UTF8ToString"]) Module["UTF8ToString"] = function() { abort("'UTF8ToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stringToUTF8Array"]) Module["stringToUTF8Array"] = function() { abort("'stringToUTF8Array' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stringToUTF8"]) Module["stringToUTF8"] = function() { abort("'stringToUTF8' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["lengthBytesUTF8"]) Module["lengthBytesUTF8"] = function() { abort("'lengthBytesUTF8' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["UTF16ToString"]) Module["UTF16ToString"] = function() { abort("'UTF16ToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stringToUTF16"]) Module["stringToUTF16"] = function() { abort("'stringToUTF16' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["lengthBytesUTF16"]) Module["lengthBytesUTF16"] = function() { abort("'lengthBytesUTF16' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["UTF32ToString"]) Module["UTF32ToString"] = function() { abort("'UTF32ToString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stringToUTF32"]) Module["stringToUTF32"] = function() { abort("'stringToUTF32' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["lengthBytesUTF32"]) Module["lengthBytesUTF32"] = function() { abort("'lengthBytesUTF32' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["allocateUTF8"]) Module["allocateUTF8"] = function() { abort("'allocateUTF8' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stackTrace"]) Module["stackTrace"] = function() { abort("'stackTrace' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addOnPreRun"]) Module["addOnPreRun"] = function() { abort("'addOnPreRun' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addOnInit"]) Module["addOnInit"] = function() { abort("'addOnInit' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addOnPreMain"]) Module["addOnPreMain"] = function() { abort("'addOnPreMain' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addOnExit"]) Module["addOnExit"] = function() { abort("'addOnExit' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addOnPostRun"]) Module["addOnPostRun"] = function() { abort("'addOnPostRun' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["writeStringToMemory"]) Module["writeStringToMemory"] = function() { abort("'writeStringToMemory' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["writeArrayToMemory"]) Module["writeArrayToMemory"] = function() { abort("'writeArrayToMemory' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["writeAsciiToMemory"]) Module["writeAsciiToMemory"] = function() { abort("'writeAsciiToMemory' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addRunDependency"]) Module["addRunDependency"] = function() { abort("'addRunDependency' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["removeRunDependency"]) Module["removeRunDependency"] = function() { abort("'removeRunDependency' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS"]) Module["FS"] = function() { abort("'FS' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["FS_createFolder"]) Module["FS_createFolder"] = function() { abort("'FS_createFolder' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createPath"]) Module["FS_createPath"] = function() { abort("'FS_createPath' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createDataFile"]) Module["FS_createDataFile"] = function() { abort("'FS_createDataFile' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createPreloadedFile"]) Module["FS_createPreloadedFile"] = function() { abort("'FS_createPreloadedFile' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createLazyFile"]) Module["FS_createLazyFile"] = function() { abort("'FS_createLazyFile' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createLink"]) Module["FS_createLink"] = function() { abort("'FS_createLink' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_createDevice"]) Module["FS_createDevice"] = function() { abort("'FS_createDevice' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["FS_unlink"]) Module["FS_unlink"] = function() { abort("'FS_unlink' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") };
+if (!Module["GL"]) Module["GL"] = function() { abort("'GL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["staticAlloc"]) Module["staticAlloc"] = function() { abort("'staticAlloc' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["dynamicAlloc"]) Module["dynamicAlloc"] = function() { abort("'dynamicAlloc' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["warnOnce"]) Module["warnOnce"] = function() { abort("'warnOnce' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["loadDynamicLibrary"]) Module["loadDynamicLibrary"] = function() { abort("'loadDynamicLibrary' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["loadWebAssemblyModule"]) Module["loadWebAssemblyModule"] = function() { abort("'loadWebAssemblyModule' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getLEB"]) Module["getLEB"] = function() { abort("'getLEB' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getFunctionTables"]) Module["getFunctionTables"] = function() { abort("'getFunctionTables' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["alignFunctionTables"]) Module["alignFunctionTables"] = function() { abort("'alignFunctionTables' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["registerFunctions"]) Module["registerFunctions"] = function() { abort("'registerFunctions' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["addFunction"]) Module["addFunction"] = function() { abort("'addFunction' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["removeFunction"]) Module["removeFunction"] = function() { abort("'removeFunction' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getFuncWrapper"]) Module["getFuncWrapper"] = function() { abort("'getFuncWrapper' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["prettyPrint"]) Module["prettyPrint"] = function() { abort("'prettyPrint' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["makeBigInt"]) Module["makeBigInt"] = function() { abort("'makeBigInt' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["dynCall"]) Module["dynCall"] = function() { abort("'dynCall' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["getCompilerSetting"]) Module["getCompilerSetting"] = function() { abort("'getCompilerSetting' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stackSave"]) Module["stackSave"] = function() { abort("'stackSave' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stackRestore"]) Module["stackRestore"] = function() { abort("'stackRestore' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Module["stackAlloc"]) Module["stackAlloc"] = function() { abort("'stackAlloc' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };if (!Module["ALLOC_NORMAL"]) Object.defineProperty(Module, "ALLOC_NORMAL", { get: function() { abort("'ALLOC_NORMAL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Module["ALLOC_STACK"]) Object.defineProperty(Module, "ALLOC_STACK", { get: function() { abort("'ALLOC_STACK' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Module["ALLOC_STATIC"]) Object.defineProperty(Module, "ALLOC_STATIC", { get: function() { abort("'ALLOC_STATIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Module["ALLOC_DYNAMIC"]) Object.defineProperty(Module, "ALLOC_DYNAMIC", { get: function() { abort("'ALLOC_DYNAMIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Module["ALLOC_NONE"]) Object.defineProperty(Module, "ALLOC_NONE", { get: function() { abort("'ALLOC_NONE' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
 
-
-if (memoryInitializer) {
-  if (typeof Module['locateFile'] === 'function') {
-    memoryInitializer = Module['locateFile'](memoryInitializer);
-  } else if (Module['memoryInitializerPrefixURL']) {
-    memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
-  }
-  if (ENVIRONMENT_IS_NODE || ENVIRONMENT_IS_SHELL) {
-    var data = Module['readBinary'](memoryInitializer);
-    HEAPU8.set(data, Runtime.GLOBAL_BASE);
-  } else {
-    addRunDependency('memory initializer');
-    var applyMemoryInitializer = function(data) {
-      if (data.byteLength) data = new Uint8Array(data);
-      for (var i = 0; i < data.length; i++) {
-        assert(HEAPU8[Runtime.GLOBAL_BASE + i] === 0, "area for memory initializer should not have been touched before it's loaded");
-      }
-      HEAPU8.set(data, Runtime.GLOBAL_BASE);
-      // Delete the typed array that contains the large blob of the memory initializer request response so that
-      // we won't keep unnecessary memory lying around. However, keep the XHR object itself alive so that e.g.
-      // its .status field can still be accessed later.
-      if (Module['memoryInitializerRequest']) delete Module['memoryInitializerRequest'].response;
-      removeRunDependency('memory initializer');
-    }
-    function doBrowserLoad() {
-      Module['readAsync'](memoryInitializer, applyMemoryInitializer, function() {
-        throw 'could not load memory initializer ' + memoryInitializer;
-      });
-    }
-    if (Module['memoryInitializerRequest']) {
-      // a network request has already been created, just use that
-      function useRequest() {
-        var request = Module['memoryInitializerRequest'];
-        if (request.status !== 200 && request.status !== 0) {
-          // If you see this warning, the issue may be that you are using locateFile or memoryInitializerPrefixURL, and defining them in JS. That
-          // means that the HTML file doesn't know about them, and when it tries to create the mem init request early, does it to the wrong place.
-          // Look in your browser's devtools network console to see what's going on.
-          console.warn('a problem seems to have happened with Module.memoryInitializerRequest, status: ' + request.status + ', retrying ' + memoryInitializer);
-          doBrowserLoad();
-          return;
-        }
-        applyMemoryInitializer(request.response);
-      }
-      if (Module['memoryInitializerRequest'].response) {
-        setTimeout(useRequest, 0); // it's already here; but, apply it asynchronously
-      } else {
-        Module['memoryInitializerRequest'].addEventListener('load', useRequest); // wait for it
-      }
-    } else {
-      // fetch it from the network ourselves
-      doBrowserLoad();
-    }
-  }
-}
 
 
 // Modularize mode returns a function, which can be called to
@@ -9509,6 +10624,7 @@ Module['then'] = function(func) {
 /**
  * @constructor
  * @extends {Error}
+ * @this {ExitStatus}
  */
 function ExitStatus(status) {
   this.name = "ExitStatus";
@@ -9519,7 +10635,6 @@ ExitStatus.prototype = new Error();
 ExitStatus.prototype.constructor = ExitStatus;
 
 var initialStackTop;
-var preloadStartTime = null;
 var calledMain = false;
 
 dependenciesFulfilled = function runCaller() {
@@ -9528,59 +10643,6 @@ dependenciesFulfilled = function runCaller() {
   if (!Module['calledRun']) dependenciesFulfilled = runCaller; // try this again later, after new deps are fulfilled
 }
 
-Module['callMain'] = Module.callMain = function callMain(args) {
-  assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on __ATMAIN__)');
-  assert(__ATPRERUN__.length == 0, 'cannot call main when preRun functions remain to be called');
-
-  args = args || [];
-
-  ensureInitRuntime();
-
-  var argc = args.length+1;
-  function pad() {
-    for (var i = 0; i < 4-1; i++) {
-      argv.push(0);
-    }
-  }
-  var argv = [allocate(intArrayFromString(Module['thisProgram']), 'i8', ALLOC_NORMAL) ];
-  pad();
-  for (var i = 0; i < argc-1; i = i + 1) {
-    argv.push(allocate(intArrayFromString(args[i]), 'i8', ALLOC_NORMAL));
-    pad();
-  }
-  argv.push(0);
-  argv = allocate(argv, 'i32', ALLOC_NORMAL);
-
-
-  try {
-
-    var ret = Module['_main'](argc, argv, 0);
-
-
-    // if we're not running an evented main loop, it's time to exit
-    exit(ret, /* implicit = */ true);
-  }
-  catch(e) {
-    if (e instanceof ExitStatus) {
-      // exit() throws this once it's done to make sure execution
-      // has been stopped completely
-      return;
-    } else if (e == 'SimulateInfiniteLoop') {
-      // running an evented main loop, don't immediately exit
-      Module['noExitRuntime'] = true;
-      return;
-    } else {
-      var toLog = e;
-      if (e && typeof e === 'object' && e.stack) {
-        toLog = [e, e.stack];
-      }
-      Module.printErr('exception thrown: ' + toLog);
-      Module['quit'](1, e);
-    }
-  } finally {
-    calledMain = true;
-  }
-}
 
 
 
@@ -9588,8 +10650,6 @@ Module['callMain'] = Module.callMain = function callMain(args) {
 /** @type {function(Array=)} */
 function run(args) {
   args = args || Module['arguments'];
-
-  if (preloadStartTime === null) preloadStartTime = Date.now();
 
   if (runDependencies > 0) {
     return;
@@ -9612,13 +10672,9 @@ function run(args) {
 
     preMain();
 
-    if (ENVIRONMENT_IS_WEB && preloadStartTime !== null) {
-      Module.printErr('pre-main prep time: ' + (Date.now() - preloadStartTime) + ' ms');
-    }
-
     if (Module['onRuntimeInitialized']) Module['onRuntimeInitialized']();
 
-    if (Module['_main'] && shouldRunNow) Module['callMain'](args);
+    assert(!Module['_main'], 'compiled without a main, but one is present. if you added it from JS, use Module["onRuntimeInitialized"]');
 
     postRun();
   }
@@ -9636,16 +10692,67 @@ function run(args) {
   }
   checkStackCookie();
 }
-Module['run'] = Module.run = run;
+Module['run'] = run;
+
+function checkUnflushedContent() {
+  // Compiler settings do not allow exiting the runtime, so flushing
+  // the streams is not possible. but in ASSERTIONS mode we check
+  // if there was something to flush, and if so tell the user they
+  // should request that the runtime be exitable.
+  // Normally we would not even include flush() at all, but in ASSERTIONS
+  // builds we do so just for this check, and here we see if there is any
+  // content to flush, that is, we check if there would have been
+  // something a non-ASSERTIONS build would have not seen.
+  // How we flush the streams depends on whether we are in NO_FILESYSTEM
+  // mode (which has its own special function for this; otherwise, all
+  // the code is inside libc)
+  var print = Module['print'];
+  var printErr = Module['printErr'];
+  var has = false;
+  Module['print'] = Module['printErr'] = function(x) {
+    has = true;
+  }
+  try { // it doesn't matter if it fails
+    var flush = Module['_fflush'];
+    if (flush) flush(0);
+    // also flush in the JS FS layer
+    var hasFS = true;
+    if (hasFS) {
+      ['stdout', 'stderr'].forEach(function(name) {
+        var info = FS.analyzePath('/dev/' + name);
+        if (!info) return;
+        var stream = info.object;
+        var rdev = stream.rdev;
+        var tty = TTY.ttys[rdev];
+        if (tty && tty.output && tty.output.length) {
+          has = true;
+        }
+      });
+    }
+  } catch(e) {}
+  Module['print'] = print;
+  Module['printErr'] = printErr;
+  if (has) {
+    warnOnce('stdio streams had content in them that was not flushed. you should set NO_EXIT_RUNTIME to 0 (see the FAQ), or make sure to emit a newline when you printf etc.');
+  }
+}
 
 function exit(status, implicit) {
-  if (implicit && Module['noExitRuntime']) {
-    Module.printErr('exit(' + status + ') implicitly called by end of main(), but noExitRuntime, so not exiting the runtime (you can use emscripten_force_exit, if you want to force a true shutdown)');
+  checkUnflushedContent();
+
+  // if this is just main exit-ing implicitly, and the status is 0, then we
+  // don't need to do anything here and can just leave. if the status is
+  // non-zero, though, then we need to report it.
+  // (we may have warned about this earlier, if a situation justifies doing so)
+  if (implicit && Module['noExitRuntime'] && status === 0) {
     return;
   }
 
   if (Module['noExitRuntime']) {
-    Module.printErr('exit(' + status + ') called, but noExitRuntime, so halting execution but not exiting the runtime or preventing further async execution (you can use emscripten_force_exit, if you want to force a true shutdown)');
+    // if exit() was called, we may warn the user if the runtime isn't actually being shut down
+    if (!implicit) {
+      Module.printErr('exit(' + status + ') called, but NO_EXIT_RUNTIME is set, so halting execution but not exiting the runtime or preventing further async execution (build with NO_EXIT_RUNTIME=0, if you want a true shutdown)');
+    }
   } else {
 
     ABORT = true;
@@ -9662,11 +10769,15 @@ function exit(status, implicit) {
   }
   Module['quit'](status, new ExitStatus(status));
 }
-Module['exit'] = Module.exit = exit;
+Module['exit'] = exit;
 
 var abortDecorators = [];
 
 function abort(what) {
+  if (Module['onAbort']) {
+    Module['onAbort'](what);
+  }
+
   if (what !== undefined) {
     Module.print(what);
     Module.printErr(what);
@@ -9679,7 +10790,6 @@ function abort(what) {
   EXITSTATUS = 1;
 
   var extra = '';
-
   var output = 'abort(' + what + ') at ' + stackTrace() + extra;
   if (abortDecorators) {
     abortDecorators.forEach(function(decorator) {
@@ -9688,7 +10798,7 @@ function abort(what) {
   }
   throw output;
 }
-Module['abort'] = Module.abort = abort;
+Module['abort'] = abort;
 
 // {{PRE_RUN_ADDITIONS}}
 
@@ -9699,12 +10809,8 @@ if (Module['preInit']) {
   }
 }
 
-// shouldRunNow refers to calling main(), not run().
-var shouldRunNow = true;
-if (Module['noInitialRun']) {
-  shouldRunNow = false;
-}
 
+Module["noExitRuntime"] = true;
 
 run();
 
@@ -11309,7 +12415,14 @@ Module['setAPITracing'] = function(on) {
 }
 
 
+
   return Binaryen;
 };
+if (typeof exports === 'object' && typeof module === 'object')
+  module.exports = Binaryen;
+else if (typeof define === 'function' && define['amd'])
+  define([], function() { return Binaryen; });
+else if (typeof exports === 'object')
+  exports["Binaryen"] = Binaryen;
 
 export default Binaryen;

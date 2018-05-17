@@ -10,11 +10,10 @@ function error (message, t = this) {
 
 export default async function generateCode(ast) {
   let binaryen;
-  debugger;
   await new Promise((resolve,reject)=>{
     binaryen = binaryen_({onRuntimeInitialized:m=>{
      resolve();
-    },'ENVIRONMENT':'NODE'});
+    }});
   });
   // debugger;
   // const binaryen = await new Promise(
@@ -23,6 +22,7 @@ export default async function generateCode(ast) {
   //       resolve(bin);
   //     });
   //   });
+  debugger;
   const module = new binaryen.Module();
   //  const exp = new binaryen.Expression();
 
