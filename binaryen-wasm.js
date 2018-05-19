@@ -77,7 +77,7 @@ if (Module['ENVIRONMENT']) {
 } else {
   ENVIRONMENT_IS_WEB = typeof window === 'object';
   ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
-  ENVIRONMENT_IS_NODE = typeof process === 'object' && typeof require === 'function' && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
+  ENVIRONMENT_IS_NODE = typeof process === 'object' && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
   ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 }
 
@@ -97,6 +97,7 @@ if (ENVIRONMENT_IS_NODE) {
     return binary ? ret : ret.toString();
   };
 
+
   Module['readBinary'] = function readBinary(filename) {
     var ret = Module['read'](filename, true);
     if (!ret.buffer) {
@@ -105,6 +106,7 @@ if (ENVIRONMENT_IS_NODE) {
     assert(ret.buffer);
     return ret;
   };
+  
 
   if (process['argv'].length > 1) {
     Module['thisProgram'] = process['argv'][1].replace(/\\/g, '/');
@@ -12424,5 +12426,3 @@ else if (typeof define === 'function' && define['amd'])
   define([], function() { return Binaryen; });
 else if (typeof exports === 'object')
   exports["Binaryen"] = Binaryen;
-
-export default Binaryen;

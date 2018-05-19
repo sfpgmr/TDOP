@@ -2,6 +2,8 @@ import generateCode from './generateCode.mjs';
 import tokenize from './tokens.mjs';
 import make_parse from './parse.mjs';
 import fs from 'fs';
+import path from 'path';
+import binaryen from './binaryen-wasm.js';
 
 // const testSrc =
 //  `
@@ -111,6 +113,8 @@ export i32 main(){
   return foo.a * foo.b;
 }`;
 
+
+
 (async ()=>{
   const tokens = tokenize(testSrc);
 
@@ -131,7 +135,11 @@ export i32 main(){
   console.log('パース完了');
   
   
-  const module = await generateCode(ast);
+  try {
+    const module = await generateCode(ast,binaryen);
+  } catch (e) {
+    console.log(e.stack);
+  }
   module.optimize();
   
   fs.writeFileSync('out.wat',module.emitText(),'utf8');

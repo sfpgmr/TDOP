@@ -71,6 +71,7 @@
         <label class="siimple-label">Source Code URL</label>
     </h2>
     <pre id=OUTPUT4 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <script src="./binaryen-wasm.js" ></script>
     <script type="module">
 
         import tokenize from './tokens.mjs';
@@ -148,7 +149,7 @@ export i32 main(){
                     output.innerHTML = string
                         .replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
-                    const module = await generateCode(ast);
+                    const module = await generateCode(ast,Binaryen);
                     optimize.checked && module.optimize();
                     const wat = module.emitText();
                     output2.innerHTML = wat

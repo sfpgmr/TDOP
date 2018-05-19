@@ -1,5 +1,3 @@
-import binaryen_ from './binaryen-wasm.mjs';
-//import binaryen from 'binaryen';
 
 function error (message, t = this) {
   t.name = 'Compiler Error';
@@ -8,7 +6,8 @@ function error (message, t = this) {
 }
 
 
-export default async function generateCode(ast) {
+export default async function generateCode(ast,binaryen_) {
+
   let binaryen;
   await new Promise((resolve,reject)=>{
     binaryen = binaryen_({onRuntimeInitialized:m=>{
