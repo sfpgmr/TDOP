@@ -129,7 +129,6 @@ export i32 main(){
       return value;
     } 
     , 2);
-  debugger;
   
   fs.writeFileSync('./ast.json', json, 'utf8');
   console.log('パース完了');
