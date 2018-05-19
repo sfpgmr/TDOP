@@ -5,7 +5,6 @@ function error (message, t = this) {
   throw t;
 }
 
-
 export default async function generateCode(ast,binaryen_) {
 
   let binaryen;
@@ -21,8 +20,8 @@ export default async function generateCode(ast,binaryen_) {
   //       resolve(bin);
   //     });
   //   });
-  debugger;
   const module = new binaryen.Module();
+  
   //  const exp = new binaryen.Expression();
 
   //module.setMemory(1, null, 'test1');
@@ -133,6 +132,7 @@ export default async function generateCode(ast,binaryen_) {
   function define_(d,vars = localVars){
     switch (d.nodeType) {
     case 'binary':
+      // 初期値あり
       // ローカル
       if (d.first.scope) {
         const left = d.first;
@@ -147,15 +147,24 @@ export default async function generateCode(ast,binaryen_) {
       }
       break;
     case 'name':
-      // ローカル
-      if (d.scope) {
-        vars && vars.push(binaryen[d.type]);
-        d.varIndex = varIndex++;
-        d.global = false;
-        return module.setLocal(d.varIndex, module[d.type].const(0));
+      //　初期値なし 
+      if(binaryen[d.type]){
+        // WASM ネイティブ型
+        if (d.scope) {
+          // ローカル
+          vars && vars.push(binaryen[d.type]);
+          d.varIndex = varIndex++;
+          d.global = false;
+          return module.setLocal(d.varIndex, module[d.type].const(0));
+        } else {
+          // グローバル
+          d.global = true;
+          return module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
+        }
       } else {
-        d.global = true;
-        return module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
+        // ユーザー定義型
+
+
       }
     }
   }
