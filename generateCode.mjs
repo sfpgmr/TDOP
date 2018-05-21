@@ -163,11 +163,16 @@ export default async function generateCode(ast,binaryen_) {
         }
       } else {
         // ユーザー定義型
+       
         const typedef = d.scope.find(d.type,true);
         if(!typedef){
           error('Type Not Found.',d);
         }
         const detail = typedef.detail;
+        const members = detail.second;
+
+        return define(members);
+        
         
         console.log(detail);
 

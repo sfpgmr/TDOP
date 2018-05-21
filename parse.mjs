@@ -461,19 +461,37 @@ export default function make_parse() {
     let n;
     let t;
     advance();
-
     n = token;
-      
+    // ポインタ型かどうか
+    if(n.id == '*'){
+      advance();
+      n = token;
+      n.pointer = true;
+    }
+    let funcptr = false;
+    // 関数ポインタ定義かどうか
+    if(n.id == '('){
+      advance();
+      advance('*');
+      n = token;
+      n.pointer = true;
+      funcptr = true;
+    }
+
     // ローカルスコープですでに定義されているか
     if(scope.def.get(n.value)){
       error('Already Defined',n);
     }
-
+    // 変数の型を保存
     n.type = this.type;
+    // export するかどうか
     n.export = this.export;
+    // scope に変数名を登録する
     scope.define(n);
     advance();
-
+    if(funcptr){
+      advance('*');
+    }
     // 関数定義かどうか
     if (token.id === '(') {
       advance();
@@ -516,16 +534,21 @@ export default function make_parse() {
       // ツリーの左に格納
       n.first = a;
       advance(')');
-      // 戻り値の型の指定
-      advance('{');
-      // ツリーの右に文を格納
-      n.second = statements();
+      if(!funcptr){
+        // 関数ボディのパース
+        advance('{');
+        // ツリーの右に文を格納
+        n.second = statements();
+      } 
       n.scope = scope;
       scope.pop();
-      advance('}');
+      if(!funcptr){
+        advance('}');
+      }
+      advance(';');
       n.nodeType = 'function';
       return n;
-    }
+  }
 
     while (true) {
       n.nud = itself;
@@ -550,7 +573,14 @@ export default function make_parse() {
         break;
       }
       advance(',');
-      n = token;
+      // ポインタ型かどうか
+      if(n.id == '*'){
+        advance();
+        n = token;
+        n.pointer = true;
+      } else {
+        n = token;
+      }
       n.type = this.type;
       n.rvalue = false;
       scope.define(n);
