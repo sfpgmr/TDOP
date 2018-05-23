@@ -109,9 +109,9 @@ public:
 }
 
 export i32 main(){
-  Foo foo;
-  Foo *fooPtr;
-  return foo.a * foo.b;
+  Foo foo,*fooPtr;
+  fooPtr = &foo;
+  return foo.a * fooPtr->b;
 };`;
 
 

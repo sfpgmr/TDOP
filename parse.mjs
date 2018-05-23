@@ -735,6 +735,20 @@ export default function make_parse() {
     return this;
   });
 
+  infix('->',80,function (left,rvalue = true) {
+    this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
+    if (token.nodeType !== 'name') {
+      error('Expected a property name.',token);
+    }
+    token.nodeType = 'literal';
+    this.second = token;
+    this.nodeType = 'binary';
+    advance();
+    !this.type && (this.type = left.type);
+    return this;
+  });
+
 
   prefix('++');
   prefix('--');
@@ -744,6 +758,11 @@ export default function make_parse() {
   prefix('!');
   prefix('-');
   //prefix('typeof');
+
+  // ポインタが示す実体を参照する
+  prefix('*');
+  // 変数のアドレスを取得する
+  prefix('&');
 
   prefix('(', function (rvalue = true) {
     const e = expression(0);
