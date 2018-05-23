@@ -204,39 +204,18 @@
                 "def": {},
                 "typedef": {}
               }
-            }
-          ]
-        },
-        {
-          "id": "Foo",
-          "value": "Foo",
-          "type": "Foo",
-          "nodeType": "define",
-          "typedef": true,
-          "userType": true,
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "lbp": 0,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
-          "line": 10,
-          "pos": 7,
-          "sign": true,
-          "rvalue": false,
-          "first": [
+            },
             {
               "id": "(name)",
               "value": "fooPtr",
               "lbp": 0,
-              "line": 10,
-              "pos": 15,
+              "line": 9,
+              "pos": 19,
               "nodeType": "name",
               "sign": true,
               "pointer": true,
               "type": "Foo",
+              "rvalue": false,
               "reserved": false,
               "led": null,
               "std": null,
@@ -246,6 +225,66 @@
               }
             }
           ]
+        },
+        {
+          "id": "=",
+          "value": "=",
+          "lbp": 10,
+          "line": 10,
+          "pos": 12,
+          "nodeType": "binary",
+          "sign": true,
+          "first": {
+            "id": "(name)",
+            "value": "fooPtr",
+            "lbp": 0,
+            "line": 10,
+            "pos": 10,
+            "nodeType": "name",
+            "sign": true,
+            "pointer": true,
+            "type": "Foo",
+            "rvalue": false,
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            }
+          },
+          "rvalue": false,
+          "second": {
+            "id": "&",
+            "value": "&",
+            "lbp": 0,
+            "line": 10,
+            "pos": 14,
+            "nodeType": "unary",
+            "sign": true,
+            "first": {
+              "id": "(name)",
+              "value": "foo",
+              "lbp": 0,
+              "line": 10,
+              "pos": 17,
+              "nodeType": "name",
+              "sign": true,
+              "type": "Foo",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": true
+            },
+            "rvalue": true,
+            "type": "Foo"
+          },
+          "type": "Foo",
+          "assignment": true
         },
         {
           "id": "return",
@@ -305,30 +344,31 @@
             },
             "rvalue": true,
             "second": {
-              "id": ".",
-              "value": ".",
+              "id": "->",
+              "value": "->",
               "lbp": 80,
               "line": 11,
-              "pos": 23,
+              "pos": 27,
               "nodeType": "binary",
               "sign": true,
               "first": {
                 "id": "(name)",
-                "value": "foo",
+                "value": "fooPtr",
                 "lbp": 0,
                 "line": 11,
-                "pos": 22,
+                "pos": 25,
                 "nodeType": "name",
                 "sign": true,
+                "pointer": true,
                 "type": "Foo",
+                "rvalue": true,
                 "reserved": false,
                 "led": null,
                 "std": null,
                 "scope": {
                   "def": {},
                   "typedef": {}
-                },
-                "rvalue": true
+                }
               },
               "rvalue": true,
               "second": {
@@ -336,7 +376,7 @@
                 "value": "b",
                 "lbp": 0,
                 "line": 11,
-                "pos": 24,
+                "pos": 28,
                 "nodeType": "literal",
                 "sign": true
               },

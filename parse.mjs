@@ -574,7 +574,7 @@ export default function make_parse() {
       }
       advance(',');
       // ポインタ型かどうか
-      if(n.id == '*'){
+      if(token.id == '*'){
         advance();
         n = token;
         n.pointer = true;
@@ -735,19 +735,6 @@ export default function make_parse() {
     return this;
   });
 
-  infix('->',80,function (left,rvalue = true) {
-    this.first = left;
-    this.rvalue = this.first.rvalue = rvalue;
-    if (token.nodeType !== 'name') {
-      error('Expected a property name.',token);
-    }
-    token.nodeType = 'literal';
-    this.second = token;
-    this.nodeType = 'binary';
-    advance();
-    !this.type && (this.type = left.type);
-    return this;
-  });
 
 
   prefix('++');
@@ -763,6 +750,21 @@ export default function make_parse() {
   prefix('*');
   // 変数のアドレスを取得する
   prefix('&');
+  // ポインタメンバの参照
+  infix('->',80,function (left,rvalue = true) {
+    this.first = left;
+    this.rvalue = this.first.rvalue = rvalue;
+    if (token.nodeType !== 'name') {
+      error('Expected a property name.',token);
+    }
+    token.nodeType = 'literal';
+    this.second = token;
+    this.nodeType = 'binary';
+    advance();
+    !this.type && (this.type = left.type);
+    return this;
+  });
+
 
   prefix('(', function (rvalue = true) {
     const e = expression(0);
