@@ -133,17 +133,23 @@ export default async function generateCode(ast,binaryen_) {
     switch (d.nodeType) {
     case 'binary':
       // 初期値あり
-      // ローカル
-      if (d.first.scope) {
-        const left = d.first;
-        vars && vars.push(binaryen[left.type]);
-        left.varIndex = varIndex++;
-        // 初期値の設定ステートメント
-        d.global = false;
-        return  module.setLocal(left.varIndex, expression(d.second));
+      if(binaryen[d.type]){
+        // WASM ネイティブ型
+        // ローカル
+        if (d.first.scope) {
+          const left = d.first;
+          vars && vars.push(binaryen[left.type]);
+          left.varIndex = varIndex++;
+          // 初期値の設定ステートメント
+          d.global = false;
+          return  module.setLocal(left.varIndex, expression(d.second));
+        } else {
+          module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
+          d.global = true;
+        }
       } else {
-        module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
-        d.global = true;
+        // ユーザー定義型
+
       }
       break;
     case 'name':
@@ -168,15 +174,15 @@ export default async function generateCode(ast,binaryen_) {
         if(!typedef){
           error('Type Not Found.',d);
         }
-        const detail = typedef.detail;
-        const members = detail.second;
+        const detail = Object.assign(Object.create(typedef.detail),typedef.detail);
+        d.members = detail.second;
+       
+        console.log(detail);
+        d.members.forEach(member=>{
+          define_(member,vars);
+        });
 
         return define(members);
-        
-        
-        console.log(detail);
-
-
       }
     }
   }
@@ -283,6 +289,9 @@ export default async function generateCode(ast,binaryen_) {
       return binOp('rotl',e);
     case '>>':
       return binOp('rotr',e);
+    // ドット演算子
+    case '.':
+      return dotOp(e);
     }
     error('Bad Binary Operator',e);
   }
@@ -357,6 +366,12 @@ export default async function generateCode(ast,binaryen_) {
         error('Bad Type',left);
       }
     }
+  }
+
+  dotOp(e){
+    const left = e.first,right = e.second;
+    
+
   }
 
   function logicalAnd(e){

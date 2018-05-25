@@ -101,17 +101,29 @@ import binaryen from './binaryen-wasm.js';
 // }
 // `;
 const testSrc = 
+// `
+// type Foo {
+// public:
+//   i32 a = 0;
+//   i32 b = 0;
+// }
+
+// export i32 main(){
+//   Foo foo,*fooPtr;
+//   fooPtr = &foo;
+//   return foo.a * fooPtr->b;
+// };`;
 `
 type Foo {
 public:
   i32 a = 0;
-  i32 b = 0;
+  i32 b = 2;
 }
 
 export i32 main(){
-  Foo foo,*fooPtr;
-  fooPtr = &foo;
-  return foo.a * fooPtr->b;
+  Foo foo;
+  foo.a = 1;
+  return foo.a * foo.b;
 };`;
 
 
