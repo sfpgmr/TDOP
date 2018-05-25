@@ -135,6 +135,7 @@ export default async function generateCode(ast,binaryen_) {
       // 初期値あり
       // ローカル
       if (d.first.scope) {
+        if(binaryen[d.type]){
         const left = d.first;
         vars && vars.push(binaryen[left.type]);
         left.varIndex = varIndex++;
@@ -464,8 +465,7 @@ export default async function generateCode(ast,binaryen_) {
     case 'i64':
     case 'u64':
       return module.i64.xor(expression(left),module.i64.const(0xffffffff,0xffffffff));
-    case 'f32':
-    case 'f64':
+    default:
       return error('Bad Operation',left);
     }
   }
