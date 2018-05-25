@@ -479,8 +479,7 @@ export default async function generateCode(ast,binaryen_) {
     case 'i64':
     case 'u64':
       return module.i64.xor(expression(left),module.i64.const(0xffffffff,0xffffffff));
-    case 'f32':
-    case 'f64':
+    default:
       return error('Bad Operation',left);
     }
   }
