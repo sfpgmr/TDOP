@@ -100,18 +100,29 @@ import binaryen from './binaryen-wasm.js';
 //   return c + b;// 9
 // }
 // `;
-const testSrc = 
-`
+// const testSrc = 
+// `
+// type Foo {
+// public:
+//   i32 a = 0;
+//   i32 b = 0;
+// }
+
+// export i32 main(){
+//   Foo foo,*fooPtr;
+//   fooPtr = &foo;
+//   return foo.a * fooPtr->b;
+// };`;
+const testSrc = `
 type Foo {
 public:
-  i32 a = 0;
-  i32 b = 0;
+  i32 a = 1;
+  i32 b = 2;
 }
 
 export i32 main(){
-  Foo foo,*fooPtr;
-  fooPtr = &foo;
-  return foo.a * fooPtr->b;
+  Foo foo;
+  return foo.a * foo.b;
 };`;
 
 
