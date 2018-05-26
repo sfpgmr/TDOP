@@ -97,6 +97,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 関数定義
   function functionStatement(funcNode) {
+    console.log('** define_() **');
     // 関数本体
     const wasmStatement = [];
     
@@ -130,6 +131,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 変数定義
   function define_(d,vars = localVars){
+    console.log('** define_() **');
     switch (d.nodeType) {
     case 'binary':
       // 初期値あり
@@ -177,7 +179,7 @@ export default async function generateCode(ast,binaryen_) {
         const detail = Object.assign(Object.create(typedef.detail),typedef.detail);
         d.members = detail.second;
        
-        console.log(detail);
+        //console.log(detail);
         const results = [];
         d.members.forEach(member=>{
           const results_ = define(member);
@@ -194,6 +196,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 変数定義
   function define(statement,results = []) {
+    console.log('** define() **');
     statement.first.forEach(d => {
       const result = define_(d);
       if(result instanceof Array){
@@ -225,6 +228,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function literal(e) {
+    console.log('** literal() **');
     switch (e.type) {
     case 'i32':
       // return module.setLocal()
@@ -242,6 +246,7 @@ export default async function generateCode(ast,binaryen_) {
   
 
   function binary(e) {
+    console.log('** binary() **');
     switch (e.value) {
     // 代入
     case '=':
@@ -308,6 +313,7 @@ export default async function generateCode(ast,binaryen_) {
 
   function setValue(n,v,e)
   {
+    console.log('** setValue() **');
     !e && (e = n); 
     if(e.rvalue){
       if(n.global || !n.scope) {
@@ -324,12 +330,15 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function getValue(e){
+    console.log('** getValue() **');
     const n = e.first; 
     return (n.global || !n.scope) ? module.getGlobal(n.value,n.type) : module.getLocal(n.varIndex,n.type);
   }
   
 
   function binOp(name,e,sign = false){
+    console.log(`** binOp(${name}) **`);
+
     //debugger;
     const left = e.first,right = e.second;
     const t =  module[left.type];
@@ -379,6 +388,8 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function dotOp(e){
+    console.log('** dotOp() **');
+
     const left = e.first,right = e.second;
     console.log(left,right);
   }
@@ -403,6 +414,8 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function logicalOr(e){
+    console.log('** logicalOr() **');
+
     const left = e.first,right = e.second;
     const t = module[left.type];
     if(t){
@@ -530,6 +543,8 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function name(e) {
+    console.log('** name() **');
+
     if (!e.global) {
       return module.getLocal(e.varIndex, binaryen[e.type]);
     } else {
@@ -537,18 +552,43 @@ export default async function generateCode(ast,binaryen_) {
     }
   }
 
+  // 左辺のドット構文の解析
+  function leftDotOp(e){
+
+  }
+
   // 代入
-  function assignment(e) {
+  function assignment(e,results = [],top = true) {
+    console.log('** assignment() **');
     const left = e.first,right = e.second;
-    return setValue(left,expression(right));
+    // 代入する値がネイティブ型かどうか
+    if(left.value == '.'){
+      return results.push(setValue(leftDotOp(left),expression(right)));
+    } else if(e.members){
+      e.members.forEach(member=>{
+        // 再帰的にassignmentを呼び出す
+        assignment(member,results,false);
+      });
+      if(top){ 
+        return module.block(null,results);
+      }
+    } else if(module[left.type]){
+      results.push(setValue(left,expression(right)));
+      return;
+    } 
   }
 
 
+
   function block(s){
+    console.log('** block() **');
+
     return module.block(null,generate(s.first));
   }
 
   function statement(s) {
+    console.log('** statement() **');
+
     switch(s.id){
     case 'return':
       return module.return(expression(s.first));
