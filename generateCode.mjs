@@ -554,7 +554,21 @@ export default async function generateCode(ast,binaryen_) {
 
   // 左辺のドット構文の解析
   function leftDotOp(e){
-
+    const body = e.first.scope.find(e.first.value);
+    const members = body.members;
+    const memberName = e.second.value;
+    if(e.second.id == '.'){
+      return leftDotOp(e.second);
+    }
+    for(let i = 0,e = members.length;i < e;++i){
+      const memberChilds = members[i].first;
+      for(let j = 0,ej = memberChilds.length;j < ej;++j){
+        if(memberChilds[i].value == memberName){
+          return memberChilds[i];
+        };
+      }
+    }
+    error('Member Not Found',e);
   }
 
   // 代入
