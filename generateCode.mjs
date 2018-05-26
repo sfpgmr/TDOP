@@ -178,21 +178,31 @@ export default async function generateCode(ast,binaryen_) {
         d.members = detail.second;
        
         console.log(detail);
+        const results = [];
         d.members.forEach(member=>{
-          define_(member,vars);
+          const results_ = define(member);
+          if(results_ instanceof Array){
+            results.push(...results_);
+          } else {
+            results.push(results_);
+          }
         });
-
-        return define(members);
+        return results;
       }
     }
   }
 
   // 変数定義
-  function define(statement,result = []) {
+  function define(statement,results = []) {
     statement.first.forEach(d => {
-      result.push(define_(d));
+      const result = define_(d);
+      if(result instanceof Array){
+        results.push(...result);
+      } else {
+        results.push(result);
+      }
     });
-    return result;
+    return results;
   }
 
 
@@ -368,10 +378,9 @@ export default async function generateCode(ast,binaryen_) {
     }
   }
 
-  dotOp(e){
+  function dotOp(e){
     const left = e.first,right = e.second;
-    
-
+    console.log(left,right);
   }
 
   function logicalAnd(e){

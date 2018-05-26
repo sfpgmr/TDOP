@@ -148,7 +148,6 @@ export i32 main(){
     console.log('パース完了');
        
     const module = await generateCode(ast,binaryen);
-    console.log(e.stack);
     module.optimize();
     
     fs.writeFileSync('out.wat',module.emitText(),'utf8');
