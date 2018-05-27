@@ -563,7 +563,7 @@ export default async function generateCode(ast,binaryen_) {
     for(let i = 0,e = members.length;i < e;++i){
       const memberChilds = members[i].first;
       for(let j = 0,ej = memberChilds.length;j < ej;++j){
-        if(memberChilds[i].value == memberName){
+        if(memberChilds[j].value == memberName){
           return memberChilds[i];
         };
       }
