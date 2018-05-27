@@ -336,13 +336,8 @@ export default async function generateCode(ast,binaryen_) {
   }
   
 
-  function binOp(name,e,sign = false){
-    console.log(`** binOp(${name}) **`);
-
-    //debugger;
-    const left = e.first,right = e.second;
+  function binOp_(name,e,left,right,sign){
     const t =  module[left.type];
-
     if(t){
       switch(left.type){
       case 'i32':
@@ -382,16 +377,46 @@ export default async function generateCode(ast,binaryen_) {
         }
         break;
       default:
-        error('Bad Type',left);
+        {
+          const l = expression(left);
+          const r = expression(right);
+          const lnative = module[l.type];
+          const rnative = module[r.type];
+
+          if(lnative && rnative && l.type  == r.type){
+            return binOp_(name,e,l,r,sign);
+          }
+          error('Bad Type',left);
+        }
+//        error('Bad Type',left);
       }
     }
   }
 
+  function binOp(name,e,sign = false){
+    console.log(`** binOp(${name}) **`);
+
+    //debugger;
+    const left = e.first,right = e.second;
+    return binOp_(name,e,left,right,sign);
+  }
+
   function dotOp(e){
     console.log('** dotOp() **');
-
-    const left = e.first,right = e.second;
-    console.log(left,right);
+    const body = e.first.scope.find(e.first.value);
+    const members = body.members;
+    const memberName = e.second.value;
+    if(e.second.id == '.'){
+      return dotOp(e.second);
+    }
+    for(let i = 0,e = members.length;i < e;++i){
+      const memberChilds = members[i].first;
+      for(let j = 0,ej = memberChilds.length;j < ej;++j){
+        if(memberChilds[j].first.value == memberName){
+          return name(memberChilds[j].first);
+        };
+      }
+    }
   }
 
   function logicalAnd(e){
@@ -563,8 +588,8 @@ export default async function generateCode(ast,binaryen_) {
     for(let i = 0,e = members.length;i < e;++i){
       const memberChilds = members[i].first;
       for(let j = 0,ej = memberChilds.length;j < ej;++j){
-        if(memberChilds[j].value == memberName){
-          return memberChilds[i];
+        if(memberChilds[j].first.value == memberName){
+          return memberChilds[j].first;
         };
       }
     }
