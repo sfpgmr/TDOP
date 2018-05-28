@@ -121,9 +121,10 @@ public:
 }
 
 export i32 main(){
-  Foo foo;
+  Foo foo,foo1;
   foo.a = 1;
-  return foo.a * foo.b;
+  foo1 = foo;  
+  return foo.a * foo1.b;
 };`;
 
 
