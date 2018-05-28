@@ -569,11 +569,16 @@ export default async function generateCode(ast,binaryen_) {
 
   function name(e) {
     console.log('** name() **');
-
-    if (!e.global) {
-      return module.getLocal(e.varIndex, binaryen[e.type]);
+    const nativeType = binaryen[e.type];
+    if(nativeTyupe){
+      if (!e.global) {
+        return module.getLocal(e.varIndex, binaryen[e.type]);
+      } else {
+        return module.getGlobal(e.value, binaryen[e.type]);
+      }
     } else {
-      return module.getGlobal(e.value, binaryen[e.type]);
+      // ネイティブ型ではないのでオブジェクトを返す
+      return e.scope.find(e.value);
     }
   }
 
@@ -589,7 +594,8 @@ export default async function generateCode(ast,binaryen_) {
       const memberChilds = members[i].first;
       for(let j = 0,ej = memberChilds.length;j < ej;++j){
         if(memberChilds[j].first.value == memberName){
-          return memberChilds[j].first;
+          const member = memberChilds[j].first;
+          return memner;
         };
       }
     }
@@ -600,9 +606,16 @@ export default async function generateCode(ast,binaryen_) {
   function assignment(e,results = [],top = true) {
     console.log('** assignment() **');
     const left = e.first,right = e.second;
-    // 代入する値がネイティブ型かどうか
+
     if(left.value == '.'){
-      return results.push(setValue(leftDotOp(left),expression(right)));
+      const l = leftDotOp(left);
+      if(module[l.type]){
+        return results.push(setValue(l,expression(right)));
+      } else {
+        
+        
+
+      }
     } else if(e.members){
       e.members.forEach(member=>{
         // 再帰的にassignmentを呼び出す
