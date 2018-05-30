@@ -612,9 +612,7 @@ export default async function generateCode(ast,binaryen_) {
       if(module[l.type]){
         return results.push(setValue(l,expression(right)));
       } else {
-        
-        
-
+        assignment(l,results,false);
       }
     } else if(e.members){
       e.members.forEach(member=>{
