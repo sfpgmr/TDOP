@@ -69,7 +69,7 @@ export default function make_parse() {
         while (true) {
           o = e.def.get(n);
           if (o && typeof o !== 'function') {
-            return o;
+            return e.def.get(n);
           }
           e = e.parent;
           if (!e) {
@@ -85,7 +85,7 @@ export default function make_parse() {
         while (e) {
           o = e.typedef.get(n);
           if (o && typeof o !== 'function') {
-            return o;
+            return e.typedef.get(n);
           } 
           e = e.parent;
         }
@@ -160,7 +160,6 @@ export default function make_parse() {
     }
 
     token = Object.assign(Object.create(o),o);
-    token.ref = o;
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
@@ -389,11 +388,11 @@ export default function make_parse() {
       return this;
     }
   }
+  //   if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
 
   function assignment(id) {
     return symbol({id:id,bp:10,led:Assignment.prototype.led,cons:Assignment});
     // return infixr(id, 10, function (left) {
-    //   if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
     //     left.error('Bad lvalue.');
     //   }
     //   this.first = left;

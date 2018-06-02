@@ -570,7 +570,7 @@ export default async function generateCode(ast,binaryen_) {
   function name(e) {
     console.log('** name() **');
     const nativeType = binaryen[e.type];
-    if(nativeType){
+    if(nativeTyupe){
       if (!e.global) {
         return module.getLocal(e.varIndex, binaryen[e.type]);
       } else {
@@ -584,7 +584,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 左辺のドット構文の解析
   function leftDotOp(e){
-    const body = e.first.ref;
+    const body = e.first.scope.find(e.first.value);
     const members = body.members;
     const memberName = e.second.value;
     if(e.second.id == '.'){
@@ -595,7 +595,7 @@ export default async function generateCode(ast,binaryen_) {
       for(let j = 0,ej = memberChilds.length;j < ej;++j){
         if(memberChilds[j].first.value == memberName){
           const member = memberChilds[j].first;
-          return member;
+          return memner;
         };
       }
     }
