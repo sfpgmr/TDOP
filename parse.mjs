@@ -69,7 +69,7 @@ export default function make_parse() {
         while (true) {
           o = e.def.get(n);
           if (o && typeof o !== 'function') {
-            return e.def.get(n);
+            return o;
           }
           e = e.parent;
           if (!e) {
@@ -85,7 +85,7 @@ export default function make_parse() {
         while (e) {
           o = e.typedef.get(n);
           if (o && typeof o !== 'function') {
-            return e.typedef.get(n);
+            return o;
           } 
           e = e.parent;
         }
@@ -160,6 +160,7 @@ export default function make_parse() {
     }
 
     token = Object.assign(Object.create(o),o);
+    token.ref = o;
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
