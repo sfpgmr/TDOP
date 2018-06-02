@@ -584,7 +584,8 @@ export default async function generateCode(ast,binaryen_) {
 
   // 左辺のドット構文の解析
   function leftDotOp(e){
-    const body = e.first.scope.find(e.first.value);
+//    const body = e.first.scope.find(e.first.value);
+    const body = e.first.ref;
     const members = body.members;
     const memberName = e.second.value;
     if(e.second.id == '.'){

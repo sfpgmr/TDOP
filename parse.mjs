@@ -133,13 +133,16 @@ export default function make_parse() {
     token_nr += 1;
     v = t.value;
     a = t.type;
+    let ref = false;
     if (a === 'name') {
       // 型名かどうか
       o = scope.find(v,true);
       // 変数名かどうか
-      if(!o) o = scope.find(v,false);
+      if(!o) {
+        o = scope.find(v,false);
+        ref = true;
+      }
       if(!o) o = symbol_table.get('(name)');
-
     } else if (a === 'operator') {
       o = symbol_table.get(v);
       if (!o) {
@@ -160,6 +163,7 @@ export default function make_parse() {
     }
 
     token = Object.assign(Object.create(o),o);
+    ref && (token.ref = o);
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;

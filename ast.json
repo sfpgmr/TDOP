@@ -9,6 +9,11 @@
       "id": "type",
       "value": "type",
       "lbp": 0,
+      "ref": {
+        "id": "type",
+        "value": "type",
+        "lbp": 0
+      },
       "line": 2,
       "pos": 6,
       "nodeType": "class",
@@ -19,6 +24,11 @@
         "id": "(name)",
         "value": "Foo",
         "lbp": 0,
+        "ref": {
+          "id": "(name)",
+          "value": "(name)",
+          "lbp": 0
+        },
         "line": 2,
         "pos": 10,
         "nodeType": "name",
@@ -56,6 +66,11 @@
                 "id": "(name)",
                 "value": "a",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "(name)",
+                  "lbp": 0
+                },
                 "line": 4,
                 "pos": 9,
                 "nodeType": "name",
@@ -117,6 +132,11 @@
                 "id": "(name)",
                 "value": "b",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "(name)",
+                  "lbp": 0
+                },
                 "line": 5,
                 "pos": 9,
                 "nodeType": "name",
@@ -153,6 +173,11 @@
       "id": "(name)",
       "value": "main",
       "lbp": 0,
+      "ref": {
+        "id": "(name)",
+        "value": "(name)",
+        "lbp": 0
+      },
       "line": 8,
       "pos": 17,
       "nodeType": "function",
@@ -192,6 +217,11 @@
               "id": "(name)",
               "value": "foo",
               "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "(name)",
+                "lbp": 0
+              },
               "line": 9,
               "pos": 11,
               "nodeType": "name",
@@ -209,6 +239,11 @@
               "id": "(name)",
               "value": "foo1",
               "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "(name)",
+                "lbp": 0
+              },
               "line": 9,
               "pos": 16,
               "nodeType": "name",
@@ -245,6 +280,28 @@
               "id": "(name)",
               "value": "foo",
               "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "foo",
+                "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "(name)",
+                  "lbp": 0
+                },
+                "line": 9,
+                "pos": 11,
+                "nodeType": "name",
+                "sign": true,
+                "type": "Foo",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                }
+              },
               "line": 10,
               "pos": 7,
               "nodeType": "name",
@@ -264,6 +321,11 @@
               "id": "(name)",
               "value": "a",
               "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "(name)",
+                "lbp": 0
+              },
               "line": 10,
               "pos": 9,
               "nodeType": "literal",
@@ -298,6 +360,29 @@
             "id": "(name)",
             "value": "foo1",
             "lbp": 0,
+            "ref": {
+              "id": "(name)",
+              "value": "foo1",
+              "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "(name)",
+                "lbp": 0
+              },
+              "line": 9,
+              "pos": 16,
+              "nodeType": "name",
+              "sign": true,
+              "type": "Foo",
+              "rvalue": false,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              }
+            },
             "line": 11,
             "pos": 8,
             "nodeType": "name",
@@ -317,6 +402,28 @@
             "id": "(name)",
             "value": "foo",
             "lbp": 0,
+            "ref": {
+              "id": "(name)",
+              "value": "foo",
+              "lbp": 0,
+              "ref": {
+                "id": "(name)",
+                "value": "(name)",
+                "lbp": 0
+              },
+              "line": 9,
+              "pos": 11,
+              "nodeType": "name",
+              "sign": true,
+              "type": "Foo",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              }
+            },
             "line": 11,
             "pos": 14,
             "nodeType": "name",
@@ -338,6 +445,11 @@
           "id": "return",
           "value": "return",
           "lbp": 0,
+          "ref": {
+            "id": "return",
+            "value": "return",
+            "lbp": 0
+          },
           "line": 12,
           "pos": 10,
           "nodeType": "statement",
@@ -364,6 +476,28 @@
                 "id": "(name)",
                 "value": "foo",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "foo",
+                  "lbp": 0,
+                  "ref": {
+                    "id": "(name)",
+                    "value": "(name)",
+                    "lbp": 0
+                  },
+                  "line": 9,
+                  "pos": 11,
+                  "nodeType": "name",
+                  "sign": true,
+                  "type": "Foo",
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  }
+                },
                 "line": 12,
                 "pos": 14,
                 "nodeType": "name",
@@ -383,6 +517,11 @@
                 "id": "(name)",
                 "value": "a",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "(name)",
+                  "lbp": 0
+                },
                 "line": 12,
                 "pos": 16,
                 "nodeType": "literal",
@@ -403,6 +542,29 @@
                 "id": "(name)",
                 "value": "foo1",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "foo1",
+                  "lbp": 0,
+                  "ref": {
+                    "id": "(name)",
+                    "value": "(name)",
+                    "lbp": 0
+                  },
+                  "line": 9,
+                  "pos": 16,
+                  "nodeType": "name",
+                  "sign": true,
+                  "type": "Foo",
+                  "rvalue": false,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  }
+                },
                 "line": 12,
                 "pos": 23,
                 "nodeType": "name",
@@ -422,6 +584,11 @@
                 "id": "(name)",
                 "value": "b",
                 "lbp": 0,
+                "ref": {
+                  "id": "(name)",
+                  "value": "(name)",
+                  "lbp": 0
+                },
                 "line": 12,
                 "pos": 25,
                 "nodeType": "literal",
