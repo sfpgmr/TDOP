@@ -378,15 +378,20 @@ export default async function generateCode(ast,binaryen_) {
         break;
       default:
         {
+          // 左の型を調べる
           const l = expression(left);
           const r = expression(right);
-          const lnative = module[l.type];
-          const rnative = module[r.type];
-
-          if(lnative && rnative && l.type  == r.type){
-            return binOp_(name,e,l,r,sign);
+          const op = module['i' + left.type.slice(-2)][sign?name + '_u':name];
+          if((typeof l != 'number') || (typeof r != 'number')){
+            error('Bad Expression',left);
           }
-          error('Bad Type',left);
+          return op(l,r);
+          //const lnative = module[l.type];
+          //const rnative = module[r.type];
+
+          //if(lnative && rnative && l.type  == r.type){
+          //  return binOp_(name,e,l,r,sign);
+          //}
         }
 //        error('Bad Type',left);
       }
@@ -409,10 +414,11 @@ export default async function generateCode(ast,binaryen_) {
     if(e.second.id == '.'){
       return dotOp(e.second);
     }
-    for(let i = 0,e = members.length;i < e;++i){
+    for(let i = 0,ei = members.length;i < ei;++i){
       const memberChilds = members[i].first;
       for(let j = 0,ej = memberChilds.length;j < ej;++j){
         if(memberChilds[j].first.value == memberName){
+          e.type = memberChilds[j].first.type;
           return name(memberChilds[j].first);
         };
       }
