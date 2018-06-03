@@ -570,7 +570,7 @@ export default async function generateCode(ast,binaryen_) {
   function name(e) {
     console.log('** name() **');
     const nativeType = binaryen[e.type];
-    if(nativeTyupe){
+    if(nativeType){
       if (!e.global) {
         return module.getLocal(e.varIndex, binaryen[e.type]);
       } else {
@@ -615,10 +615,19 @@ export default async function generateCode(ast,binaryen_) {
       } else {
         assignment(l,results,false);
       }
-    } else if(e.members){
-      e.members.forEach(member=>{
-        // 再帰的にassignmentを呼び出す
-        assignment(member,results,false);
+    } else if(left.ref && left.ref.members){
+      const leftMembers = left.ref.members;
+      const rightMembers = right.ref.members;
+      leftMembers.forEach((leftMember,i)=>{
+        const lms = leftMember.first;
+        const rms = rightMembers[i].first;
+        lms.forEach((lm,j)=>{
+          const rm = rms[j];
+          const memberAssignmment = Object.assign(Object.create(e),e);
+          memberAssignmment.first = lm.first;
+          memberAssignmment.second = rm.first;
+          assignment(memberAssignmment,results,false);
+        });
       });
       if(top){ 
         return module.block(null,results);
