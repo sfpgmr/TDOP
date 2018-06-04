@@ -116,15 +116,17 @@ const testSrc =
 `
 type Foo {
 public:
-  i32 a = 0;
+  i32 a = 1;
   i32 b = 2;
 }
 
 export i32 main(){
   Foo foo,foo1;
-  foo.a = 1;
+//  foo.a = 1;
   foo1 = foo;  
   return foo.a * foo1.b;
+  //i32 a = 1;
+  //return a;
 };`;
 
 
@@ -149,9 +151,11 @@ export i32 main(){
     console.log('パース完了');
        
     const module = await generateCode(ast,binaryen);
-    module.optimize();
+    module.validate();
+    //module.optimize();
     
     fs.writeFileSync('out.wat',module.emitText(),'utf8');
+    
     const compiled = module.emitBinary();
     fs.writeFileSync('out.wasm',compiled);
     

@@ -5,34 +5,32 @@
   (local $0 i32)
   (local $1 i32)
   (local $2 i32)
-  (block $for0
-   (loop $loop1
-    (br_if $for0
-     (i32.ge_s
-      (get_local $0)
-      (i32.const 4)
-     )
-    )
-    (set_local $2
-     (i32.add
-      (get_local $0)
-      (set_local $1
-       (i32.add
-        (get_local $1)
-        (i32.const 1)
-       )
-      )
-     )
-    )
-    (set_local $0
-     (i32.add
-      (get_local $0)
-      (i32.const 1)
-     )
-    )
-    (br $loop1)
+  (local $3 i32)
+  (set_local $0
+   (i32.const 1)
+  )
+  (set_local $1
+   (i32.const 2)
+  )
+  (set_local $2
+   (i32.const 1)
+  )
+  (set_local $3
+   (i32.const 2)
+  )
+  (block
+   (set_local $2
+    (get_local $2)
+   )
+   (set_local $3
+    (get_local $3)
    )
   )
-  (get_local $2)
+  (return
+   (i32.mul
+    (get_local $2)
+    (get_local $3)
+   )
+  )
  )
 )
