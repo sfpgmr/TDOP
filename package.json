@@ -5,7 +5,7 @@
   "main": "index.mjs",
   "types": "index.d.ts",
   "scripts": {
-    "test": "node --experimental-modules index.mjs",
+    "test": "node --experimental-modules test.mjs",
     "web": "node --experimental-modules static-server.js"
   },
   "repository": {
@@ -24,5 +24,9 @@
   "homepage": "https://github.com/sfpgmr/TDOP#readme",
   "dependencies": {
     "binaryen": "^47.0.0"
+  },
+  "devDependencies": {
+    "tape": "^4.9.0",
+    "tape-async": "^2.3.0"
   }
 }

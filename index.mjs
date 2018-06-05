@@ -122,7 +122,7 @@ public:
 
 export i32 main(){
   Foo foo,foo1;
-//  foo.a = 1;
+  foo.a = 10;
   foo1 = foo;  
   return foo.a * foo1.b;
   //i32 a = 1;
