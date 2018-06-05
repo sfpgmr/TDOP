@@ -18,6 +18,9 @@
   (set_local $3
    (i32.const 2)
   )
+  (set_local $2
+   (i32.const 10)
+  )
   (block
    (set_local $2
     (get_local $2)

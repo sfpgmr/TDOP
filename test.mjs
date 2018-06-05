@@ -18,7 +18,7 @@ type Foo {
   
   export i32 main(){
     Foo foo,foo1;
-    //foo.a = 10;
+    foo.a = 10;
     foo1 = foo;  
     return foo.a * foo1.b;
   };
@@ -58,8 +58,8 @@ try {
   //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
   const bin = new WebAssembly.Module(compiled);
   const inst = new WebAssembly.Instance(bin,{});
-  t.equal(inst.exports.main(),2);
-  //console.log(inst.exports.main());
+  t.equal(inst.exports.main(),20);
+  console.log(inst.exports.main());
 
 } catch(e){
   console.log(e);

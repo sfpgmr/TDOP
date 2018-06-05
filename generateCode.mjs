@@ -176,8 +176,8 @@ export default async function generateCode(ast,binaryen_) {
         if(!typedef){
           error('Type Not Found.',d);
         }
-        const detail = Object.assign(Object.create(typedef.detail),typedef.detail);
-        d.members = detail.second;
+        const detail = Object.assign(Object.create(typedef.detail.second),typedef.detail.second);
+        d.members = detail;
        
         //console.log(detail);
         const results = [];
@@ -617,7 +617,17 @@ export default async function generateCode(ast,binaryen_) {
     if(left.value == '.'){
       const l = leftDotOp(left);
       if(module[l.type]){
-        return results.push(setValue(l,expression(right)));
+        const op = setValue(l,expression(right));
+        if(top){
+          if(results.length > 0){
+            results.push(op);
+            return module.block(null,results);
+          } else {
+            return op;
+          }
+        } else {
+          results.push(op);
+        }
       } else {
         assignment(l,results,false);
       }
@@ -635,13 +645,14 @@ export default async function generateCode(ast,binaryen_) {
           assignment(memberAssignmment,results,false);
         });
       });
-      if(top){ 
-        return module.block(null,results);
-      }
+      if(top){
+        return results.length == 1 ?  results[0] : module.block(null,results);
+      } 
     } else if(module[left.type]){
       results.push(setValue(left,expression(right)));
-      return;
-    } 
+    } else {
+      error('Bad Assignment',e);
+    }
   }
 
 

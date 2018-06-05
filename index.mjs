@@ -125,8 +125,6 @@ export i32 main(){
   foo.a = 10;
   foo1 = foo;  
   return foo.a * foo1.b;
-  //i32 a = 1;
-  //return a;
 };`;
 
 
