@@ -459,7 +459,7 @@ export default function make_parse() {
 
   sym('(end)');
 
-  function defVar(){
+  function defineVarAndFunction(){
     //debugger;
     let a = [];
     let n;
@@ -498,22 +498,27 @@ export default function make_parse() {
     }
     // 関数定義かどうか
     if (token.id === '(') {
+      // 関数定義
       advance();
-      // ローカル・スコープを開く
+      // 関数内のスコープを開く
       createScope();
+      scope.varIndex = 0;
+      // 関数の引数があるか
       if (token.id !== ')') {
-      // 変数を取り出して配列に格納する
+      // 引数を取り出して配列に格納する
         while (true) {
           if (token.nodeType !== 'define') {
             error('Expected a parameter name.',token);
           }
           advance();
+          // 変数名
           const t = token;
+          t.varIndex = scope.varIndex++;
           t.type = this.type;
           scope.define(t);
           t.rvalue = false;
           advance();
-          
+          // 初期値代入
           if (token.id === '=') {
             const n = token;
             advance('=');
@@ -535,7 +540,7 @@ export default function make_parse() {
           advance(',');
         }
       }
-      // ツリーの左に格納
+      // 引数情報をツリーの左に格納
       n.first = a;
       advance(')');
       if(!funcptr){
@@ -555,17 +560,19 @@ export default function make_parse() {
   }
 
     while (true) {
+      // 変数名
       n.nud = itself;
       // 代入演算子
       if (token.id === '=') {
+        // 初期値あり
         t = token;
         advance('=');
         t.first = n;
+        // 右辺値ではない
         t.rvalue = t.first.rvalue = false;
         //debugger;
         t.second = expression(0);
         t.second.type = this.type;
-
         t.nodeType = 'binary';
         a.push(t);
       } else {
@@ -587,6 +594,9 @@ export default function make_parse() {
       }
       n.type = this.type;
       n.rvalue = false;
+      if(scope.varIndex){
+        n.varIndex = scope.varIndex++;
+      }
       scope.define(n);
       advance();
     }
@@ -603,9 +613,14 @@ export default function make_parse() {
     //     : a;
   }
 
+  function setTypeInfo(node)
+  {
+
+  }
+
   stmt('export',function(){
     token.export = true;
-    return defVar.bind(token)();
+    return defineVarAndFunction.bind(token)();
   });
   
   stmt('(name)');
@@ -941,7 +956,7 @@ export default function make_parse() {
               break;
             default:
               {
-                const def = defVar.bind(token)();
+                const def = defineVarAndFunction.bind(token)();
                 def.access = access;
                 defs.push(def);
               }
@@ -953,7 +968,7 @@ export default function make_parse() {
         this.second = defs;
         const t = this.first.value;
         // 型をスコープに登録
-        scope.define({id:t,value:t,type:t,nodeType:'define',detail:this,typedef:true,dvd:defVar,userType:true});
+        scope.define({id:t,value:t,type:t,nodeType:'define',detail:this,typedef:true,dvd:defineVarAndFunction,userType:true});
         return this;   
       case '=':
         break;
@@ -971,7 +986,7 @@ export default function make_parse() {
     // ビルトイン 型
     ['u32','u64','i32','i64','f32','f64','void','string']
       .forEach(t=>{
-        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defVar,userType:false});
+        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defineVarAndFunction,userType:false});
       });
     advance();
     const s = statements();

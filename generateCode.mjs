@@ -176,8 +176,19 @@ export default async function generateCode(ast,binaryen_) {
         if(!typedef){
           error('Type Not Found.',d);
         }
-        const detail = Object.assign(Object.create(typedef.detail.second),typedef.detail.second);
-        d.members = detail;
+        const detail = typedef.detail.second;
+        d.members = new Map();
+        detail.forEach(d=>{
+          //d.members.set()          
+
+        });
+        d.members = detail.map(d=>{
+          return {
+            ref:d
+
+          };
+          Object.assign(Object.create(d),d)
+        });
        
         //console.log(detail);
         const results = [];
