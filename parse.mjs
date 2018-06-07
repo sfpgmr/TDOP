@@ -13,6 +13,53 @@ function error(message, t = this) {
   throw t;
 }
 
+class FunctionScope {
+  constructor(){
+    this.funcVars = [];
+    this.length = 0;
+  }
+  scopeIn (){
+    this.funcVars.push(0);
+    this.length = this.funcVars.length;
+    this.stackTop = this.length - 1;
+    this.current = 0;
+  }
+
+  scopeOut(){
+    if(this.length == 0) throw new Error('配列インデックスの上限を超えています。');
+
+    this.funcVars.pop();
+    this.length = this.funcVars.length;
+    if(this.length >= 1){
+      this.stackTop =  this.length - 1;
+      this.current = this.funcVars[this.stackTop];
+    } else {
+      this.stackTop = undefined;
+      this.current = undefined;
+    }
+  }
+
+  index(inc = true) {
+    if(inc){
+      const ret = this.current;
+      this.incIndex();
+      return ret;
+    } else {
+      return this.current;
+    }
+  }
+
+  incIndex()
+  {
+    ++this.current;
+    this.funcVars[this.stackTop] = this.current;
+  }
+
+  get global(){
+    return this.current === undefined;
+  }
+}
+
 
 // パーサの生成
 export default function make_parse() {
@@ -24,6 +71,7 @@ export default function make_parse() {
   const labels = new Map();
   let scope;
   let scopeTop;
+  let funcScope = new FunctionScope();
 
   function createScope(){
     const s = new Scope(scope);
@@ -502,7 +550,7 @@ export default function make_parse() {
       advance();
       // 関数内のスコープを開く
       createScope();
-      scope.varIndex = 0;
+      funcScope.scopeIn();
       // 関数の引数があるか
       if (token.id !== ')') {
       // 引数を取り出して配列に格納する
@@ -513,22 +561,25 @@ export default function make_parse() {
           advance();
           // 変数名
           const t = token;
-          t.varIndex = scope.varIndex++;
+          
+          t.varIndex = funcScope.index();
           t.type = this.type;
           scope.define(t);
           t.rvalue = false;
           advance();
           // 初期値代入
           if (token.id === '=') {
-            const n = token;
+            
+            //const temp = token;
             advance('=');
-            n.first = t;
-            n.rvalue = n.first.rvalue = false;
+            t.rvalue = false;
+            t.initialExpression = expression(0);
+            //n.first = t;
             //debugger;
-            n.second = expression(0);
-            n.second.type = this.type;
-            n.assignment = true;
-            n.nodeType = 'binary';
+            //n.second = expression(0);
+            //n.second.type = this.type;
+            //n.assignment = true;
+            //n.nodeType = 'binary';
             a.push(n);
           } else {
             a.push(t);
@@ -540,28 +591,34 @@ export default function make_parse() {
           advance(',');
         }
       }
-      // 引数情報をツリーの左に格納
-      n.first = a;
+      // 引数情報を格納
+      n.params = a;
       advance(')');
       if(!funcptr){
         // 関数ボディのパース
         advance('{');
         // ツリーの右に文を格納
-        n.second = statements();
+        n.statements = statements();
       } 
       n.scope = scope;
       scope.pop();
+      funcScope.scopeOut();
       if(!funcptr){
         advance('}');
       }
       advance(';');
       n.nodeType = 'function';
       return n;
-  }
+    }
 
     while (true) {
       // 変数名
       n.nud = itself;
+
+      if(!funcScope.global){
+        n.varIndex = funcScope.index();
+      }
+      
       // 代入演算子
       if (token.id === '=') {
         // 初期値あり
@@ -572,6 +629,7 @@ export default function make_parse() {
         t.rvalue = t.first.rvalue = false;
         //debugger;
         t.second = expression(0);
+        // TODO:型情報は式から得るようにしなければならない
         t.second.type = this.type;
         t.nodeType = 'binary';
         a.push(t);
@@ -594,9 +652,6 @@ export default function make_parse() {
       }
       n.type = this.type;
       n.rvalue = false;
-      if(scope.varIndex){
-        n.varIndex = scope.varIndex++;
-      }
       scope.define(n);
       advance();
     }
