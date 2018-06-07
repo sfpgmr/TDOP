@@ -580,7 +580,7 @@ export default function make_parse() {
             //n.second.type = this.type;
             //n.assignment = true;
             //n.nodeType = 'binary';
-            a.push(n);
+            a.push(t);
           } else {
             a.push(t);
           }
