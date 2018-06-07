@@ -114,14 +114,14 @@ export default async function generateCode(ast,binaryen_) {
     const funcReturnType = binaryen[funcNode.type];
 
     // 関数パラメータ
-    if (funcNode.first) {
-      const funcParams = funcNode.first;
+    if (funcNode.params) {
+      const funcParams = funcNode.params;
       funcParams.forEach(p => {
         paramInits.push(define_(p,null));
         paramTypes.push(binaryen[p.type]);
       });
     }
-    const statements = generate(funcNode.second);
+    const statements = generate(funcNode.statement);
     const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type],paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
     if(funcNode.export){
