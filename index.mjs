@@ -148,23 +148,23 @@ export i32 main(){
     fs.writeFileSync('./ast.json', json, 'utf8');
     console.log('パース完了');
        
-    const module = await generateCode(ast,binaryen);
-    module.validate();
-    //module.optimize();
+    // const module = await generateCode(ast,binaryen);
+    // module.validate();
+    // //module.optimize();
     
-    fs.writeFileSync('out.wat',module.emitText(),'utf8');
+    // fs.writeFileSync('out.wat',module.emitText(),'utf8');
     
-    const compiled = module.emitBinary();
-    fs.writeFileSync('out.wasm',compiled);
+    // const compiled = module.emitBinary();
+    // fs.writeFileSync('out.wasm',compiled);
     
     console.log('コンパイル完了');
     
     // 実行
     
     //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
-    const bin = new WebAssembly.Module(compiled);
-    const inst = new WebAssembly.Instance(bin,{});
-    console.log(inst.exports.main());
+    // const bin = new WebAssembly.Module(compiled);
+    // const inst = new WebAssembly.Instance(bin,{});
+    // console.log(inst.exports.main());
   
   } catch(e){
     console.log(e);

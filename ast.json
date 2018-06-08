@@ -53,40 +53,30 @@
           "line": 4,
           "pos": 7,
           "sign": true,
-          "first": [
+          "defines": [
             {
-              "id": "=",
-              "value": "=",
-              "lbp": 10,
-              "line": 4,
-              "pos": 11,
-              "nodeType": "binary",
-              "sign": true,
-              "first": {
+              "id": "(name)",
+              "value": "a",
+              "lbp": 0,
+              "ref": {
                 "id": "(name)",
-                "value": "a",
-                "lbp": 0,
-                "ref": {
-                  "id": "(name)",
-                  "value": "(name)",
-                  "lbp": 0
-                },
-                "line": 4,
-                "pos": 9,
-                "nodeType": "name",
-                "sign": true,
-                "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
-                "rvalue": false
+                "value": "(name)",
+                "lbp": 0
+              },
+              "line": 4,
+              "pos": 9,
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
               },
               "rvalue": false,
-              "second": {
+              "initialExpression": {
                 "id": "(literal)",
                 "value": "1",
                 "lbp": 0,
@@ -119,40 +109,30 @@
           "line": 5,
           "pos": 7,
           "sign": true,
-          "first": [
+          "defines": [
             {
-              "id": "=",
-              "value": "=",
-              "lbp": 10,
-              "line": 5,
-              "pos": 11,
-              "nodeType": "binary",
-              "sign": true,
-              "first": {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "ref": {
                 "id": "(name)",
-                "value": "b",
-                "lbp": 0,
-                "ref": {
-                  "id": "(name)",
-                  "value": "(name)",
-                  "lbp": 0
-                },
-                "line": 5,
-                "pos": 9,
-                "nodeType": "name",
-                "sign": true,
-                "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
-                "rvalue": false
+                "value": "(name)",
+                "lbp": 0
+              },
+              "line": 5,
+              "pos": 9,
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
               },
               "rvalue": false,
-              "second": {
+              "initialExpression": {
                 "id": "(literal)",
                 "value": "2",
                 "lbp": 0,
@@ -191,8 +171,8 @@
         "def": {},
         "typedef": {}
       },
-      "first": [],
-      "second": [
+      "params": [],
+      "statements": [
         {
           "id": "Foo",
           "value": "Foo",
@@ -212,7 +192,7 @@
           "pos": 7,
           "sign": true,
           "rvalue": false,
-          "first": [
+          "defines": [
             {
               "id": "(name)",
               "value": "foo",
@@ -233,7 +213,8 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "varIndex": 0
             },
             {
               "id": "(name)",
@@ -256,7 +237,8 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "varIndex": 1
             }
           ]
         },
@@ -300,7 +282,8 @@
                 "scope": {
                   "def": {},
                   "typedef": {}
-                }
+                },
+                "varIndex": 0
               },
               "line": 10,
               "pos": 7,
@@ -314,6 +297,7 @@
                 "def": {},
                 "typedef": {}
               },
+              "varIndex": 0,
               "rvalue": false
             },
             "rvalue": false,
@@ -381,7 +365,8 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "varIndex": 1
             },
             "line": 11,
             "pos": 8,
@@ -395,7 +380,8 @@
             "scope": {
               "def": {},
               "typedef": {}
-            }
+            },
+            "varIndex": 1
           },
           "rvalue": false,
           "second": {
@@ -422,7 +408,8 @@
               "scope": {
                 "def": {},
                 "typedef": {}
-              }
+              },
+              "varIndex": 0
             },
             "line": 11,
             "pos": 14,
@@ -436,6 +423,7 @@
               "def": {},
               "typedef": {}
             },
+            "varIndex": 0,
             "rvalue": true
           },
           "type": "Foo",
@@ -496,7 +484,8 @@
                   "scope": {
                     "def": {},
                     "typedef": {}
-                  }
+                  },
+                  "varIndex": 0
                 },
                 "line": 12,
                 "pos": 14,
@@ -510,6 +499,7 @@
                   "def": {},
                   "typedef": {}
                 },
+                "varIndex": 0,
                 "rvalue": true
               },
               "rvalue": true,
@@ -563,7 +553,8 @@
                   "scope": {
                     "def": {},
                     "typedef": {}
-                  }
+                  },
+                  "varIndex": 1
                 },
                 "line": 12,
                 "pos": 23,
@@ -577,7 +568,8 @@
                 "scope": {
                   "def": {},
                   "typedef": {}
-                }
+                },
+                "varIndex": 1
               },
               "rvalue": true,
               "second": {

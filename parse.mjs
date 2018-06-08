@@ -622,17 +622,19 @@ export default function make_parse() {
       // 代入演算子
       if (token.id === '=') {
         // 初期値あり
-        t = token;
+        //t = token;
         advance('=');
-        t.first = n;
+        //t.first = n;
         // 右辺値ではない
-        t.rvalue = t.first.rvalue = false;
+        //t.rvalue = t.first.rvalue = false;
+        n.rvalue = false;
         //debugger;
-        t.second = expression(0);
+        //t.second = expression(0);
+        n.initialExpression = expression(0);
         // TODO:型情報は式から得るようにしなければならない
-        t.second.type = this.type;
-        t.nodeType = 'binary';
-        a.push(t);
+        //t.second.type = this.type;
+        //t.nodeType = 'binary';
+        a.push(n);
       } else {
         a.push(n);
       }
@@ -658,7 +660,7 @@ export default function make_parse() {
 
     advance(';');
 
-    this.first = a;
+    this.defines = a;
 
     return this;
     // return (a.length === 0)
@@ -668,10 +670,6 @@ export default function make_parse() {
     //     : a;
   }
 
-  function setTypeInfo(node)
-  {
-
-  }
 
   stmt('export',function(){
     token.export = true;
