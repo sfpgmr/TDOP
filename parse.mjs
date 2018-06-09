@@ -210,6 +210,7 @@ export default function make_parse() {
       error('Unexpected token.',t);
     }
 
+    //if(o.id == 'type')
     token = Object.assign(Object.create(o),o);
     ref && (token.ref = o);
     token.line = t.line;
@@ -607,6 +608,7 @@ export default function make_parse() {
         advance('}');
       }
       advance(';');
+      n.id = 'type';
       n.nodeType = 'function';
       return n;
     }
@@ -976,14 +978,18 @@ export default function make_parse() {
     this.nodeType = 'statement';
     return this;
   });
-  
+
+  // ** type 定義 ** //
   stmt('type',function(){
-    this.first = token;
+    //this.first = token;
+    this.value = token.value;
     advance();
     switch(token.id){
       case '{':
         // クラス定義
         this.nodeType = 'class';
+        this.userType = true;
+        this.typedef = true;
         advance();
         const defs = [];
         let access = 'public';// privateから始まる。
@@ -1018,11 +1024,13 @@ export default function make_parse() {
         }
         advance('}');
         scope.pop();
-        this.second = defs;
-        const t = this.first.value;
+        this.members = defs;
+        this.dvd = defineVarAndFunction;
+        //const t = this.first.value;
         // 型をスコープに登録
-        scope.define({id:t,value:t,type:t,nodeType:'define',detail:this,typedef:true,dvd:defineVarAndFunction,userType:true});
-        return this;   
+        scope.define(this);
+        return this;
+      // 型エイリアス
       case '=':
         break;
      }
@@ -1039,7 +1047,7 @@ export default function make_parse() {
     // ビルトイン 型
     ['u32','u64','i32','i64','f32','f64','void','string']
       .forEach(t=>{
-        scope.define({id:t,value:t,type:t,nodeType:'define',typedef:true,dvd:defineVarAndFunction,userType:false});
+        scope.define({id:'type',value:t,type:t,nodeType:'builtin',typedef:true,dvd:defineVarAndFunction,userType:false});
       });
     advance();
     const s = statements();
@@ -1048,7 +1056,7 @@ export default function make_parse() {
     return {
       id:'(program)',
       scope: scopeTop,
-      first:s
+      statements:s
     };
   };
 }

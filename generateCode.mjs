@@ -33,7 +33,7 @@ export default async function generateCode(ast,binaryen_) {
   let currentBrakePoint;
   //module.addMemoryImport('test','test','a');
 
-  const statements = ast.first;
+  const statements = ast.statements;
 
   
   function generate(stmts) {
