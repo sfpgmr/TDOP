@@ -210,14 +210,13 @@ export default function make_parse() {
       error('Unexpected token.',t);
     }
 
-    //if(o.id == 'type')
-    token = Object.assign(Object.create(o),o);
-    ref && (token.ref = o);
+    token = Object.create(o);
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
     token.nodeType = o.typedef ? o.nodeType : a;
     token.sign = sign;
+    //token.type = a;
     type && (token.type = type);
     t.kind && (token.kind = t.kind);
 
@@ -276,7 +275,9 @@ export default function make_parse() {
       }
       s = statement();
 
-      if (s) {
+      if (s instanceof Array) {
+        a.push(...s);
+      } else {
         a.push(s);
       }
     }
@@ -662,9 +663,15 @@ export default function make_parse() {
 
     advance(';');
 
-    this.defines = a;
+    a = a.map(d=>{
+      const ret = Object.assign(Object.create(d),this,d);
+      ret.id = 'define';
+      ret.type = this.type;
+      return ret;
+    })
+    //this.defines = a;
 
-    return this;
+    return a;
     // return (a.length === 0)
     //   ? null
     //   : (a.length === 1)
@@ -983,6 +990,7 @@ export default function make_parse() {
   stmt('type',function(){
     //this.first = token;
     this.value = token.value;
+    this.type = token.value;
     advance();
     switch(token.id){
       case '{':
@@ -1016,8 +1024,8 @@ export default function make_parse() {
             default:
               {
                 const def = defineVarAndFunction.bind(token)();
-                def.access = access;
-                defs.push(def);
+                def.forEach(d=>d.access = access);
+                defs.push(...def);
               }
               break;
           }
