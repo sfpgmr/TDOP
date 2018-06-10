@@ -254,8 +254,10 @@ export default function make_parse() {
     // ステートメント
     if (n.std) {
       advance();
-      scope.reserve(n);
-      return n.std(false);
+      const scope_ = scope;
+      const ret = n.std(false);
+      scope_.reserve(n);
+      return ret;
     }
 
     // 変数定義
@@ -1019,6 +1021,8 @@ export default function make_parse() {
     //this.first = token;
     this.value = token.value;
     this.type = token.value;
+    this.id = token.value;
+
     advance();
     switch (token.id) {
       case '{':
@@ -1061,10 +1065,9 @@ export default function make_parse() {
         scope.pop();
         this.members = defs;
         this.dvd = defineVarAndFunction;
-        this.id = 'type';
         //const t = this.first.value;
         // 型をスコープに登録
-        scope.define(this);
+        //scope.define(this);
         return this;
       // 型エイリアス
       case '=':
