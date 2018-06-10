@@ -1067,7 +1067,7 @@ export default function make_parse() {
         this.dvd = defineVarAndFunction;
         //const t = this.first.value;
         // 型をスコープに登録
-        //scope.define(this);
+        scope.define(this);
         return this;
       // 型エイリアス
       case '=':
