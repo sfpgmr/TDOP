@@ -7,6 +7,10 @@
 
 //jslint for, this
 
+const ACCESS_PUBLIC = 1 | 0;
+const ACCESS_PRIVATE = 2 | 0;
+const ACCESS_PROTECTED = 3 | 0;
+
 function error(message, t = this) {
   t.name = 'Parser : SyntaxError';
   t.message = message;
@@ -210,7 +214,12 @@ export default function make_parse() {
       error('Unexpected token.',t);
     }
 
-    token = Object.create(o);
+    //token = Object.assign(Object.create(o),o);
+    if(o.id == 'type' && o.userType){
+      token = o;
+    } else {
+      token = Object.create(o);
+    }
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
@@ -509,176 +518,7 @@ export default function make_parse() {
 
   sym('(end)');
 
-  function defineVarAndFunction(){
-    //debugger;
-    let a = [];
-    let n;
-    let t;
-    advance();
-    n = token;
-    // ポインタ型かどうか
-    if(n.id == '*'){
-      advance();
-      n = token;
-      n.pointer = true;
-    }
-    let funcptr = false;
-    // 関数ポインタ定義かどうか
-    if(n.id == '('){
-      advance();
-      advance('*');
-      n = token;
-      n.pointer = true;
-      funcptr = true;
-    }
-
-    // ローカルスコープですでに定義されているか
-    if(scope.def.get(n.value)){
-      error('Already Defined',n);
-    }
-    // 変数の型を保存
-    n.type = this.type;
-    // export するかどうか
-    n.export = this.export;
-    // scope に変数名を登録する
-    scope.define(n);
-    advance();
-    if(funcptr){
-      advance('*');
-    }
-    // 関数定義かどうか
-    if (token.id === '(') {
-      // 関数定義
-      advance();
-      // 関数内のスコープを開く
-      createScope();
-      funcScope.scopeIn();
-      // 関数の引数があるか
-      if (token.id !== ')') {
-      // 引数を取り出して配列に格納する
-        while (true) {
-          if (token.nodeType !== 'define') {
-            error('Expected a parameter name.',token);
-          }
-          advance();
-          // 変数名
-          const t = token;
-          
-          t.varIndex = funcScope.index();
-          t.type = this.type;
-          scope.define(t);
-          t.rvalue = false;
-          advance();
-          // 初期値代入
-          if (token.id === '=') {
-            
-            //const temp = token;
-            advance('=');
-            t.rvalue = false;
-            t.initialExpression = expression(0);
-            //n.first = t;
-            //debugger;
-            //n.second = expression(0);
-            //n.second.type = this.type;
-            //n.assignment = true;
-            //n.nodeType = 'binary';
-            a.push(t);
-          } else {
-            a.push(t);
-          }
-
-          if (token.id !== ',') {
-            break;
-          }
-          advance(',');
-        }
-      }
-      // 引数情報を格納
-      n.params = a;
-      advance(')');
-      if(!funcptr){
-        // 関数ボディのパース
-        advance('{');
-        // ツリーの右に文を格納
-        n.statements = statements();
-      } 
-      n.scope = scope;
-      scope.pop();
-      funcScope.scopeOut();
-      if(!funcptr){
-        advance('}');
-      }
-      advance(';');
-      n.id = 'type';
-      n.nodeType = 'function';
-      return n;
-    }
-
-    while (true) {
-      // 変数名
-      n.nud = itself;
-
-      if(!funcScope.global){
-        n.varIndex = funcScope.index();
-      }
-      
-      // 代入演算子
-      if (token.id === '=') {
-        // 初期値あり
-        //t = token;
-        advance('=');
-        //t.first = n;
-        // 右辺値ではない
-        //t.rvalue = t.first.rvalue = false;
-        n.rvalue = false;
-        //debugger;
-        //t.second = expression(0);
-        n.initialExpression = expression(0);
-        // TODO:型情報は式から得るようにしなければならない
-        //t.second.type = this.type;
-        //t.nodeType = 'binary';
-        a.push(n);
-      } else {
-        a.push(n);
-      }
-
-      // カンマ演算子
-      if (token.id !== ',') {
-        break;
-      }
-      advance(',');
-      // ポインタ型かどうか
-      if(token.id == '*'){
-        advance();
-        n = token;
-        n.pointer = true;
-      } else {
-        n = token;
-      }
-      n.type = this.type;
-      n.rvalue = false;
-      scope.define(n);
-      advance();
-    }
-
-    advance(';');
-
-    a = a.map(d=>{
-      const ret = Object.assign(Object.create(d),this,d);
-      ret.id = 'define';
-      ret.type = this.type;
-      return ret;
-    })
-    //this.defines = a;
-
-    return a;
-    // return (a.length === 0)
-    //   ? null
-    //   : (a.length === 1)
-    //     ? a[0]
-    //     : a;
-  }
-
+  
 
   stmt('export',function(){
     token.export = true;
@@ -986,6 +826,195 @@ export default function make_parse() {
     return this;
   });
 
+  function defineVarAndFunction(){
+    //debugger;
+    let a = [];
+    let n;
+    let t;
+    advance();
+    n = token;
+    // ポインタ型かどうか
+    if(n.id == '*'){
+      advance();
+      n = token;
+      n.pointer = true;
+    }
+    let funcptr = false;
+    // 関数ポインタ定義かどうか
+    if(n.id == '('){
+      advance();
+      advance('*');
+      n = token;
+      n.pointer = true;
+      funcptr = true;
+    }
+
+    // ローカルスコープですでに定義されているか
+    if(scope.def.get(n.value)){
+      error('Already Defined',n);
+    }
+    // 変数の型を保存
+    n.type = this.type;
+    // export するかどうか
+    n.export = this.export;
+    // scope に変数名を登録する
+    scope.define(n);
+    advance();
+    if(funcptr){
+      advance('*');
+    }
+    // 関数定義かどうか
+    if (token.id === '(') {
+      // 関数定義
+      advance();
+      // 関数内のスコープを開く
+      createScope();
+      funcScope.scopeIn();
+      // 関数の引数があるか
+      if (token.id !== ')') {
+      // 引数を取り出して配列に格納する
+        while (true) {
+          if (token.nodeType !== 'define') {
+            error('Expected a parameter name.',token);
+          }
+          advance();
+          // 変数名
+          const t = token;
+          
+          t.varIndex = funcScope.index();
+          t.type = this.type;
+          scope.define(t);
+          t.rvalue = false;
+          advance();
+          // 初期値代入
+          if (token.id === '=') {
+            
+            //const temp = token;
+            advance('=');
+            t.rvalue = false;
+            t.initialExpression = expression(0);
+            //n.first = t;
+            //debugger;
+            //n.second = expression(0);
+            //n.second.type = this.type;
+            //n.assignment = true;
+            //n.nodeType = 'binary';
+            a.push(t);
+          } else {
+            a.push(t);
+          }
+
+          if (token.id !== ',') {
+            break;
+          }
+          advance(',');
+        }
+      }
+      // 引数情報を格納
+      n.params = a;
+      advance(')');
+      if(!funcptr){
+        // 関数ボディのパース
+        advance('{');
+        // ツリーの右に文を格納
+        n.statements = statements();
+      } 
+      n.scope = scope;
+      scope.pop();
+      funcScope.scopeOut();
+      if(!funcptr){
+        advance('}');
+      }
+      advance(';');
+      n.id = 'type';
+      n.nodeType = 'function';
+      return n;
+    }
+
+    while (true) {
+      // 変数名
+      n.nud = itself;
+
+    
+      // 代入演算子
+      if (token.id === '=') {
+        // 初期値あり
+        //t = token;
+        advance('=');
+        //t.first = n;
+        // 右辺値ではない
+        //t.rvalue = t.first.rvalue = false;
+        n.rvalue = false;
+        //debugger;
+        //t.second = expression(0);
+        n.initialExpression = expression(0);
+        // TODO:型情報は式から得るようにしなければならない
+        //t.second.type = this.type;
+        //t.nodeType = 'binary';
+        a.push(n);
+      } else {
+        a.push(n);
+      }
+
+      // カンマ演算子
+      if (token.id !== ',') {
+        break;
+      }
+      advance(',');
+      // ポインタ型かどうか
+      if(token.id == '*'){
+        advance();
+        n = token;
+        n.pointer = true;
+      } else {
+        n = token;
+      }
+      n.type = this.type;
+      n.rvalue = false;
+      scope.define(n);
+      advance();
+    }
+
+    advance(';');
+
+    a = a.map(d=>{
+      const ret = Object.assign(Object.create(d),d);
+      if(!funcScope.global && !this.userType){
+        // ビルトイン型
+        ret.varIndex = funcScope.index();
+      } 
+      if(this.userType){
+        // ユーザー定義型
+        function assignMembers (node){
+          return node.members.map(m=>{
+            const member = Object.assign({},m);
+            if(!funcScope.global && !member.userType){
+              // ビルトイン型
+              member.varIndex = funcScope.index();
+            } 
+            if(member.userType){
+              member.members = assignMembers(m);
+            }
+            return member;
+         });
+        }
+        ret.members = assignMembers(this);
+      }
+      ret.ref = this;
+      ret.id = 'define';
+      ret.type = this.type;
+      return ret;
+    })
+    //this.defines = a;
+
+    return a;
+    // return (a.length === 0)
+    //   ? null
+    //   : (a.length === 1)
+    //     ? a[0]
+    //     : a;
+  }
+
   // ** type 定義 ** //
   stmt('type',function(){
     //this.first = token;
@@ -1000,24 +1029,24 @@ export default function make_parse() {
         this.typedef = true;
         advance();
         const defs = [];
-        let access = 'public';// privateから始まる。
+        let access = ACCESS_PUBLIC;// privateから始まる。
         createScope();
 
         while(token.id != "}")
         {
           switch(token.value){
             case 'public':
-              access = 'public';
+              access = ACCESS_PUBLIC;
               advance();
               advance(':');
               break;
             case 'private':
-              access = 'private';
+              access = ACCESS_PRIVATE;
               advance();
               advance(':');
               break;
             case 'protected':
-              access = 'protected';
+              access = ACCESS_PROTECTED;
               advance();
               advance(':');
               break;
@@ -1034,6 +1063,7 @@ export default function make_parse() {
         scope.pop();
         this.members = defs;
         this.dvd = defineVarAndFunction;
+        this.id = 'type';
         //const t = this.first.value;
         // 型をスコープに登録
         scope.define(this);

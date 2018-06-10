@@ -6,8 +6,8 @@
   },
   "statements": [
     {
-      "line": 2,
-      "pos": 6,
+      "line": 9,
+      "pos": 7,
       "value": "Foo",
       "nodeType": "class",
       "sign": true,
@@ -42,8 +42,15 @@
             "type": "i32",
             "rvalue": true
           },
+          "ref": {
+            "line": 4,
+            "pos": 7,
+            "value": "i32",
+            "nodeType": "builtin",
+            "sign": true
+          },
           "id": "define",
-          "access": "public"
+          "access": 1
         },
         {
           "line": 5,
@@ -70,10 +77,18 @@
             "type": "i32",
             "rvalue": true
           },
+          "ref": {
+            "line": 5,
+            "pos": 7,
+            "value": "i32",
+            "nodeType": "builtin",
+            "sign": true
+          },
           "id": "define",
-          "access": "public"
+          "access": 1
         }
       ],
+      "id": "type",
       "led": null,
       "std": null,
       "lbp": 0,
@@ -106,7 +121,6 @@
           "value": "foo",
           "nodeType": "name",
           "sign": true,
-          "rvalue": false,
           "type": "Foo",
           "reserved": false,
           "led": null,
@@ -116,7 +130,172 @@
             "def": {},
             "typedef": {}
           },
-          "varIndex": 0,
+          "members": [
+            {
+              "line": 4,
+              "pos": 9,
+              "value": "a",
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "lbp": 0,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "line": 4,
+                "pos": 13,
+                "value": "1",
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "ref": {
+                "line": 4,
+                "pos": 7,
+                "value": "i32",
+                "nodeType": "builtin",
+                "sign": true
+              },
+              "id": "define",
+              "access": 1,
+              "varIndex": 0
+            },
+            {
+              "line": 5,
+              "pos": 9,
+              "value": "b",
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "lbp": 0,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "line": 5,
+                "pos": 13,
+                "value": "2",
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "ref": {
+                "line": 5,
+                "pos": 7,
+                "value": "i32",
+                "nodeType": "builtin",
+                "sign": true
+              },
+              "id": "define",
+              "access": 1,
+              "varIndex": 1
+            }
+          ],
+          "ref": {
+            "line": 9,
+            "pos": 7,
+            "value": "Foo",
+            "nodeType": "class",
+            "sign": true,
+            "rvalue": false,
+            "reserved": false,
+            "type": "Foo",
+            "userType": true,
+            "typedef": true,
+            "members": [
+              {
+                "line": 4,
+                "pos": 9,
+                "value": "a",
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "line": 4,
+                  "pos": 13,
+                  "value": "1",
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "line": 4,
+                  "pos": 7,
+                  "value": "i32",
+                  "nodeType": "builtin",
+                  "sign": true
+                },
+                "id": "define",
+                "access": 1
+              },
+              {
+                "line": 5,
+                "pos": 9,
+                "value": "b",
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "line": 5,
+                  "pos": 13,
+                  "value": "2",
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "line": 5,
+                  "pos": 7,
+                  "value": "i32",
+                  "nodeType": "builtin",
+                  "sign": true
+                },
+                "id": "define",
+                "access": 1
+              }
+            ],
+            "id": "type",
+            "led": null,
+            "std": null,
+            "lbp": 0,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            }
+          },
           "id": "define"
         },
         {
@@ -125,8 +304,8 @@
           "value": "foo1",
           "nodeType": "name",
           "sign": true,
-          "rvalue": false,
           "type": "Foo",
+          "rvalue": false,
           "reserved": false,
           "led": null,
           "std": null,
@@ -135,7 +314,172 @@
             "def": {},
             "typedef": {}
           },
-          "varIndex": 1,
+          "members": [
+            {
+              "line": 4,
+              "pos": 9,
+              "value": "a",
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "lbp": 0,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "line": 4,
+                "pos": 13,
+                "value": "1",
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "ref": {
+                "line": 4,
+                "pos": 7,
+                "value": "i32",
+                "nodeType": "builtin",
+                "sign": true
+              },
+              "id": "define",
+              "access": 1,
+              "varIndex": 2
+            },
+            {
+              "line": 5,
+              "pos": 9,
+              "value": "b",
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "lbp": 0,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "line": 5,
+                "pos": 13,
+                "value": "2",
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "ref": {
+                "line": 5,
+                "pos": 7,
+                "value": "i32",
+                "nodeType": "builtin",
+                "sign": true
+              },
+              "id": "define",
+              "access": 1,
+              "varIndex": 3
+            }
+          ],
+          "ref": {
+            "line": 9,
+            "pos": 7,
+            "value": "Foo",
+            "nodeType": "class",
+            "sign": true,
+            "rvalue": false,
+            "reserved": false,
+            "type": "Foo",
+            "userType": true,
+            "typedef": true,
+            "members": [
+              {
+                "line": 4,
+                "pos": 9,
+                "value": "a",
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "line": 4,
+                  "pos": 13,
+                  "value": "1",
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "line": 4,
+                  "pos": 7,
+                  "value": "i32",
+                  "nodeType": "builtin",
+                  "sign": true
+                },
+                "id": "define",
+                "access": 1
+              },
+              {
+                "line": 5,
+                "pos": 9,
+                "value": "b",
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "line": 5,
+                  "pos": 13,
+                  "value": "2",
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "line": 5,
+                  "pos": 7,
+                  "value": "i32",
+                  "nodeType": "builtin",
+                  "sign": true
+                },
+                "id": "define",
+                "access": 1
+              }
+            ],
+            "id": "type",
+            "led": null,
+            "std": null,
+            "lbp": 0,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            }
+          },
           "id": "define"
         },
         {
