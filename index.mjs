@@ -124,7 +124,7 @@ type Foo {
 public:
   i32 a = 1;
   i32 b = 2;
-  //Bar c;
+  Bar c;
 }
 
 export i32 main(){
