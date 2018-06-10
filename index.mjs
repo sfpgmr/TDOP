@@ -114,10 +114,17 @@ const testSrc =
 //   return foo.a * fooPtr->b;
 // };`;
 `
+type Bar {
+public:
+  i32 barA = 3;
+  i32 barB = 4;
+}
+
 type Foo {
 public:
   i32 a = 1;
   i32 b = 2;
+  //Bar c;
 }
 
 export i32 main(){

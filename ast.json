@@ -6,7 +6,7 @@
   },
   "statements": [
     {
-      "line": 9,
+      "line": 16,
       "pos": 7,
       "value": "Foo",
       "nodeType": "class",
@@ -18,7 +18,7 @@
       "typedef": true,
       "members": [
         {
-          "line": 4,
+          "line": 10,
           "pos": 9,
           "value": "a",
           "nodeType": "name",
@@ -34,7 +34,7 @@
           },
           "rvalue": false,
           "initialExpression": {
-            "line": 4,
+            "line": 10,
             "pos": 13,
             "value": "1",
             "nodeType": "literal",
@@ -43,7 +43,7 @@
             "rvalue": true
           },
           "ref": {
-            "line": 4,
+            "line": 10,
             "pos": 7,
             "value": "i32",
             "nodeType": "builtin",
@@ -53,7 +53,7 @@
           "access": 1
         },
         {
-          "line": 5,
+          "line": 11,
           "pos": 9,
           "value": "b",
           "nodeType": "name",
@@ -69,7 +69,7 @@
           },
           "rvalue": false,
           "initialExpression": {
-            "line": 5,
+            "line": 11,
             "pos": 13,
             "value": "2",
             "nodeType": "literal",
@@ -78,7 +78,7 @@
             "rvalue": true
           },
           "ref": {
-            "line": 5,
+            "line": 11,
             "pos": 7,
             "value": "i32",
             "nodeType": "builtin",
@@ -98,7 +98,7 @@
       }
     },
     {
-      "line": 8,
+      "line": 15,
       "pos": 17,
       "value": "main",
       "nodeType": "function",
@@ -116,7 +116,7 @@
       "params": [],
       "statements": [
         {
-          "line": 9,
+          "line": 16,
           "pos": 11,
           "value": "foo",
           "nodeType": "name",
@@ -132,7 +132,7 @@
           },
           "members": [
             {
-              "line": 4,
+              "line": 10,
               "pos": 9,
               "value": "a",
               "nodeType": "name",
@@ -148,7 +148,7 @@
               },
               "rvalue": false,
               "initialExpression": {
-                "line": 4,
+                "line": 10,
                 "pos": 13,
                 "value": "1",
                 "nodeType": "literal",
@@ -157,7 +157,7 @@
                 "rvalue": true
               },
               "ref": {
-                "line": 4,
+                "line": 10,
                 "pos": 7,
                 "value": "i32",
                 "nodeType": "builtin",
@@ -168,7 +168,7 @@
               "varIndex": 0
             },
             {
-              "line": 5,
+              "line": 11,
               "pos": 9,
               "value": "b",
               "nodeType": "name",
@@ -184,7 +184,7 @@
               },
               "rvalue": false,
               "initialExpression": {
-                "line": 5,
+                "line": 11,
                 "pos": 13,
                 "value": "2",
                 "nodeType": "literal",
@@ -193,7 +193,7 @@
                 "rvalue": true
               },
               "ref": {
-                "line": 5,
+                "line": 11,
                 "pos": 7,
                 "value": "i32",
                 "nodeType": "builtin",
@@ -205,7 +205,7 @@
             }
           ],
           "ref": {
-            "line": 9,
+            "line": 16,
             "pos": 7,
             "value": "Foo",
             "nodeType": "class",
@@ -217,7 +217,7 @@
             "typedef": true,
             "members": [
               {
-                "line": 4,
+                "line": 10,
                 "pos": 9,
                 "value": "a",
                 "nodeType": "name",
@@ -233,7 +233,7 @@
                 },
                 "rvalue": false,
                 "initialExpression": {
-                  "line": 4,
+                  "line": 10,
                   "pos": 13,
                   "value": "1",
                   "nodeType": "literal",
@@ -242,7 +242,7 @@
                   "rvalue": true
                 },
                 "ref": {
-                  "line": 4,
+                  "line": 10,
                   "pos": 7,
                   "value": "i32",
                   "nodeType": "builtin",
@@ -252,7 +252,7 @@
                 "access": 1
               },
               {
-                "line": 5,
+                "line": 11,
                 "pos": 9,
                 "value": "b",
                 "nodeType": "name",
@@ -268,7 +268,7 @@
                 },
                 "rvalue": false,
                 "initialExpression": {
-                  "line": 5,
+                  "line": 11,
                   "pos": 13,
                   "value": "2",
                   "nodeType": "literal",
@@ -277,7 +277,7 @@
                   "rvalue": true
                 },
                 "ref": {
-                  "line": 5,
+                  "line": 11,
                   "pos": 7,
                   "value": "i32",
                   "nodeType": "builtin",
@@ -299,7 +299,7 @@
           "id": "define"
         },
         {
-          "line": 9,
+          "line": 16,
           "pos": 16,
           "value": "foo1",
           "nodeType": "name",
@@ -316,7 +316,7 @@
           },
           "members": [
             {
-              "line": 4,
+              "line": 10,
               "pos": 9,
               "value": "a",
               "nodeType": "name",
@@ -332,7 +332,7 @@
               },
               "rvalue": false,
               "initialExpression": {
-                "line": 4,
+                "line": 10,
                 "pos": 13,
                 "value": "1",
                 "nodeType": "literal",
@@ -341,7 +341,7 @@
                 "rvalue": true
               },
               "ref": {
-                "line": 4,
+                "line": 10,
                 "pos": 7,
                 "value": "i32",
                 "nodeType": "builtin",
@@ -352,7 +352,7 @@
               "varIndex": 2
             },
             {
-              "line": 5,
+              "line": 11,
               "pos": 9,
               "value": "b",
               "nodeType": "name",
@@ -368,7 +368,7 @@
               },
               "rvalue": false,
               "initialExpression": {
-                "line": 5,
+                "line": 11,
                 "pos": 13,
                 "value": "2",
                 "nodeType": "literal",
@@ -377,7 +377,7 @@
                 "rvalue": true
               },
               "ref": {
-                "line": 5,
+                "line": 11,
                 "pos": 7,
                 "value": "i32",
                 "nodeType": "builtin",
@@ -389,7 +389,7 @@
             }
           ],
           "ref": {
-            "line": 9,
+            "line": 16,
             "pos": 7,
             "value": "Foo",
             "nodeType": "class",
@@ -401,7 +401,7 @@
             "typedef": true,
             "members": [
               {
-                "line": 4,
+                "line": 10,
                 "pos": 9,
                 "value": "a",
                 "nodeType": "name",
@@ -417,7 +417,7 @@
                 },
                 "rvalue": false,
                 "initialExpression": {
-                  "line": 4,
+                  "line": 10,
                   "pos": 13,
                   "value": "1",
                   "nodeType": "literal",
@@ -426,7 +426,7 @@
                   "rvalue": true
                 },
                 "ref": {
-                  "line": 4,
+                  "line": 10,
                   "pos": 7,
                   "value": "i32",
                   "nodeType": "builtin",
@@ -436,7 +436,7 @@
                 "access": 1
               },
               {
-                "line": 5,
+                "line": 11,
                 "pos": 9,
                 "value": "b",
                 "nodeType": "name",
@@ -452,7 +452,7 @@
                 },
                 "rvalue": false,
                 "initialExpression": {
-                  "line": 5,
+                  "line": 11,
                   "pos": 13,
                   "value": "2",
                   "nodeType": "literal",
@@ -461,7 +461,7 @@
                   "rvalue": true
                 },
                 "ref": {
-                  "line": 5,
+                  "line": 11,
                   "pos": 7,
                   "value": "i32",
                   "nodeType": "builtin",
@@ -483,19 +483,19 @@
           "id": "define"
         },
         {
-          "line": 10,
+          "line": 17,
           "pos": 11,
           "value": "=",
           "nodeType": "binary",
           "sign": true,
           "first": {
-            "line": 10,
+            "line": 17,
             "pos": 8,
             "value": ".",
             "nodeType": "binary",
             "sign": true,
             "first": {
-              "line": 10,
+              "line": 17,
               "pos": 7,
               "value": "foo",
               "nodeType": "name",
@@ -504,7 +504,7 @@
             },
             "rvalue": false,
             "second": {
-              "line": 10,
+              "line": 17,
               "pos": 9,
               "value": "a",
               "nodeType": "literal",
@@ -514,7 +514,7 @@
           },
           "rvalue": false,
           "second": {
-            "line": 10,
+            "line": 17,
             "pos": 14,
             "value": "10",
             "nodeType": "literal",
@@ -526,13 +526,13 @@
           "assignment": true
         },
         {
-          "line": 11,
+          "line": 18,
           "pos": 10,
           "value": "=",
           "nodeType": "binary",
           "sign": true,
           "first": {
-            "line": 11,
+            "line": 18,
             "pos": 8,
             "value": "foo1",
             "nodeType": "name",
@@ -541,7 +541,7 @@
           },
           "rvalue": false,
           "second": {
-            "line": 11,
+            "line": 18,
             "pos": 14,
             "value": "foo",
             "nodeType": "name",
@@ -552,7 +552,7 @@
           "assignment": true
         },
         {
-          "line": 12,
+          "line": 19,
           "pos": 10,
           "value": "return",
           "nodeType": "statement",
@@ -560,19 +560,19 @@
           "rvalue": false,
           "reserved": true,
           "first": {
-            "line": 12,
+            "line": 19,
             "pos": 18,
             "value": "*",
             "nodeType": "binary",
             "sign": true,
             "first": {
-              "line": 12,
+              "line": 19,
               "pos": 15,
               "value": ".",
               "nodeType": "binary",
               "sign": true,
               "first": {
-                "line": 12,
+                "line": 19,
                 "pos": 14,
                 "value": "foo",
                 "nodeType": "name",
@@ -581,7 +581,7 @@
               },
               "rvalue": true,
               "second": {
-                "line": 12,
+                "line": 19,
                 "pos": 16,
                 "value": "a",
                 "nodeType": "literal",
@@ -591,13 +591,13 @@
             },
             "rvalue": true,
             "second": {
-              "line": 12,
+              "line": 19,
               "pos": 24,
               "value": ".",
               "nodeType": "binary",
               "sign": true,
               "first": {
-                "line": 12,
+                "line": 19,
                 "pos": 23,
                 "value": "foo1",
                 "nodeType": "name",
@@ -606,7 +606,7 @@
               },
               "rvalue": true,
               "second": {
-                "line": 12,
+                "line": 19,
                 "pos": 25,
                 "value": "b",
                 "nodeType": "literal",

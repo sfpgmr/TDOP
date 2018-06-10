@@ -18,24 +18,24 @@ function error(message, t = this) {
 }
 
 class FunctionScope {
-  constructor(){
+  constructor() {
     this.funcVars = [];
     this.length = 0;
   }
-  scopeIn (){
+  scopeIn() {
     this.funcVars.push(0);
     this.length = this.funcVars.length;
     this.stackTop = this.length - 1;
     this.current = 0;
   }
 
-  scopeOut(){
-    if(this.length == 0) throw new Error('配列インデックスの上限を超えています。');
+  scopeOut() {
+    if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
 
     this.funcVars.pop();
     this.length = this.funcVars.length;
-    if(this.length >= 1){
-      this.stackTop =  this.length - 1;
+    if (this.length >= 1) {
+      this.stackTop = this.length - 1;
       this.current = this.funcVars[this.stackTop];
     } else {
       this.stackTop = undefined;
@@ -44,7 +44,7 @@ class FunctionScope {
   }
 
   index(inc = true) {
-    if(inc){
+    if (inc) {
       const ret = this.current;
       this.incIndex();
       return ret;
@@ -53,13 +53,12 @@ class FunctionScope {
     }
   }
 
-  incIndex()
-  {
+  incIndex() {
     ++this.current;
     this.funcVars[this.stackTop] = this.current;
   }
 
-  get global(){
+  get global() {
     return this.current === undefined;
   }
 }
@@ -67,7 +66,7 @@ class FunctionScope {
 
 // パーサの生成
 export default function make_parse() {
-//  let scope = new Scope();
+  //  let scope = new Scope();
   const symbol_table = new Map();
   let token;
   let tokens;
@@ -77,45 +76,44 @@ export default function make_parse() {
   let scopeTop;
   let funcScope = new FunctionScope();
 
-  function createScope(){
+  function createScope() {
     const s = new Scope(scope);
     scope = s;
-    return s;  
+    return s;
   }
-  
+
   function itself(rvalue = true) {
     this.rvalue = rvalue;
     return this;
   }
-  
+
   class Scope {
-    constructor(s){
+    constructor(s) {
       this.def = new Map();
       this.typedef = new Map();
       this.parent = s;
     }
-  
-    define(n)
-    {
+
+    define(n) {
       const def = n.typedef ? this.typedef : this.def;
       const t = def.get(n.value);
       if (t) {
         error((t.reserved)
           ? 'Already reserved.'
-          : 'Already defined.',n);
+          : 'Already defined.', n);
       }
-      def.set(n.value,n);
+      def.set(n.value, n);
       n.reserved = false;
       n.nud = itself;
       n.led = null;
       n.std = null;
       n.lbp = 0;
       n.scope = scope;
-      return n;     
+      return n;
     }
-  
-    find(n,typedef = n.typedef) {
-      if(!typedef){
+
+    find(n, typedef = n.typedef) {
+      if (!typedef) {
         let e = this;
         let o;
         while (true) {
@@ -138,7 +136,7 @@ export default function make_parse() {
           o = e.typedef.get(n);
           if (o && typeof o !== 'function') {
             return e.typedef.get(n);
-          } 
+          }
           e = e.parent;
         }
         return null;
@@ -159,12 +157,12 @@ export default function make_parse() {
           return;
         }
         if (t.nodeType === 'name') {
-          error('Already defined.',n);
+          error('Already defined.', n);
         }
       }
-      def.set(n.value,n);
+      def.set(n.value, n);
       n.reserved = true;
-    }          
+    }
   }
 
   function advance(id) {
@@ -175,7 +173,7 @@ export default function make_parse() {
     let sign = true;
     let type;
     if (id && token.id !== id) {
-      error('Expected "' + id + '".',token);
+      error('Expected "' + id + '".', token);
     }
     if (token_nr >= tokens.length) {
       token = symbol_table.get('(end)');
@@ -188,34 +186,34 @@ export default function make_parse() {
     let ref = false;
     if (a === 'name') {
       // 型名かどうか
-      o = scope.find(v,true);
+      o = scope.find(v, true);
       // 変数名かどうか
-      if(!o) {
-        o = scope.find(v,false);
+      if (!o) {
+        o = scope.find(v, false);
         ref = true;
       }
-      if(!o) o = symbol_table.get('(name)');
+      if (!o) o = symbol_table.get('(name)');
     } else if (a === 'operator') {
       o = symbol_table.get(v);
       if (!o) {
-        error('Unknown operator.',t);
+        error('Unknown operator.', t);
       }
-    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a== 'i32' || a == 'i64' || a=='u32' || a== 'u64') {
+    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
       o = symbol_table.get('(literal)');
       type = a;
       a = 'literal';
-      if(a.substr(0,1) == 'i'){
+      if (a.substr(0, 1) == 'i') {
         sign = true;
       } else {
         sign = false;
       }
 
     } else {
-      error('Unexpected token.',t);
+      error('Unexpected token.', t);
     }
 
     //token = Object.assign(Object.create(o),o);
-    if(o.id == 'type' && o.userType){
+    if (o.id == 'type' && o.userType) {
       token = o;
     } else {
       token = Object.create(o);
@@ -232,17 +230,17 @@ export default function make_parse() {
     return token;
   }
 
-  function expression(rbp,rvalue = true) {
+  function expression(rbp, rvalue = true) {
     //debugger;
     let left;
     let t = token;
-    
+
     advance();
     left = t.nud(rvalue);
     while (rbp < token.lbp) {
       t = token;
       advance();
-      left = t.led(left,rvalue);
+      left = t.led(left, rvalue);
       !t.type && (t.type = left.type);
     }
     return left;
@@ -261,13 +259,13 @@ export default function make_parse() {
     }
 
     // 変数定義
-    if(n.dvd){
+    if (n.dvd) {
       return n.dvd(false);
     }
 
     // 式
-    v = expression(0,false);
-    
+    v = expression(0, false);
+
     // if (!v.assignment && v.id !== '(' && v.nodeType !== 'unary') {
     //   v.error('Bad expression statement.');
     // }
@@ -306,7 +304,7 @@ export default function make_parse() {
 
 
   class SymbolBase {
-    constructor({id ,value,bp = 0,nud,led,std}){
+    constructor({ id, value, bp = 0, nud, led, std }) {
       this.id = id;
       this.value = value;
       this.lbp = bp;
@@ -314,15 +312,15 @@ export default function make_parse() {
       (typeof led === 'function') && (this.led = led);
       (typeof std === 'function') && (this.std = std);
     }
-    nud(){
-      error('Undefined.',this);
+    nud() {
+      error('Undefined.', this);
     }
-    led(){
-      error('Missing operator.',this);
+    led() {
+      error('Missing operator.', this);
     }
   }
 
-  function symbol({id, bp = 0,value,nud,led,std,cons}) {
+  function symbol({ id, bp = 0, value, nud, led, std, cons }) {
     let s = symbol_table.get(id);
     bp = bp || 0;
     if (s) {
@@ -333,24 +331,24 @@ export default function make_parse() {
       std && (s.std = std);
       led && (s.led = led);
       value && (s.value = value);
-      symbol_table.set(id,s);
+      symbol_table.set(id, s);
     } else {
-      const params = {id:id,value:value?value:id,bp:bp,nud:nud,led:led,std:std};
+      const params = { id: id, value: value ? value : id, bp: bp, nud: nud, led: led, std: std };
       s = cons ? new cons(params) : new SymbolBase(params);
-      symbol_table.set(id,s);
+      symbol_table.set(id, s);
     }
     return s;
   }
 
-  function sym(s){
-    return symbol({id:s});
+  function sym(s) {
+    return symbol({ id: s });
   }
 
   class Constant extends SymbolBase {
-    constructor({id,value,bp}){
-      super({id:id,value:value?value:id,bp:bp});
+    constructor({ id, value, bp }) {
+      super({ id: id, value: value ? value : id, bp: bp });
     }
-    nud(rvalue = true){
+    nud(rvalue = true) {
       scope.reserve(this);
       this.value = symbol_table.get(this.id).value;
       this.rvalue = rvalue;
@@ -360,7 +358,7 @@ export default function make_parse() {
   }
 
   function constant(s, v) {
-    return symbol({id:s,value:v,nud:Constant.prototype.nud,cons:Constant});
+    return symbol({ id: s, value: v, nud: Constant.prototype.nud, cons: Constant });
     // x.nud = function () {
     //   scope.reserve(this);
     //   this.value = symbol_table.get(this.id).value;
@@ -372,28 +370,28 @@ export default function make_parse() {
   }
 
   class Infix extends SymbolBase {
-    constructor({id,bp,led}){
-      super({id:id,bp:bp});
-      (typeof led === 'function')  && (this.led = led);
+    constructor({ id, bp, led }) {
+      super({ id: id, bp: bp });
+      (typeof led === 'function') && (this.led = led);
     }
-    led(left,rvalue = true){
+    led(left, rvalue = true) {
       this.first = left;
       this.rvalue = rvalue;
-      this.first.rvalue =rvalue;
+      this.first.rvalue = rvalue;
       this.second = expression(this.lbp);
       this.second.rvalue = true;
 
-      !this.type  && (this.type = left.type);
+      !this.type && (this.type = left.type);
       // if(this.first.type != this.second.type){
       //   this.error('type unmatched.');
       // }
       this.nodeType = 'binary';
-      return this;      
+      return this;
     }
   }
 
   function infix(id, bp, led) {
-    return symbol({id:id,bp:bp,led:led || Infix.prototype.led,cons:Infix});
+    return symbol({ id: id, bp: bp, led: led || Infix.prototype.led, cons: Infix });
     // const s = symbol(id, bp);
     // s.led = led || function (left) {
     //   this.first = left;
@@ -405,14 +403,14 @@ export default function make_parse() {
   }
 
   class Infixr extends SymbolBase {
-    constructor({id,bp,led}){
-      super({id:id,bp:bp});
-      (typeof led === 'function')  && (this.led = led);
+    constructor({ id, bp, led }) {
+      super({ id: id, bp: bp });
+      (typeof led === 'function') && (this.led = led);
     }
-    led(left,rvalue = true){
+    led(left, rvalue = true) {
       this.first = left;
       this.rvalue = this.first.rvalue = rvalue;
-      this.second = expression(this.lbp - 1,true);
+      this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
       !this.type && (this.type = left.type);
       this.nodeType = 'binary';
@@ -421,7 +419,7 @@ export default function make_parse() {
   }
 
   function infixr(id, bp, led) {
-    return symbol({id:id,bp:bp,led:led || Infixr.prototype.led,cons:Infixr});
+    return symbol({ id: id, bp: bp, led: led || Infixr.prototype.led, cons: Infixr });
     // const s = symbol(id, bp);
     // s.led = led || function (left) {
     //   this.first = left;
@@ -433,16 +431,16 @@ export default function make_parse() {
   }
 
   class Assignment extends SymbolBase {
-    constructor({id}){
-      super({id:id,bp:10});
+    constructor({ id }) {
+      super({ id: id, bp: 10 });
     }
-    led(left,rvalue =true){
+    led(left, rvalue = true) {
       if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
-        error('Bad lvalue.',left);
+        error('Bad lvalue.', left);
       }
       this.first = left;
       this.rvalue = this.first.rvalue = rvalue;
-      this.second = expression(this.lbp - 1,true);
+      this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
 
       !this.type && (this.type = left.type);
@@ -454,7 +452,7 @@ export default function make_parse() {
   //   if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
 
   function assignment(id) {
-    return symbol({id:id,bp:10,led:Assignment.prototype.led,cons:Assignment});
+    return symbol({ id: id, bp: 10, led: Assignment.prototype.led, cons: Assignment });
     // return infixr(id, 10, function (left) {
     //     left.error('Bad lvalue.');
     //   }
@@ -467,11 +465,11 @@ export default function make_parse() {
   }
 
   class Prefix extends SymbolBase {
-    constructor({id,nud}){
-      super({id:id});
-      if(typeof nud === 'function' ) this.nud = nud;
+    constructor({ id, nud }) {
+      super({ id: id });
+      if (typeof nud === 'function') this.nud = nud;
     }
-    nud(rvalue = true){
+    nud(rvalue = true) {
       scope.reserve(this);
       this.first = expression(70);
       this.rvalue = this.first.rvalue = rvalue;
@@ -482,7 +480,7 @@ export default function make_parse() {
   }
 
   function prefix(id, nud) {
-    return symbol({id:id,nud:nud || Prefix.prototype.nud,cons:Prefix});
+    return symbol({ id: id, nud: nud || Prefix.prototype.nud, cons: Prefix });
     // const s = symbol(id);
     // s.nud = nud || function () {
     //   scope.reserve(this);
@@ -493,24 +491,24 @@ export default function make_parse() {
     // return s;
   }
 
-  function suffix(id,led = function(left,rvalue = true){
+  function suffix(id, led = function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     !this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
-  }){
-    return symbol({id:id,led:led});
+  }) {
+    return symbol({ id: id, led: led });
   }
 
   class Statement extends SymbolBase {
-    constructor(id,std){
-      super({id:id,std:std});
+    constructor(id, std) {
+      super({ id: id, std: std });
     }
   }
 
   function stmt(id, std) {
-    return symbol({id:id,std:std});    
+    return symbol({ id: id, std: std });
     // const x = symbol(s);
     // x.std = f;
     // return x;
@@ -518,15 +516,15 @@ export default function make_parse() {
 
   sym('(end)');
 
-  
 
-  stmt('export',function(){
+
+  stmt('export', function () {
     token.export = true;
     return defineVarAndFunction.bind(token)();
   });
-  
+
   stmt('(name)');
-  
+
   sym(':');
   sym(';');
   sym(')');
@@ -554,7 +552,7 @@ export default function make_parse() {
   assignment('+=');
   assignment('-=');
 
-  infix('?', 20, function (left,rvalue = true) {
+  infix('?', 20, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     this.second = expression(0);
@@ -566,7 +564,7 @@ export default function make_parse() {
     return this;
   });
 
-  infix(':', 20, function (left,rvalue = true) {
+  infix(':', 20, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     advance();
@@ -591,11 +589,11 @@ export default function make_parse() {
   infix('*', 60);
   infix('/', 60);
 
-  infix('.', 80, function (left,rvalue = true) {
+  infix('.', 80, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     if (token.nodeType !== 'name') {
-      error('Expected a property name.',token);
+      error('Expected a property name.', token);
     }
     token.nodeType = 'literal';
     this.second = token;
@@ -605,7 +603,7 @@ export default function make_parse() {
     return this;
   });
 
-  infix('[', 80, function (left,rvalue = true) {
+  infix('[', 80, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     this.second = expression(0);
@@ -615,7 +613,7 @@ export default function make_parse() {
     return this;
   });
 
-  infix('(', 80, function (left,rvalue = true) {
+  infix('(', 80, function (left, rvalue = true) {
     var a = [];
     if (left.id === '.' || left.id === '[') {
       this.nodeType = 'ternary';
@@ -637,9 +635,9 @@ export default function make_parse() {
       this.second = a;
       this.second.rvalue = true;
       if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&
-                left.nodeType !== 'name' && left.id !== '(' &&
-                left.id !== '&&' && left.id !== '||' && left.id !== '?') {
-        error('Expected a variable name.',left);
+        left.nodeType !== 'name' && left.id !== '(' &&
+        left.id !== '&&' && left.id !== '||' && left.id !== '?') {
+        error('Expected a variable name.', left);
       }
     }
     if (token.id !== ')') {
@@ -672,11 +670,11 @@ export default function make_parse() {
   // 変数のアドレスを取得する
   prefix('&');
   // ポインタメンバの参照
-  infix('->',80,function (left,rvalue = true) {
+  infix('->', 80, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     if (token.nodeType !== 'name') {
-      error('Expected a property name.',token);
+      error('Expected a property name.', token);
     }
     token.nodeType = 'literal';
     this.second = token;
@@ -719,7 +717,7 @@ export default function make_parse() {
       while (true) {
         n = token;
         if (n.nodeType !== 'name' && n.nodeType !== 'literal') {
-          error('Bad property name.',token);
+          error('Bad property name.', token);
         }
         advance();
         advance(':');
@@ -750,7 +748,7 @@ export default function make_parse() {
 
     return this;
   });
-  
+
   stmt('if', function () {
     advance('(');
     this.first = expression(0);
@@ -775,7 +773,7 @@ export default function make_parse() {
     }
     advance(';');
     if (token.id !== '}') {
-      error('Unreachable statement.',token);
+      error('Unreachable statement.', token);
     }
     this.nodeType = 'statement';
     !this.type && (this.type = this.first.type);
@@ -785,7 +783,7 @@ export default function make_parse() {
   stmt('break', function () {
     advance(';');
     if (token.id !== '}') {
-      error('Unreachable statement.',token);
+      error('Unreachable statement.', token);
     }
     this.nodeType = 'statement';
     return this;
@@ -826,7 +824,7 @@ export default function make_parse() {
     return this;
   });
 
-  function defineVarAndFunction(){
+  function defineVarAndFunction() {
     //debugger;
     let a = [];
     let n;
@@ -834,14 +832,14 @@ export default function make_parse() {
     advance();
     n = token;
     // ポインタ型かどうか
-    if(n.id == '*'){
+    if (n.id == '*') {
       advance();
       n = token;
       n.pointer = true;
     }
     let funcptr = false;
     // 関数ポインタ定義かどうか
-    if(n.id == '('){
+    if (n.id == '(') {
       advance();
       advance('*');
       n = token;
@@ -850,8 +848,8 @@ export default function make_parse() {
     }
 
     // ローカルスコープですでに定義されているか
-    if(scope.def.get(n.value)){
-      error('Already Defined',n);
+    if (scope.def.get(n.value)) {
+      error('Already Defined', n);
     }
     // 変数の型を保存
     n.type = this.type;
@@ -860,7 +858,7 @@ export default function make_parse() {
     // scope に変数名を登録する
     scope.define(n);
     advance();
-    if(funcptr){
+    if (funcptr) {
       advance('*');
     }
     // 関数定義かどうか
@@ -872,15 +870,15 @@ export default function make_parse() {
       funcScope.scopeIn();
       // 関数の引数があるか
       if (token.id !== ')') {
-      // 引数を取り出して配列に格納する
+        // 引数を取り出して配列に格納する
         while (true) {
           if (token.nodeType !== 'define') {
-            error('Expected a parameter name.',token);
+            error('Expected a parameter name.', token);
           }
           advance();
           // 変数名
           const t = token;
-          
+
           t.varIndex = funcScope.index();
           t.type = this.type;
           scope.define(t);
@@ -888,7 +886,7 @@ export default function make_parse() {
           advance();
           // 初期値代入
           if (token.id === '=') {
-            
+
             //const temp = token;
             advance('=');
             t.rvalue = false;
@@ -913,16 +911,16 @@ export default function make_parse() {
       // 引数情報を格納
       n.params = a;
       advance(')');
-      if(!funcptr){
+      if (!funcptr) {
         // 関数ボディのパース
         advance('{');
         // ツリーの右に文を格納
         n.statements = statements();
-      } 
+      }
       n.scope = scope;
       scope.pop();
       funcScope.scopeOut();
-      if(!funcptr){
+      if (!funcptr) {
         advance('}');
       }
       advance(';');
@@ -935,7 +933,7 @@ export default function make_parse() {
       // 変数名
       n.nud = itself;
 
-    
+
       // 代入演算子
       if (token.id === '=') {
         // 初期値あり
@@ -962,7 +960,7 @@ export default function make_parse() {
       }
       advance(',');
       // ポインタ型かどうか
-      if(token.id == '*'){
+      if (token.id == '*') {
         advance();
         n = token;
         n.pointer = true;
@@ -977,34 +975,35 @@ export default function make_parse() {
 
     advance(';');
 
-    a = a.map(d=>{
-      const ret = Object.assign(Object.create(d),d);
-      if(!funcScope.global && !this.userType){
+    function assignMembers(node) {
+      return node.members.map(m => {
+        const member = Object.assign({}, m);
+        if (!funcScope.global && !member.userType) {
+          // ビルトイン型
+          member.varIndex = funcScope.index();
+        }
+        if (member.userType) {
+          member.members = assignMembers(m);
+        }
+        return member;
+      });
+    }
+    a = a.map(d => {
+      const ret = Object.assign(Object.create(d), d);
+      if (!funcScope.global && !this.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
-      } 
-      if(this.userType){
+      }
+
+      if (this.userType) {
         // ユーザー定義型
-        function assignMembers (node){
-          return node.members.map(m=>{
-            const member = Object.assign({},m);
-            if(!funcScope.global && !member.userType){
-              // ビルトイン型
-              member.varIndex = funcScope.index();
-            } 
-            if(member.userType){
-              member.members = assignMembers(m);
-            }
-            return member;
-         });
-        }
         ret.members = assignMembers(this);
       }
       ret.ref = this;
       ret.id = 'define';
       ret.type = this.type;
       return ret;
-    })
+    });
     //this.defines = a;
 
     return a;
@@ -1016,12 +1015,12 @@ export default function make_parse() {
   }
 
   // ** type 定義 ** //
-  stmt('type',function(){
+  stmt('type', function () {
     //this.first = token;
     this.value = token.value;
     this.type = token.value;
     advance();
-    switch(token.id){
+    switch (token.id) {
       case '{':
         // クラス定義
         this.nodeType = 'class';
@@ -1032,9 +1031,8 @@ export default function make_parse() {
         let access = ACCESS_PUBLIC;// privateから始まる。
         createScope();
 
-        while(token.id != "}")
-        {
-          switch(token.value){
+        while (token.id != "}") {
+          switch (token.value) {
             case 'public':
               access = ACCESS_PUBLIC;
               advance();
@@ -1053,7 +1051,7 @@ export default function make_parse() {
             default:
               {
                 const def = defineVarAndFunction.bind(token)();
-                def.forEach(d=>d.access = access);
+                def.forEach(d => d.access = access);
                 defs.push(...def);
               }
               break;
@@ -1071,7 +1069,7 @@ export default function make_parse() {
       // 型エイリアス
       case '=':
         break;
-     }
+    }
   });
 
   return function (t) {
@@ -1083,18 +1081,18 @@ export default function make_parse() {
     //global = scope;
     scopeTop = createScope();
     // ビルトイン 型
-    ['u32','u64','i32','i64','f32','f64','void','string']
-      .forEach(t=>{
-        scope.define({id:'type',value:t,type:t,nodeType:'builtin',typedef:true,dvd:defineVarAndFunction,userType:false});
+    ['u32', 'u64', 'i32', 'i64', 'f32', 'f64', 'void', 'string']
+      .forEach(t => {
+        scope.define({ id: 'type', value: t, type: t, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false });
       });
     advance();
     const s = statements();
     advance('(end)');
     scope.pop();
     return {
-      id:'(program)',
+      id: '(program)',
       scope: scopeTop,
-      statements:s
+      statements: s
     };
   };
 }
