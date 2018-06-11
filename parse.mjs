@@ -135,7 +135,7 @@ export default function make_parse() {
         while (e) {
           o = e.typedef.get(n);
           if (o && typeof o !== 'function') {
-            return e.typedef.get(n);
+            return o;
           }
           e = e.parent;
         }
@@ -213,11 +213,7 @@ export default function make_parse() {
     }
 
     //token = Object.assign(Object.create(o),o);
-    if (o.id == 'type' && o.userType) {
-      token = o;
-    } else {
-      token = Object.create(o);
-    }
+    token = Object.create(o);
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
@@ -226,6 +222,7 @@ export default function make_parse() {
     //token.type = a;
     type && (token.type = type);
     t.kind && (token.kind = t.kind);
+    token.userType = o.userType;
 
     return token;
   }
@@ -980,11 +977,11 @@ export default function make_parse() {
     function assignMembers(node) {
       return node.members.map(m => {
         const member = Object.assign({}, m);
-        if (!funcScope.global && !member.userType) {
+        if (!funcScope.global && !member.ref.userType) {
           // ビルトイン型
           member.varIndex = funcScope.index();
         }
-        if (member.userType) {
+        if (member.ref.userType) {
           member.members = assignMembers(m);
         }
         return member;
