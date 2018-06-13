@@ -14,9 +14,9 @@
       "pos": 8,
       "nodeType": "class",
       "sign": true,
-      "userType": true,
       "rvalue": false,
       "type": "Bar",
+      "userType": true,
       "typedef": true,
       "members": [
         {
@@ -134,9 +134,9 @@
       "pos": 8,
       "nodeType": "class",
       "sign": true,
-      "userType": true,
       "rvalue": false,
       "type": "Foo",
+      "userType": true,
       "typedef": true,
       "members": [
         {
@@ -362,9 +362,9 @@
             "pos": 9,
             "nodeType": "class",
             "sign": true,
-            "userType": true,
             "rvalue": false,
             "type": "Bar",
+            "userType": true,
             "typedef": true,
             "members": [
               {
@@ -746,9 +746,9 @@
                 "pos": 9,
                 "nodeType": "class",
                 "sign": true,
-                "userType": true,
                 "rvalue": false,
                 "type": "Bar",
+                "userType": true,
                 "typedef": true,
                 "members": [
                   {
@@ -869,9 +869,9 @@
             "pos": 9,
             "nodeType": "class",
             "sign": true,
-            "userType": true,
             "rvalue": false,
             "type": "Foo",
+            "userType": true,
             "typedef": true,
             "members": [
               {
@@ -1097,9 +1097,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Bar",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -1464,9 +1464,9 @@
                 "pos": 9,
                 "nodeType": "class",
                 "sign": true,
-                "userType": true,
                 "rvalue": false,
                 "type": "Bar",
+                "userType": true,
                 "typedef": true,
                 "members": [
                   {
@@ -1587,9 +1587,9 @@
             "pos": 9,
             "nodeType": "class",
             "sign": true,
-            "userType": true,
             "rvalue": false,
             "type": "Foo",
+            "userType": true,
             "typedef": true,
             "members": [
               {
@@ -1815,9 +1815,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Bar",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -1973,13 +1973,54 @@
             },
             "rvalue": false,
             "second": {
-              "id": "(name)",
+              "id": "define",
               "value": "a",
               "lbp": 0,
-              "line": 17,
+              "line": 10,
               "pos": 11,
-              "nodeType": "literal",
-              "sign": true
+              "nodeType": "name",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "1",
+                "lbp": 0,
+                "line": 10,
+                "pos": 15,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "ref": {
+                "id": "type",
+                "value": "i32",
+                "type": "i32",
+                "nodeType": "builtin",
+                "typedef": true,
+                "userType": false,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "lbp": 0,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "line": 10,
+                "pos": 9,
+                "sign": true
+              },
+              "access": 1,
+              "varIndex": 0
             },
             "type": "Foo"
           },
@@ -2251,9 +2292,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Bar",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -2374,9 +2415,9 @@
               "pos": 9,
               "nodeType": "class",
               "sign": true,
-              "userType": true,
               "rvalue": false,
               "type": "Foo",
+              "userType": true,
               "typedef": true,
               "members": [
                 {
@@ -2602,9 +2643,9 @@
                     "pos": 9,
                     "nodeType": "class",
                     "sign": true,
-                    "userType": true,
                     "rvalue": false,
                     "type": "Bar",
+                    "userType": true,
                     "typedef": true,
                     "members": [
                       {
@@ -2722,7 +2763,8 @@
                 "def": {},
                 "typedef": {}
               }
-            }
+            },
+            "userType": true
           },
           "rvalue": false,
           "second": {
@@ -2969,9 +3011,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Bar",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -3092,9 +3134,9 @@
               "pos": 9,
               "nodeType": "class",
               "sign": true,
-              "userType": true,
               "rvalue": false,
               "type": "Foo",
+              "userType": true,
               "typedef": true,
               "members": [
                 {
@@ -3320,9 +3362,9 @@
                     "pos": 9,
                     "nodeType": "class",
                     "sign": true,
-                    "userType": true,
                     "rvalue": false,
                     "type": "Bar",
+                    "userType": true,
                     "typedef": true,
                     "members": [
                       {
@@ -3441,6 +3483,7 @@
                 "typedef": {}
               }
             },
+            "userType": true,
             "rvalue": true
           },
           "type": "Foo",
@@ -3715,9 +3758,9 @@
                       "pos": 9,
                       "nodeType": "class",
                       "sign": true,
-                      "userType": true,
                       "rvalue": false,
                       "type": "Bar",
+                      "userType": true,
                       "typedef": true,
                       "members": [
                         {
@@ -3838,9 +3881,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Foo",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -4066,9 +4109,9 @@
                         "pos": 9,
                         "nodeType": "class",
                         "sign": true,
-                        "userType": true,
                         "rvalue": false,
                         "type": "Bar",
+                        "userType": true,
                         "typedef": true,
                         "members": [
                           {
@@ -4187,17 +4230,59 @@
                     "typedef": {}
                   }
                 },
+                "userType": true,
                 "rvalue": true
               },
               "rvalue": true,
               "second": {
-                "id": "(name)",
+                "id": "define",
                 "value": "a",
                 "lbp": 0,
-                "line": 19,
-                "pos": 18,
-                "nodeType": "literal",
-                "sign": true
+                "line": 10,
+                "pos": 11,
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "1",
+                  "lbp": 0,
+                  "line": 10,
+                  "pos": 15,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "id": "type",
+                  "value": "i32",
+                  "type": "i32",
+                  "nodeType": "builtin",
+                  "typedef": true,
+                  "userType": false,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "lbp": 0,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
+                  "line": 10,
+                  "pos": 9,
+                  "sign": true
+                },
+                "access": 1,
+                "varIndex": 0
               },
               "type": "Foo"
             },
@@ -4455,9 +4540,9 @@
                       "pos": 9,
                       "nodeType": "class",
                       "sign": true,
-                      "userType": true,
                       "rvalue": false,
                       "type": "Bar",
+                      "userType": true,
                       "typedef": true,
                       "members": [
                         {
@@ -4578,9 +4663,9 @@
                   "pos": 9,
                   "nodeType": "class",
                   "sign": true,
-                  "userType": true,
                   "rvalue": false,
                   "type": "Foo",
+                  "userType": true,
                   "typedef": true,
                   "members": [
                     {
@@ -4806,9 +4891,9 @@
                         "pos": 9,
                         "nodeType": "class",
                         "sign": true,
-                        "userType": true,
                         "rvalue": false,
                         "type": "Bar",
+                        "userType": true,
                         "typedef": true,
                         "members": [
                           {
@@ -4926,17 +5011,59 @@
                     "def": {},
                     "typedef": {}
                   }
-                }
+                },
+                "userType": true
               },
               "rvalue": true,
               "second": {
-                "id": "(name)",
+                "id": "define",
                 "value": "b",
                 "lbp": 0,
-                "line": 19,
-                "pos": 27,
-                "nodeType": "literal",
-                "sign": true
+                "line": 11,
+                "pos": 11,
+                "nodeType": "name",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "2",
+                  "lbp": 0,
+                  "line": 11,
+                  "pos": 15,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "ref": {
+                  "id": "type",
+                  "value": "i32",
+                  "type": "i32",
+                  "nodeType": "builtin",
+                  "typedef": true,
+                  "userType": false,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "lbp": 0,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
+                  "line": 11,
+                  "pos": 9,
+                  "sign": true
+                },
+                "access": 1,
+                "varIndex": 5
               },
               "type": "Foo"
             },

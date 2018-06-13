@@ -219,10 +219,13 @@ export default function make_parse() {
     token.value = o.typedef ? o.value : v;
     token.nodeType = o.typedef ? o.nodeType : a;
     token.sign = sign;
+    o.members && (token.members = o.members);
+    o.varIndex && (token.varIndex = o.varIndex);
     //token.type = a;
     type && (token.type = type);
     t.kind && (token.kind = t.kind);
-    token.userType = o.userType;
+    o.userType && (token.userType = o.userType);
+    (token.ref && token.ref.userType) && (token.userType = token.ref.userType);
 
     return token;
   }
@@ -596,6 +599,14 @@ export default function make_parse() {
     }
     token.nodeType = 'literal';
     this.second = token;
+    left.members.some(m=>{
+      if(m.value == token.value){
+        this.second = m;
+        return true;
+      } 
+      return false;
+    });
+//    this.second.parent = token;
     this.nodeType = 'binary';
     advance();
     !this.type && (this.type = left.type);
@@ -976,7 +987,7 @@ export default function make_parse() {
 
     function assignMembers(node) {
       return node.members.map(m => {
-        const member = Object.assign({}, m);
+        const member = Object.assign({parent:node}, m);
         if (!funcScope.global && !member.ref.userType) {
           // ビルトイン型
           member.varIndex = funcScope.index();
