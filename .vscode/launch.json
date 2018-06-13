@@ -8,12 +8,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "プログラムの起動",
-      "program": "${workspaceFolder}/index.mjs",
+      "name": "test.mjs",
+      "program": "${workspaceFolder}/tests/test.mjs",
       "runtimeArgs": [
         "--experimental-modules"
-      ],
-      "useWSL": true
+      ]//,
+//      "useWSL": true
     }
   ]
 }

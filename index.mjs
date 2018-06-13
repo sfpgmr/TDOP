@@ -118,14 +118,14 @@ type Bar {
 public:
   i32 barA = 3;
   i32 barB = 4;
-}
+};
 
 type Foo {
 public:
   i32 a = 1;
   i32 b = 2;
   Bar c;
-}
+};
 
 export i32 main(){
   Foo foo,foo1;
@@ -155,14 +155,14 @@ export i32 main(){
     fs.writeFileSync('./ast.json', json, 'utf8');
     console.log('パース完了');
        
-    // const module = await generateCode(ast,binaryen);
-    // module.validate();
-    // //module.optimize();
+    const module = await generateCode(ast,binaryen);
+    module.validate();
+    //module.optimize();
     
-    // fs.writeFileSync('out.wat',module.emitText(),'utf8');
+    fs.writeFileSync('out.wat',module.emitText(),'utf8');
     
-    // const compiled = module.emitBinary();
-    // fs.writeFileSync('out.wasm',compiled);
+    const compiled = module.emitBinary();
+    fs.writeFileSync('out.wasm',compiled);
     
     console.log('コンパイル完了');
     

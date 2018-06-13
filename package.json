@@ -5,7 +5,7 @@
   "main": "index.mjs",
   "types": "index.d.ts",
   "scripts": {
-    "test": "node --experimental-modules test.mjs",
+    "test": "node --experimental-modules ./tests/test.mjs",
     "run": "node --experimental-modules .",
     "web": "node --experimental-modules static-server.js"
   },

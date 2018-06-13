@@ -212,8 +212,8 @@ export default function make_parse() {
       error('Unexpected token.', t);
     }
 
-    //token = Object.assign(Object.create(o),o);
-    token = Object.create(o);
+    token = Object.assign(Object.create(o),o);
+    //token = Object.create(o);
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
@@ -987,8 +987,9 @@ export default function make_parse() {
         return member;
       });
     }
-    a = a.map(d => {
-      const ret = Object.assign(Object.create(d), d);
+    
+    a.forEach(d => {
+      const ret = d;//Object.assign(Object.create(d), d);
       if (!funcScope.global && !this.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
@@ -1059,6 +1060,7 @@ export default function make_parse() {
           }
         }
         advance('}');
+        advance(';');
         scope.pop();
         this.members = defs;
         this.dvd = defineVarAndFunction;
