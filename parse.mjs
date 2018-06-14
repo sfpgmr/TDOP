@@ -225,7 +225,7 @@ export default function make_parse() {
     type && (token.type = type);
     t.kind && (token.kind = t.kind);
     o.userType && (token.userType = o.userType);
-    (token.ref && token.ref.userType) && (token.userType = token.ref.userType);
+    //(token.ref && token.ref.userType) && (token.userType = token.ref.userType);
 
     return token;
   }
@@ -987,12 +987,12 @@ export default function make_parse() {
 
     function assignMembers(node) {
       return node.members.map(m => {
-        const member = Object.assign({parent:node}, m);
-        if (!funcScope.global && !member.ref.userType) {
+        const member = Object.assign({}, m);
+        if (!funcScope.global && !member.userType) {
           // ビルトイン型
           member.varIndex = funcScope.index();
         }
-        if (member.ref.userType) {
+        if (member.userType) {
           member.members = assignMembers(m);
         }
         return member;
@@ -1000,20 +1000,22 @@ export default function make_parse() {
     }
     
     a.forEach(d => {
-      const ret = d;//Object.assign(Object.create(d), d);
-      if (!funcScope.global && !this.userType) {
+      const ret = d;
+      //const ret = d;//Object.assign(Object.create(d), d);
+      if (!funcScope.global && !ret.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
       }
 
-      if (this.userType) {
+      if (ret.userType) {
         // ユーザー定義型
         ret.members = assignMembers(this);
       }
-      ret.ref = this;
-      ret.id = 'define';
+      //ret.parent = this;
+      //ret.id = 'define';
+      ret.nodeType = 'define';
       ret.type = this.type;
-      return ret;
+      //return ret;
     });
     //this.defines = a;
 
