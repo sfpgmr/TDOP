@@ -12,8 +12,17 @@
       "program": "${workspaceFolder}/tests/test.mjs",
       "runtimeArgs": [
         "--experimental-modules"
-      ]//,
-//      "useWSL": true
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "test.mjs - use WSL",
+      "program": "${workspaceFolder}/tests/test.mjs",
+      "runtimeArgs": [
+        "--experimental-modules"
+      ],
+      "useWSL": true
     }
   ]
 }
