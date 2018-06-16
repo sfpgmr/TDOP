@@ -214,6 +214,7 @@ export default function make_parse() {
 
     token = Object.assign(Object.create(o),o);
     //token = Object.create(o);
+    // TODO:このへんのいい加減コードも整理せんといかんですなあ。。
     token.line = t.line;
     token.pos = t.pos;
     token.value = o.typedef ? o.value : v;
