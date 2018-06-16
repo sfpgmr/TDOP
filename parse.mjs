@@ -7,9 +7,8 @@
 
 //jslint for, this
 
-const ACCESS_PUBLIC = 1 | 0;
-const ACCESS_PRIVATE = 2 | 0;
-const ACCESS_PROTECTED = 3 | 0;
+
+import * as constants from './compilerConstants.mjs';
 
 function error(message, t = this) {
   t.name = 'Parser : SyntaxError';
@@ -882,11 +881,17 @@ export default function make_parse() {
     function assignMembers(node) {
       return node.members.map(m => {
         const member = Object.assign({}, m);
-        if (!funcScope.global && !member.userType) {
-          // ビルトイン型
-          member.varIndex = funcScope.index();
+        if(!funcScope.global){
+          member.stored = STORED_LOCAL;
+          if(!member.userType){
+            // ビルトイン型
+            member.varIndex = funcScope.index();
+          } 
+        } else {
+          member.stored = STORED_GLOBAL;
         }
         if (member.userType) {
+          // ユーザー定義の場合はさらに掘り下げる
           member.members = assignMembers(m.typeRef);
         }
         return member;
@@ -1025,6 +1030,9 @@ export default function make_parse() {
       if (!funcScope.global && !ret.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
+        ret.stored = STORED_LOCAL;
+      } else {
+        ret.stored = STORED_GLOBAL;
       }
 
       if (ret.userType) {
@@ -1064,7 +1072,7 @@ export default function make_parse() {
       this.typedef = true;
       advance();
       const defs = [];
-      let access = ACCESS_PUBLIC;// privateから始まる。
+      let access = constants.ACCESS_PUBLIC;// privateから始まる。
       createScope();
 
       while (token.id != "}") {

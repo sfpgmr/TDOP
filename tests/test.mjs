@@ -88,13 +88,14 @@ function getInstance(obj){
   return inst;
 }
 
+const exceptProperties = ['parent','typeRef','detail'];
+
 async function compile(name,src){
     const tokens = tokenize(src);
     const ast = parse(tokens);
     const json = JSON.stringify(ast,
       (key,value)=>{
-        if(key == 'parent' || key == 'detail')  return undefined;
-        return value;
+        return exceptProperties.includes(key) ? undefined : value; 
       } 
       , 2);
     
