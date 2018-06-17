@@ -143,77 +143,97 @@ export default async function generateCode(ast,binaryen_) {
   // 変数定義
   function define_(d,vars = localVars){
     console.log('** define_() **');
-    switch (d.nodeType) {
-    case 'binary':
-      // 初期値あり
-      if(binaryen[d.type]){
+    if(!d.userType){
         // WASM ネイティブ型
         // ローカル
-        if (d.first.scope) {
-          const left = d.first;
-          vars && vars.push(binaryen[left.type]);
-          left.varIndex = varIndex++;
-          // 初期値の設定ステートメント
-          d.global = false;
-          return  module.setLocal(left.varIndex, expression(d.second));
-        } else {
-          module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
-          d.global = true;
+        switch(d.stored){
+          case constants.STORED_LOCAL:
+            vars && vars.push(binaryen[ｄ.type]);
+            if(d.initialExpression){
+              return  module.setLocal(ｄ.varIndex, expression(d.initialExpression));
+            }
+            return null;
+          case constants.STORED_GLOBAL:
+            if(d.initialExpression){
+              return module.addGlobal(d.value, binaryen[d.type], true, expression(d.initialExpression));
+            } else {
+              return module.addGlobal(d.value, binaryen[d.type], true, module[d.type].const(0));
+            }
         }
-      } else {
-        // ユーザー定義型
+    } else {
 
-      }
-      break;
-    case 'name':
-      //　初期値なし 
-      if(binaryen[d.type]){
-        // WASM ネイティブ型
-        if (d.scope) {
-          // ローカル
-          vars && vars.push(binaryen[d.type]);
-          d.varIndex = varIndex++;
-          d.global = false;
-          return module.setLocal(d.varIndex, module[d.type].const(0));
-        } else {
-          // グローバル
-          d.global = true;
-          return module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
-        }
-      } else {
-        // ユーザー定義型
-       
-        const typedef = d.scope.find(d.type,true);
-        if(!typedef){
-          error('Type Not Found.',d);
-        }
-        const detail = typedef.detail.second;
-        d.members = new Map();
-        detail.forEach(d=>{
-          //d.members.set()          
-
-        });
-        d.members = detail.map(d=>{
-          return {
-            ref:d
-
-          };
-          Object.assign(Object.create(d),d)
-        });
-       
-        //console.log(detail);
-        const results = [];
-        d.members.forEach(member=>{
-          const results_ = define(member);
-          if(results_ instanceof Array){
-            results.push(...results_);
-          } else {
-            results.push(results_);
-          }
-        });
-        return results;
-      }
     }
+    // switch (d.nodeType) {
+    // case 'binary':
+    //   // 初期値あり
+    //   if(binaryen[d.type]){
+    //     // WASM ネイティブ型
+    //     // ローカル
+    //     if (d.first.scope) {
+    //       const left = d.first;
+    //       vars && vars.push(binaryen[left.type]);
+    //       left.varIndex = varIndex++;
+    //       // 初期値の設定ステートメント
+    //       d.global = false;
+    //       return  module.setLocal(left.varIndex, expression(d.second));
+    //     } else {
+    //       module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
+    //       d.global = true;
+    //     }
+    //   } else {
+    //     // ユーザー定義型
+
+    //   }
+    //   break;
+    // case 'name':
+    //   //　初期値なし 
+    //   if(binaryen[d.type]){
+    //     // WASM ネイティブ型
+    //     if (d.scope) {
+    //       // ローカル
+    //       vars && vars.push(binaryen[d.type]);
+    //       d.varIndex = varIndex++;
+    //       d.global = false;
+    //       return module.setLocal(d.varIndex, module[d.type].const(0));
+    //     } else {
+    //       // グローバル
+    //       d.global = true;
+    //       return module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
+    //     }
+    //   } else {
+    //     // ユーザー定義型
+       
+    //     const typedef = d.scope.find(d.type,true);
+    //     if(!typedef){
+    //       error('Type Not Found.',d);
+    //     }
+    //     const detail = typedef.detail.second;
+    //     d.members = new Map();
+    //     detail.forEach(d=>{
+    //       //d.members.set()          
+
+    //     });
+    //     d.members = detail.map(d=>{
+    //       return {
+    //         ref:d
+
+    //       };
+    //       Object.assign(Object.create(d),d)
+    //     });
+       
+    //     //console.log(detail);
+    //     const results = [];
+    //     d.members.forEach(member=>{
+    //       const results_ = define(member);
+    //       if(results_ instanceof Array){
+    //         results.push(...results_);
+    //       } else {
+    //         results.push(results_);
+    //       }
+    //     });
+    //     return results;
+    //   }
+    // }
   }
 
   // 変数定義
@@ -436,22 +456,15 @@ export default async function generateCode(ast,binaryen_) {
 
   function dotOp(e){
     console.log('** dotOp() **');
-    const body = e.first.scope.find(e.first.value);
-    const members = body.members;
-    const memberName = e.second.value;
+ 
     if(e.second.id == '.'){
-      return dotOp(e.second);
+      const ret = dotOp(e.second);
+      e.type = ret.type;
+      return ret;
     }
-    for(let i = 0,ei = members.length;i < ei;++i){
-      const memberChilds = members[i].first;
-      for(let j = 0,ej = memberChilds.length;j < ej;++j){
-        if(memberChilds[j].first.value == memberName){
-          e.type = memberChilds[j].first.type;
-          return name(memberChilds[j].first);
-        };
-      }
-    }
-  }
+    e.type = e.second.type;
+    return name(e.second);
+   }
 
   function logicalAnd(e){
     const left = e.first,right = e.second;
@@ -618,26 +631,20 @@ export default async function generateCode(ast,binaryen_) {
 
   // 左辺のドット構文の解析
   function leftDotOp(e){
-//    const body = e.first.scope.find(e.first.value);
-    //const body = e.first.ref;
-    const members = e.first.members;
-    const memberName = e.second.value;
     if(e.second.id == '.'){
-      return leftDotOp(e.second);
+      const ret = leftDotOp(e.second);
+      e.type = ret.type;
+      return ret;
     }
-    for(let i = 0,e = members.length;i < e;++i){
-      const memberChild = members[i];
-      if(memberChild.value == memberName){
-        return memberChild;
-      }
-    }
-    error('Member Not Found',e);
+    e.type = e.second.type;
+    return e.second;
   }
 
-  // 代入
+  // 代入 // 
   function assignment(e,results = [],top = true) {
     console.log('** assignment() **');
     const left = e.first,right = e.second;
+    
 
     if(left.value == '.'){
       const l = leftDotOp(left);
@@ -654,29 +661,30 @@ export default async function generateCode(ast,binaryen_) {
           results.push(op);
         }
       } else {
-        assignment(l,results,false);
+        let m = Object.assign(Object.create(e),e);
+        m.type = l.type;
+        assignment(m,results,false);
       }
     } else if(left.members){
       const leftMembers = left.members;
       const rightMembers = right.members;
       leftMembers.forEach((leftMember,i)=>{
-        const lms = leftMember;
-        const rms = rightMembers[i];
-        lms.forEach((lm,j)=>{
-          const rm = rms[j];
-          const memberAssignmment = Object.assign(Object.create(e),e);
-          memberAssignmment.first = lm.first;
-          memberAssignmment.second = rm.first;
-          assignment(memberAssignmment,results,false);
-        });
+        const memberAssignmment = Object.assign(Object.create(e),e);
+        memberAssignmment.first = leftMember;
+        memberAssignmment.second = rightMembers[i];
+        e.type = leftMember.type;
+        assignment(memberAssignmment,results,false);
       });
       if(top){
         return results.length == 1 ?  results[0] : module.block(null,results);
       } 
     } else if(module[left.type]){
+      if(left.type != right.type){
+        error('不正な代入：左辺と右辺の型が違います',e);
+      }
       results.push(setValue(left,expression(right)));
     } else {
-      error('Bad Assignment',e);
+      error('不正な代入',e);
     }
   }
 
