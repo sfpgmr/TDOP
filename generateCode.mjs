@@ -1,3 +1,4 @@
+import * as constants from './compilerConstants.mjs';
 
 function error (message, t = this) {
   t.name = 'Compiler Error';
@@ -53,7 +54,7 @@ export default async function generateCode(ast,binaryen_) {
       });
     } else {
       let ops = generate_(stmts);
-      ops instanceof Array ? result.push(...ops):result.push(ops);
+      ops instanceof Array ? result.push(...ops):(ops && result.push(ops));
       if(postOpcodes.length > 0){
         result.push(...postOpcodes);
         postOpcodes.length = 0;
@@ -63,6 +64,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function generate_(s) {
+    console.log('node type: ',!s,s.nodeType);
     switch (s.nodeType) {
     case 'define':
       return define(s);
@@ -84,7 +86,16 @@ export default async function generateCode(ast,binaryen_) {
       return literal(s);
     case 'suffix':
       return suffix(s);
+    case 'class':
+      return classDefinition(s);
+    default:
+      error('unrecognized nodetype',s);
+      break;
     }
+  }
+
+  function classDefinition(stmt){
+    return null;
   }
 
   // 関数呼び出し
@@ -121,7 +132,7 @@ export default async function generateCode(ast,binaryen_) {
         paramTypes.push(binaryen[p.type]);
       });
     }
-    const statements = generate(funcNode.statement);
+    const statements = generate(funcNode.statements);
     const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type],paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
     if(funcNode.export){
@@ -208,14 +219,20 @@ export default async function generateCode(ast,binaryen_) {
   // 変数定義
   function define(statement,results = []) {
     console.log('** define() **');
-    statement.first.forEach(d => {
-      const result = define_(d);
-      if(result instanceof Array){
-        results.push(...result);
-      } else {
-        results.push(result);
-      }
-    });
+    // statement.first.forEach(d => {
+    //   const result = define_(d);
+    //   if(result instanceof Array){
+    //     results.push(...result);
+    //   } else {
+    //     results.push(result);
+    //   }
+    // });
+    const result = define_(statement);
+    if(result instanceof Array){
+      results.push(...result);
+    } else {
+      results.push(result);
+    }
     return results;
   }
 
@@ -602,19 +619,16 @@ export default async function generateCode(ast,binaryen_) {
   // 左辺のドット構文の解析
   function leftDotOp(e){
 //    const body = e.first.scope.find(e.first.value);
-    const body = e.first.ref;
-    const members = body.members;
+    //const body = e.first.ref;
+    const members = e.first.members;
     const memberName = e.second.value;
     if(e.second.id == '.'){
       return leftDotOp(e.second);
     }
     for(let i = 0,e = members.length;i < e;++i){
-      const memberChilds = members[i].first;
-      for(let j = 0,ej = memberChilds.length;j < ej;++j){
-        if(memberChilds[j].first.value == memberName){
-          const member = memberChilds[j].first;
-          return member;
-        };
+      const memberChild = members[i];
+      if(memberChild.value == memberName){
+        return memberChild;
       }
     }
     error('Member Not Found',e);
@@ -642,12 +656,12 @@ export default async function generateCode(ast,binaryen_) {
       } else {
         assignment(l,results,false);
       }
-    } else if(left.ref && left.ref.members){
-      const leftMembers = left.ref.members;
-      const rightMembers = right.ref.members;
+    } else if(left.members){
+      const leftMembers = left.members;
+      const rightMembers = right.members;
       leftMembers.forEach((leftMember,i)=>{
-        const lms = leftMember.first;
-        const rms = rightMembers[i].first;
+        const lms = leftMember;
+        const rms = rightMembers[i];
         lms.forEach((lm,j)=>{
           const rm = rms[j];
           const memberAssignmment = Object.assign(Object.create(e),e);
