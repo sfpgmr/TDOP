@@ -161,6 +161,10 @@ export default async function generateCode(ast,binaryen_) {
             }
         }
     } else {
+      // ユーザー定義型
+      if(d.members){
+        d.forEach()
+      }
 
     }
     // switch (d.nodeType) {
@@ -250,7 +254,7 @@ export default async function generateCode(ast,binaryen_) {
     const result = define_(statement);
     if(result instanceof Array){
       results.push(...result);
-    } else {
+    } else if(result) {
       results.push(result);
     }
     return results;
