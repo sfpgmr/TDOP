@@ -148,9 +148,9 @@ export default async function generateCode(ast,binaryen_) {
         // ローカル
         switch(d.stored){
           case constants.STORED_LOCAL:
-            vars && vars.push(binaryen[ｄ.type]);
+            vars && vars.push(binaryen[d.type]);
             if(d.initialExpression){
-              return  module.setLocal(ｄ.varIndex, expression(d.initialExpression));
+              return  module.setLocal(d.varIndex, expression(d.initialExpression));
             }
             return null;
           case constants.STORED_GLOBAL:
@@ -162,10 +162,12 @@ export default async function generateCode(ast,binaryen_) {
         }
     } else {
       // ユーザー定義型
-      if(d.members){
-        d.forEach()
-      }
-
+      const results = [];
+      d.members && d.members.forEach(m=>{
+        const r = define(m);
+        (r instanceof Array) ? results.push(...r):(r && results.push(r));
+      });
+      return results;
     }
     // switch (d.nodeType) {
     // case 'binary':
@@ -276,6 +278,8 @@ export default async function generateCode(ast,binaryen_) {
       return call(e);
     case 'suffix':
       return suffix(e);
+    case 'reference':
+      return name(e);
     }
   }
 
@@ -377,7 +381,7 @@ export default async function generateCode(ast,binaryen_) {
         return module.teeLocal(n.varIndex,v);
       }
     } else {
-      return (n.global || !n.scope) ? module.setGlobal(n.value,v) : module.setLocal(n.varIndex,v);
+      return n.varIndex ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
     }
   }
 

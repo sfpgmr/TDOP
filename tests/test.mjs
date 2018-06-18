@@ -9,11 +9,11 @@ import binaryen from '../binaryen-wasm.js';
 
 const parse = make_parse();
 
-test.skip('mul test',async t=>{
+test('mul test',async t=>{
   const testSrc = 
 `
   export i32 main(){
-    int32 a = 2,b = 3;
+    i32 a = 2,b = 3;
     return a * b;
   };
 `;
@@ -25,23 +25,18 @@ test.skip('mul test',async t=>{
     console.log(inst.exports.main());
 });
 
-test.skip('compile testx',async t=>{
+test('compile testx',async t=>{
   const testSrc = 
 `
 type Foo {
-  public:
-    i32 a = 1;
-    i32 b = 2;
-  };
-  
+  i32 a = 10;
+  i32 b = 2;
+};
   export i32 main(){
-    Foo foo,foo1;
-    foo.a = 10;
-    foo1 = foo;  
-    return foo.a * foo1.b;
+    Foo foo;
+//    foo.a = 10;
+    return foo.a * foo.b;
   };
-    //i32 a = 1;
-    //return a;
 `;
 
     const obj = await compile('test01',testSrc);
@@ -51,7 +46,7 @@ type Foo {
     console.log(inst.exports.main());
 });
 
-test('type',async t=>{
+test('** type test ** ',async t=>{
   const testSrc = 
   `
   type Bar {
