@@ -883,13 +883,13 @@ export default function make_parse() {
       return node.members.map(m => {
         const member = Object.assign({}, m);
         if(!funcScope.global){
-          member.stored = STORED_LOCAL;
+          member.stored = constants.STORED_LOCAL;
           if(!member.userType){
             // ビルトイン型
             member.varIndex = funcScope.index();
           } 
         } else {
-          member.stored = STORED_GLOBAL;
+          member.stored = constants.STORED_GLOBAL;
         }
         if (member.userType) {
           // ユーザー定義の場合はさらに掘り下げる
@@ -1031,9 +1031,9 @@ export default function make_parse() {
       if (!funcScope.global && !ret.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
-        ret.stored = STORED_LOCAL;
+        ret.stored = constants.STORED_LOCAL;
       } else {
-        ret.stored = STORED_GLOBAL;
+        ret.stored = constants.STORED_GLOBAL;
       }
 
       if (ret.userType) {
@@ -1079,12 +1079,12 @@ export default function make_parse() {
       while (token.id != "}") {
         switch (token.value) {
         case 'public':
-          access = ACCESS_PUBLIC;
+          access = constants.ACCESS_PUBLIC;
           advance();
           advance(':');
           break;
         case 'private':
-          access = ACCESS_PRIVATE;
+          access = constants.ACCESS_PRIVATE;
           advance();
           advance(':');
           break;
