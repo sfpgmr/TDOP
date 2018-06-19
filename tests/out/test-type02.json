@@ -1,0 +1,986 @@
+{
+  "id": "(program)",
+  "scope": {
+    "def": {},
+    "typedef": {}
+  },
+  "statements": [
+    {
+      "id": "Foo",
+      "value": "Foo",
+      "lbp": 0,
+      "std": null,
+      "line": 2,
+      "pos": 6,
+      "nodeType": "class",
+      "sign": true,
+      "rvalue": false,
+      "type": "Foo",
+      "userType": true,
+      "typedef": true,
+      "members": [
+        {
+          "id": "(name)",
+          "value": "a",
+          "lbp": 0,
+          "line": 3,
+          "pos": 9,
+          "nodeType": "define",
+          "sign": true,
+          "type": "i32",
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "rvalue": false,
+          "initialExpression": {
+            "id": "(literal)",
+            "value": "10",
+            "lbp": 0,
+            "line": 3,
+            "pos": 14,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "stored": 1,
+          "access": 1
+        },
+        {
+          "id": "(name)",
+          "value": "b",
+          "lbp": 0,
+          "line": 4,
+          "pos": 9,
+          "nodeType": "define",
+          "sign": true,
+          "type": "i32",
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "rvalue": false,
+          "initialExpression": {
+            "id": "(literal)",
+            "value": "2",
+            "lbp": 0,
+            "line": 4,
+            "pos": 13,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "stored": 1,
+          "access": 1
+        }
+      ],
+      "reserved": false,
+      "led": null,
+      "scope": {
+        "def": {},
+        "typedef": {}
+      }
+    },
+    {
+      "id": "type",
+      "value": "main",
+      "lbp": 0,
+      "line": 6,
+      "pos": 19,
+      "nodeType": "function",
+      "sign": true,
+      "type": "i32",
+      "export": true,
+      "reserved": false,
+      "led": null,
+      "std": null,
+      "scope": {
+        "def": {},
+        "typedef": {}
+      },
+      "params": [],
+      "statements": [
+        {
+          "id": "(name)",
+          "value": "foo",
+          "lbp": 0,
+          "line": 7,
+          "pos": 13,
+          "nodeType": "define",
+          "sign": true,
+          "type": "Foo",
+          "userType": true,
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "stored": 1,
+          "members": [
+            {
+              "id": "(name)",
+              "value": "a",
+              "lbp": 0,
+              "line": 3,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "10",
+                "lbp": 0,
+                "line": 3,
+                "pos": 14,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 0
+            },
+            {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "line": 4,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "2",
+                "lbp": 0,
+                "line": 4,
+                "pos": 13,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 1
+            }
+          ]
+        },
+        {
+          "id": "(name)",
+          "value": "foo1",
+          "lbp": 0,
+          "line": 7,
+          "pos": 18,
+          "nodeType": "define",
+          "sign": true,
+          "type": "Foo",
+          "userType": true,
+          "rvalue": false,
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "stored": 1,
+          "members": [
+            {
+              "id": "(name)",
+              "value": "a",
+              "lbp": 0,
+              "line": 3,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "10",
+                "lbp": 0,
+                "line": 3,
+                "pos": 14,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 2
+            },
+            {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "line": 4,
+              "pos": 9,
+              "nodeType": "define",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "2",
+                "lbp": 0,
+                "line": 4,
+                "pos": 13,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "=",
+          "value": "=",
+          "lbp": 10,
+          "line": 8,
+          "pos": 13,
+          "nodeType": "binary",
+          "sign": true,
+          "first": {
+            "id": ".",
+            "value": ".",
+            "lbp": 80,
+            "line": 8,
+            "pos": 10,
+            "nodeType": "binary",
+            "sign": true,
+            "first": {
+              "id": "(name)",
+              "value": "foo",
+              "lbp": 0,
+              "line": 8,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "Foo",
+              "userType": true,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false
+            },
+            "rvalue": false,
+            "second": {
+              "id": "(name)",
+              "value": "a",
+              "lbp": 0,
+              "line": 3,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "10",
+                "lbp": 0,
+                "line": 3,
+                "pos": 14,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 0
+            },
+            "type": "Foo"
+          },
+          "rvalue": false,
+          "second": {
+            "id": "(literal)",
+            "value": "3",
+            "lbp": 0,
+            "line": 8,
+            "pos": 15,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "type": "Foo",
+          "assignment": true
+        },
+        {
+          "id": "=",
+          "value": "=",
+          "lbp": 10,
+          "line": 9,
+          "pos": 13,
+          "nodeType": "binary",
+          "sign": true,
+          "first": {
+            "id": ".",
+            "value": ".",
+            "lbp": 80,
+            "line": 9,
+            "pos": 10,
+            "nodeType": "binary",
+            "sign": true,
+            "first": {
+              "id": "(name)",
+              "value": "foo",
+              "lbp": 0,
+              "line": 9,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "Foo",
+              "userType": true,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "stored": 1,
+              "members": [
+                {
+                  "id": "(name)",
+                  "value": "a",
+                  "lbp": 0,
+                  "line": 3,
+                  "pos": 9,
+                  "nodeType": "reference",
+                  "sign": true,
+                  "type": "i32",
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
+                  "rvalue": false,
+                  "initialExpression": {
+                    "id": "(literal)",
+                    "value": "10",
+                    "lbp": 0,
+                    "line": 3,
+                    "pos": 14,
+                    "nodeType": "literal",
+                    "sign": false,
+                    "type": "i32",
+                    "rvalue": true
+                  },
+                  "stored": 0,
+                  "access": 1,
+                  "varIndex": 0
+                },
+                {
+                  "id": "(name)",
+                  "value": "b",
+                  "lbp": 0,
+                  "line": 4,
+                  "pos": 9,
+                  "nodeType": "reference",
+                  "sign": true,
+                  "type": "i32",
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
+                  "rvalue": false,
+                  "initialExpression": {
+                    "id": "(literal)",
+                    "value": "2",
+                    "lbp": 0,
+                    "line": 4,
+                    "pos": 13,
+                    "nodeType": "literal",
+                    "sign": false,
+                    "type": "i32",
+                    "rvalue": true
+                  },
+                  "stored": 0,
+                  "access": 1,
+                  "varIndex": 1
+                }
+              ],
+              "rvalue": false
+            },
+            "rvalue": false,
+            "second": {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "line": 4,
+              "pos": 9,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": false,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "2",
+                "lbp": 0,
+                "line": 4,
+                "pos": 13,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "stored": 0,
+              "access": 1,
+              "varIndex": 1
+            },
+            "type": "Foo"
+          },
+          "rvalue": false,
+          "second": {
+            "id": "(literal)",
+            "value": "4",
+            "lbp": 0,
+            "line": 9,
+            "pos": 15,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "type": "Foo",
+          "assignment": true
+        },
+        {
+          "id": "=",
+          "value": "=",
+          "lbp": 10,
+          "line": 10,
+          "pos": 12,
+          "nodeType": "binary",
+          "sign": true,
+          "first": {
+            "id": "(name)",
+            "value": "foo1",
+            "lbp": 0,
+            "line": 10,
+            "pos": 10,
+            "nodeType": "reference",
+            "sign": true,
+            "type": "Foo",
+            "userType": true,
+            "rvalue": false,
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            },
+            "stored": 1,
+            "members": [
+              {
+                "id": "(name)",
+                "value": "a",
+                "lbp": 0,
+                "line": 3,
+                "pos": 9,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "10",
+                  "lbp": 0,
+                  "line": 3,
+                  "pos": 14,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 2
+              },
+              {
+                "id": "(name)",
+                "value": "b",
+                "lbp": 0,
+                "line": 4,
+                "pos": 9,
+                "nodeType": "define",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "2",
+                  "lbp": 0,
+                  "line": 4,
+                  "pos": 13,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 3
+              }
+            ]
+          },
+          "rvalue": false,
+          "second": {
+            "id": "(name)",
+            "value": "foo",
+            "lbp": 0,
+            "line": 10,
+            "pos": 16,
+            "nodeType": "reference",
+            "sign": true,
+            "type": "Foo",
+            "userType": true,
+            "reserved": false,
+            "led": null,
+            "std": null,
+            "scope": {
+              "def": {},
+              "typedef": {}
+            },
+            "stored": 1,
+            "members": [
+              {
+                "id": "(name)",
+                "value": "a",
+                "lbp": 0,
+                "line": 3,
+                "pos": 9,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "10",
+                  "lbp": 0,
+                  "line": 3,
+                  "pos": 14,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 0
+              },
+              {
+                "id": "(name)",
+                "value": "b",
+                "lbp": 0,
+                "line": 4,
+                "pos": 9,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "2",
+                  "lbp": 0,
+                  "line": 4,
+                  "pos": 13,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 1
+              }
+            ],
+            "rvalue": true
+          },
+          "type": "Foo",
+          "assignment": true
+        },
+        {
+          "id": "return",
+          "value": "return",
+          "lbp": 0,
+          "line": 11,
+          "pos": 12,
+          "nodeType": "statement",
+          "sign": true,
+          "rvalue": false,
+          "first": {
+            "id": "*",
+            "value": "*",
+            "lbp": 60,
+            "line": 11,
+            "pos": 21,
+            "nodeType": "binary",
+            "sign": true,
+            "first": {
+              "id": ".",
+              "value": ".",
+              "lbp": 80,
+              "line": 11,
+              "pos": 18,
+              "nodeType": "binary",
+              "sign": true,
+              "first": {
+                "id": "(name)",
+                "value": "foo1",
+                "lbp": 0,
+                "line": 11,
+                "pos": 17,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "Foo",
+                "userType": true,
+                "rvalue": true,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "stored": 1,
+                "members": [
+                  {
+                    "id": "(name)",
+                    "value": "a",
+                    "lbp": 0,
+                    "line": 3,
+                    "pos": 9,
+                    "nodeType": "reference",
+                    "sign": true,
+                    "type": "i32",
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
+                    "rvalue": false,
+                    "initialExpression": {
+                      "id": "(literal)",
+                      "value": "10",
+                      "lbp": 0,
+                      "line": 3,
+                      "pos": 14,
+                      "nodeType": "literal",
+                      "sign": false,
+                      "type": "i32",
+                      "rvalue": true
+                    },
+                    "stored": 0,
+                    "access": 1,
+                    "varIndex": 2
+                  },
+                  {
+                    "id": "(name)",
+                    "value": "b",
+                    "lbp": 0,
+                    "line": 4,
+                    "pos": 9,
+                    "nodeType": "define",
+                    "sign": true,
+                    "type": "i32",
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
+                    "rvalue": false,
+                    "initialExpression": {
+                      "id": "(literal)",
+                      "value": "2",
+                      "lbp": 0,
+                      "line": 4,
+                      "pos": 13,
+                      "nodeType": "literal",
+                      "sign": false,
+                      "type": "i32",
+                      "rvalue": true
+                    },
+                    "stored": 0,
+                    "access": 1,
+                    "varIndex": 3
+                  }
+                ]
+              },
+              "rvalue": true,
+              "second": {
+                "id": "(name)",
+                "value": "a",
+                "lbp": 0,
+                "line": 3,
+                "pos": 9,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "10",
+                  "lbp": 0,
+                  "line": 3,
+                  "pos": 14,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 2
+              },
+              "type": "Foo"
+            },
+            "rvalue": true,
+            "second": {
+              "id": ".",
+              "value": ".",
+              "lbp": 80,
+              "line": 11,
+              "pos": 26,
+              "nodeType": "binary",
+              "sign": true,
+              "first": {
+                "id": "(name)",
+                "value": "foo",
+                "lbp": 0,
+                "line": 11,
+                "pos": 25,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "Foo",
+                "userType": true,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "stored": 1,
+                "members": [
+                  {
+                    "id": "(name)",
+                    "value": "a",
+                    "lbp": 0,
+                    "line": 3,
+                    "pos": 9,
+                    "nodeType": "reference",
+                    "sign": true,
+                    "type": "i32",
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
+                    "rvalue": false,
+                    "initialExpression": {
+                      "id": "(literal)",
+                      "value": "10",
+                      "lbp": 0,
+                      "line": 3,
+                      "pos": 14,
+                      "nodeType": "literal",
+                      "sign": false,
+                      "type": "i32",
+                      "rvalue": true
+                    },
+                    "stored": 0,
+                    "access": 1,
+                    "varIndex": 0
+                  },
+                  {
+                    "id": "(name)",
+                    "value": "b",
+                    "lbp": 0,
+                    "line": 4,
+                    "pos": 9,
+                    "nodeType": "reference",
+                    "sign": true,
+                    "type": "i32",
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
+                    "rvalue": false,
+                    "initialExpression": {
+                      "id": "(literal)",
+                      "value": "2",
+                      "lbp": 0,
+                      "line": 4,
+                      "pos": 13,
+                      "nodeType": "literal",
+                      "sign": false,
+                      "type": "i32",
+                      "rvalue": true
+                    },
+                    "stored": 0,
+                    "access": 1,
+                    "varIndex": 1
+                  }
+                ],
+                "rvalue": true
+              },
+              "rvalue": true,
+              "second": {
+                "id": "(name)",
+                "value": "b",
+                "lbp": 0,
+                "line": 4,
+                "pos": 9,
+                "nodeType": "reference",
+                "sign": true,
+                "type": "i32",
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
+                "rvalue": false,
+                "initialExpression": {
+                  "id": "(literal)",
+                  "value": "2",
+                  "lbp": 0,
+                  "line": 4,
+                  "pos": 13,
+                  "nodeType": "literal",
+                  "sign": false,
+                  "type": "i32",
+                  "rvalue": true
+                },
+                "stored": 0,
+                "access": 1,
+                "varIndex": 1
+              },
+              "type": "Foo"
+            },
+            "type": "Foo"
+          },
+          "type": "Foo"
+        }
+      ]
+    }
+  ]
+}

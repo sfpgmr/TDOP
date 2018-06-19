@@ -279,6 +279,7 @@ export default async function generateCode(ast,binaryen_) {
     case 'suffix':
       return suffix(e);
     case 'reference':
+    case 'define':
       return name(e);
     }
   }
@@ -381,7 +382,7 @@ export default async function generateCode(ast,binaryen_) {
         return module.teeLocal(n.varIndex,v);
       }
     } else {
-      return n.varIndex ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
+      return (n.varIndex >= 0)  ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
     }
   }
 

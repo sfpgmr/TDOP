@@ -9,7 +9,36 @@ import binaryen from '../binaryen-wasm.js';
 
 const parse = make_parse();
 
-test('mul test',async t=>{
+
+test('test-expression-add',async t=>{
+  const testSrc = 
+`
+  export i32 main(){
+    i32 a = 2,b = 3;
+    return a + b;
+  };
+`;
+    const inst = await compileAndInstanciate(t.name,testSrc);
+    t.equal(inst.exports.main(),5);
+});
+
+test('test-expression-sub',async t=>{
+  const testSrc = 
+`
+  export i32 main(){
+    i32 a = 2,b = 3;
+    return a - b;
+  };
+`;
+
+    const obj = await compile(t.name,testSrc);
+    const inst = getInstance(obj);
+    t.equal(inst.exports.main(),-1);
+    console.log(inst.exports.main());
+});
+
+
+test('test-expression-mul',async t=>{
   const testSrc = 
 `
   export i32 main(){
@@ -18,14 +47,29 @@ test('mul test',async t=>{
   };
 `;
 
-    const obj = await compile('test01',testSrc);
-    //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
+    const obj = await compile('test-expression-mul',testSrc);
     const inst = getInstance(obj);
     t.equal(inst.exports.main(),6);
     console.log(inst.exports.main());
 });
 
-test('compile testx',async t=>{
+test('test-expression-div',async t=>{
+  const testSrc = 
+`
+  export i32 main(){
+    i32 a = 6,b = 3;
+    return a / b;
+  };
+`;
+
+    const obj = await compile(t.name,testSrc);
+    const inst = getInstance(obj);
+    t.equal(inst.exports.main(),2);
+    console.log(inst.exports.main());
+});
+
+
+test('test-type01',async t=>{
   const testSrc = 
 `
 type Foo {
@@ -34,19 +78,40 @@ type Foo {
 };
   export i32 main(){
     Foo foo;
-//    foo.a = 10;
     return foo.a * foo.b;
   };
 `;
 
-    const obj = await compile('test01',testSrc);
-    //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
+    const obj = await compile(t.name,testSrc);
     const inst = getInstance(obj);
     t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
 
-test('** type test ** ',async t=>{
+test('test-type02',async t=>{
+  const testSrc = 
+`
+type Foo {
+  i32 a = 10;
+  i32 b = 2;
+};
+  export i32 main(){
+    Foo foo,foo1;
+    foo.a = 3;
+    foo.b = 4;
+    foo1 = foo;
+    return foo1.a * foo.b;
+  };
+`;
+
+    const obj = await compile(t.name,testSrc);
+    const inst = getInstance(obj);
+    console.log(inst.exports.main());
+    t.equal(inst.exports.main(),12);
+});
+
+
+test('test-type03-nest',async t=>{
   const testSrc = 
   `
   type Bar {
@@ -64,13 +129,13 @@ test('** type test ** ',async t=>{
   
   export i32 main(){
     Foo foo,foo1;
-    foo.a = 10;
+    foo.a = 2;
     foo1 = foo;  
-    return foo.a * foo1.b;
+    foo.a = 10;
+    return foo.a * foo1.a;
   };`;
 
-    const obj = await compile('test01',testSrc);
-    //const bin = new WebAssembly.Module(fs.readFileSync('out.wasm'));
+    const obj = await compile(t.name,testSrc);
     const inst = getInstance(obj);
     t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
@@ -102,3 +167,9 @@ async function compile(name,src){
     fs.writeFileSync(`./tests/out/${name}.wasm`,compiled);
     return compiled;    
 }
+
+async function compileAndInstanciate(name,src){
+  const obj = await compile(name,src);
+  return getInstance(obj);
+}
+
