@@ -95,13 +95,14 @@ export default function make_parse() {
 
     define(n) {
       const def = n.typedef ? this.typedef : this.def;
-      const t = def.get(n.value);
+      const varName = n.varName ? n.varName : n.value;
+      const t = def.get(varName);
       if (t) {
         error((t.reserved)
           ? 'Already reserved.'
           : 'Already defined.', n);
       }
-      def.set(n.value, n);
+      def.set(varName, n);
       n.reserved = false;
       n.nud = itself;
       n.led = null;
@@ -111,7 +112,7 @@ export default function make_parse() {
       return n;
     }
 
-    find(n, typedef = n.typedef) {
+    find(n, typedef = false) {
       if (!typedef) {
         let e = this;
         let o;
@@ -600,6 +601,7 @@ export default function make_parse() {
     }
     token.nodeType = 'literal';
     this.second = token;
+    this.second.parent = left;
     left.members.some(m=>{
       if(m.value == token.value){
         this.second = m;
@@ -608,7 +610,6 @@ export default function make_parse() {
       } 
       return false;
     });
-    //    this.second.parent = token;
     this.nodeType = 'binary';
     advance();
     !this.type && (this.type = left.type);
@@ -836,11 +837,10 @@ export default function make_parse() {
     return this;
   });
 
-  function defineVarAndFunction() {
+  function defineVarAndFunction(parent) {
     //debugger;
     let a = [];
     let n;
-    let t;
     advance();
     n = token;
     // ポインタ型かどうか
@@ -860,7 +860,8 @@ export default function make_parse() {
     }
 
     // ローカルスコープですでに定義されているか
-    if (scope.def.get(n.value)) {
+    n.varName = parent ? parent.value + '.' + n.value : n.value;
+    if (scope.def.get(n.varName)) {
       error('Already Defined', n);
     }
     // 変数の型を保存
@@ -1073,7 +1074,7 @@ export default function make_parse() {
       this.typedef = true;
       advance();
       const defs = [];
-      let access = constants.ACCESS_PUBLIC;// privateから始まる。
+      let access = constants.ACCESS_PUBLIC;// publicから始まる。
       createScope();
 
       while (token.id != "}") {
@@ -1089,13 +1090,13 @@ export default function make_parse() {
           advance(':');
           break;
         case 'protected':
-          access = ACCESS_PROTECTED;
+          access = constants.ACCESS_PROTECTED;
           advance();
           advance(':');
           break;
         default:
           {
-            const def = defineVarAndFunction.bind(token)();
+            const def = defineVarAndFunction.bind(token,this)();
             def.forEach(d => d.access = access);
             defs.push(...def);
           }

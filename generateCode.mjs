@@ -373,23 +373,24 @@ export default async function generateCode(ast,binaryen_) {
     console.log('** setValue() **');
     !e && (e = n); 
     if(e.rvalue){
-      if(n.global || !n.scope) {
-        return module.block(null,[
-          module.setGlobal(n.value,v),
-          module.getGlobal(n.value,n.type)
-        ]);
-      } else {
-        return module.teeLocal(n.varIndex,v);
+      switch(n.stored){
+        case constants.STORED_LOCAL:
+          return module.teeLocal(n.varIndex,v);
+        case constants.STORED_GLOBAL:
+          return module.block(null,[
+            module.setGlobal(n.value,v),
+            module.getGlobal(n.value,n.type)
+          ]);
       }
     } else {
-      return (n.varIndex >= 0)  ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
+      return (n.stored == constants.STORED_LOCAL) ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
     }
   }
 
   function getValue(e){
     console.log('** getValue() **');
     const n = e.first; 
-    return (n.global || !n.scope) ? module.getGlobal(n.value,n.type) : module.getLocal(n.varIndex,n.type);
+    return (n.stored == constants.STORED_LOCAL) ?  module.getLocal(n.varIndex,n.type) : module.getGlobal(n.value,n.type);
   }
   
 
@@ -627,10 +628,11 @@ export default async function generateCode(ast,binaryen_) {
     console.log('** name() **');
     const nativeType = binaryen[e.type];
     if(nativeType){
-      if (!e.global) {
-        return module.getLocal(e.varIndex, binaryen[e.type]);
-      } else {
-        return module.getGlobal(e.value, binaryen[e.type]);
+      switch(e.stored){
+        case constants.STORED_LOCAL:
+          return module.getLocal(e.varIndex, binaryen[e.type]);
+        case constants.STORED_GLOBAL:
+          return module.getGlobal(e.value, binaryen[e.type]);
       }
     } else {
       // ネイティブ型ではないのでオブジェクトを返す
