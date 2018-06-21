@@ -63,6 +63,7 @@ class FunctionScope {
 }
 
 
+
 // パーサの生成
 export default function make_parse() {
   //  let scope = new Scope();
@@ -837,7 +838,7 @@ export default function make_parse() {
     return this;
   });
 
-  function defineVarAndFunction(parent) {
+  function defineVarAndFunction(typedef = false) {
     //debugger;
     let a = [];
     let n;
@@ -849,6 +850,7 @@ export default function make_parse() {
       n = token;
       n.pointer = true;
     }
+
     let funcptr = false;
     // 関数ポインタ定義かどうか
     if (n.id == '(') {
@@ -860,7 +862,13 @@ export default function make_parse() {
     }
 
     // ローカルスコープですでに定義されているか
-    n.varName = parent ? parent.value + '.' + n.value : n.value;
+
+    if(typedef){// 型定義の場合はそのまま
+      n.varName = n.value;
+    } else {
+      n.varName = n.parent ? (n.parent.varName ? n.parent.varName + '.' + n.value : n.parent.value + '.' + n.value ) : n.value;
+    }
+
     if (scope.def.get(n.varName)) {
       error('Already Defined', n);
     }
@@ -874,15 +882,19 @@ export default function make_parse() {
     // export するかどうか
     n.export = this.export;
     // scope に変数名を登録する
-    scope.define(n);
+    (!typedef) && scope.define(n);
     advance();
     if (funcptr) {
       advance('*');
     }
 
     function assignMembers(node) {
-      return node.members.map(m => {
+      const parentVarName = node.varName;
+      const typeRef = node.typeRef;
+      return typeRef.members.map(m => {
         const member = Object.assign({}, m);
+        member.varName = parentVarName + '.' + member.value;
+        scope.define(member);
         if(!funcScope.global){
           member.stored = constants.STORED_LOCAL;
           if(!member.userType){
@@ -1021,7 +1033,7 @@ export default function make_parse() {
         n.typeRef = this;
       }
       n.rvalue = false;
-      scope.define(n);
+      (!typedef) && scope.define(n);
       advance();
     }
 
@@ -1029,7 +1041,7 @@ export default function make_parse() {
     a.forEach(d => {
       const ret = d;
       //const ret = d;//Object.assign(Object.create(d), d);
-      if (!funcScope.global && !ret.userType) {
+      if (!typedef && !funcScope.global && !ret.userType) {
         // ビルトイン型
         ret.varIndex = funcScope.index();
         ret.stored = constants.STORED_LOCAL;
@@ -1039,7 +1051,9 @@ export default function make_parse() {
 
       if (ret.userType) {
         // ユーザー定義型
-        ret.members = assignMembers(d.typeRef);
+        if(!typedef){
+          ret.members = assignMembers(ret);
+        } 
       }
       //ret.parent = this;
       //ret.id = 'define';
@@ -1075,7 +1089,7 @@ export default function make_parse() {
       advance();
       const defs = [];
       let access = constants.ACCESS_PUBLIC;// publicから始まる。
-      createScope();
+      //createScope();
 
       while (token.id != "}") {
         switch (token.value) {
@@ -1096,7 +1110,7 @@ export default function make_parse() {
           break;
         default:
           {
-            const def = defineVarAndFunction.bind(token,this)();
+            const def = defineVarAndFunction.bind(token,true)();
             def.forEach(d => d.access = access);
             defs.push(...def);
           }
@@ -1105,7 +1119,7 @@ export default function make_parse() {
       }
       advance('}');
       advance(';');
-      scope.pop();
+      //scope.pop();
       this.members = defs;
       this.dvd = defineVarAndFunction;
       //const t = this.first.value;
