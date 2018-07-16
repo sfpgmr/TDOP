@@ -196,7 +196,7 @@
             "lbp": 80,
             "line": 9,
             "pos": 13,
-            "nodeType": "binary",
+            "nodeType": "call",
             "sign": true,
             "first": {
               "id": "type",
