@@ -168,6 +168,28 @@ test('test-type03-nest2',async t=>{
     console.log(inst.exports.main());
 });
 
+test('test-fucntion-call',async t=>{
+  const testSrc = 
+  `
+  i32 𩸽(i32 a,i32 b){
+    return a * b;
+  };
+  
+  export i32 main(){
+  i32 b = 2;
+ 
+  return 𩸽(b,b);// 4
+  };
+    `;
+
+    const obj = await compile(t.name,testSrc);
+    const inst = getInstance(obj);
+    t.equal(inst.exports.main(),4);
+    console.log(inst.exports.main());
+});
+
+
+
 function getInstance(obj){
   const bin = new WebAssembly.Module(obj);
   const inst = new WebAssembly.Instance(bin,{});
