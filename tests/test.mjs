@@ -9,7 +9,6 @@ import binaryen from '../binaryen-wasm.js';
 
 const parse = make_parse();
 
-/*
 test('test-expression-add',async t=>{
   const testSrc = 
 `
@@ -139,7 +138,7 @@ test('test-type03-nest',async t=>{
     const inst = getInstance(obj);
     t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
-});*/
+});
 
 test('test-type03-nest2',async t=>{
   const testSrc = 
@@ -159,7 +158,7 @@ test('test-type03-nest2',async t=>{
   
   export i32 main(){
     Foo foo,foo1;
-    foo.c.barA = 10;
+    foo.c.barA = 20;
     return foo.c.barA;
   };`;
 

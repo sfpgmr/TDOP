@@ -594,6 +594,8 @@ export default function make_parse() {
   infix('*', 60);
   infix('/', 60);
 
+
+
   infix('.', 80, function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
@@ -603,7 +605,18 @@ export default function make_parse() {
     token.nodeType = 'literal';
     this.second = token;
     this.second.parent = left;
-    left.members.some(m=>{
+    function findMembers(target){
+      if(target.members){
+        return target.members;
+      }
+      if(target.second){
+        return findMembers(target.second);
+      }
+      error('not find members');
+    }
+    const members = findMembers(left);
+
+    members.some(m=>{
       if(m.value == token.value){
         this.second = m;
         this.second.nodeType = 'reference';
@@ -906,7 +919,7 @@ export default function make_parse() {
         }
         if (member.userType) {
           // ユーザー定義の場合はさらに掘り下げる
-          member.members = assignMembers(m.typeRef);
+          member.members = assignMembers(member/*.typeRef*/);
         }
         return member;
       });
