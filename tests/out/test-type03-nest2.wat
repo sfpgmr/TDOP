@@ -34,31 +34,11 @@
   (set_local $7
    (i32.const 4)
   )
-  (set_local $0
-   (i32.const 2)
-  )
-  (block
-   (set_local $4
-    (get_local $0)
-   )
-   (set_local $5
-    (get_local $1)
-   )
-   (set_local $6
-    (get_local $2)
-   )
-   (set_local $7
-    (get_local $3)
-   )
-  )
-  (set_local $0
-   (i32.const 10)
+  (set_local $2
+   (i32.const 20)
   )
   (return
-   (i32.mul
-    (get_local $0)
-    (get_local $4)
-   )
+   (get_local $2)
   )
  )
 )

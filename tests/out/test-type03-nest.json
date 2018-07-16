@@ -27,14 +27,8 @@
           "pos": 14,
           "nodeType": "define",
           "sign": true,
+          "varName": "barA",
           "type": "i32",
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
           "rvalue": false,
           "initialExpression": {
             "id": "(literal)",
@@ -58,14 +52,8 @@
           "pos": 14,
           "nodeType": "define",
           "sign": true,
+          "varName": "barB",
           "type": "i32",
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
           "rvalue": false,
           "initialExpression": {
             "id": "(literal)",
@@ -111,14 +99,8 @@
           "pos": 11,
           "nodeType": "define",
           "sign": true,
+          "varName": "a",
           "type": "i32",
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
           "rvalue": false,
           "initialExpression": {
             "id": "(literal)",
@@ -142,14 +124,8 @@
           "pos": 11,
           "nodeType": "define",
           "sign": true,
+          "varName": "b",
           "type": "i32",
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
           "rvalue": false,
           "initialExpression": {
             "id": "(literal)",
@@ -173,80 +149,10 @@
           "pos": 11,
           "nodeType": "define",
           "sign": true,
+          "varName": "c",
           "type": "Bar",
           "userType": true,
-          "reserved": false,
-          "led": null,
-          "std": null,
-          "scope": {
-            "def": {},
-            "typedef": {}
-          },
           "stored": 1,
-          "members": [
-            {
-              "id": "(name)",
-              "value": "barA",
-              "lbp": 0,
-              "line": 4,
-              "pos": 14,
-              "nodeType": "define",
-              "sign": true,
-              "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
-              "rvalue": false,
-              "initialExpression": {
-                "id": "(literal)",
-                "value": "3",
-                "lbp": 0,
-                "line": 4,
-                "pos": 18,
-                "nodeType": "literal",
-                "sign": false,
-                "type": "i32",
-                "rvalue": true
-              },
-              "stored": 1,
-              "access": 1
-            },
-            {
-              "id": "(name)",
-              "value": "barB",
-              "lbp": 0,
-              "line": 5,
-              "pos": 14,
-              "nodeType": "define",
-              "sign": true,
-              "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
-              "rvalue": false,
-              "initialExpression": {
-                "id": "(literal)",
-                "value": "4",
-                "lbp": 0,
-                "line": 5,
-                "pos": 18,
-                "nodeType": "literal",
-                "sign": false,
-                "type": "i32",
-                "rvalue": true
-              },
-              "stored": 1,
-              "access": 1
-            }
-          ],
           "access": 1
         }
       ],
@@ -265,6 +171,7 @@
       "pos": 19,
       "nodeType": "function",
       "sign": true,
+      "varName": "main",
       "type": "i32",
       "export": true,
       "reserved": false,
@@ -284,6 +191,7 @@
           "pos": 13,
           "nodeType": "define",
           "sign": true,
+          "varName": "foo",
           "type": "Foo",
           "userType": true,
           "reserved": false,
@@ -303,14 +211,8 @@
               "pos": 11,
               "nodeType": "reference",
               "sign": true,
+              "varName": "foo.a",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -325,6 +227,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 0
             },
             {
@@ -335,14 +244,8 @@
               "pos": 11,
               "nodeType": "define",
               "sign": true,
+              "varName": "foo.b",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -357,6 +260,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 1
             },
             {
@@ -367,8 +277,11 @@
               "pos": 11,
               "nodeType": "define",
               "sign": true,
+              "varName": "foo.c",
               "type": "Bar",
               "userType": true,
+              "stored": 0,
+              "access": 1,
               "reserved": false,
               "led": null,
               "std": null,
@@ -376,7 +289,6 @@
                 "def": {},
                 "typedef": {}
               },
-              "stored": 0,
               "members": [
                 {
                   "id": "(name)",
@@ -386,14 +298,8 @@
                   "pos": 14,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "foo.c.barA",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -408,6 +314,13 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 2
                 },
                 {
@@ -418,14 +331,8 @@
                   "pos": 14,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "foo.c.barB",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -440,10 +347,16 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 3
                 }
-              ],
-              "access": 1
+              ]
             }
           ]
         },
@@ -475,14 +388,8 @@
               "pos": 11,
               "nodeType": "reference",
               "sign": true,
+              "varName": "undefined.a",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -497,6 +404,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 4
             },
             {
@@ -507,14 +421,8 @@
               "pos": 11,
               "nodeType": "define",
               "sign": true,
+              "varName": "undefined.b",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -529,6 +437,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 5
             },
             {
@@ -539,8 +454,11 @@
               "pos": 11,
               "nodeType": "define",
               "sign": true,
+              "varName": "undefined.c",
               "type": "Bar",
               "userType": true,
+              "stored": 0,
+              "access": 1,
               "reserved": false,
               "led": null,
               "std": null,
@@ -548,7 +466,6 @@
                 "def": {},
                 "typedef": {}
               },
-              "stored": 0,
               "members": [
                 {
                   "id": "(name)",
@@ -558,14 +475,8 @@
                   "pos": 14,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "undefined.c.barA",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -580,6 +491,13 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 6
                 },
                 {
@@ -590,14 +508,8 @@
                   "pos": 14,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "undefined.c.barB",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -612,10 +524,16 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 7
                 }
-              ],
-              "access": 1
+              ]
             }
           ]
         },
@@ -643,6 +561,7 @@
               "pos": 9,
               "nodeType": "reference",
               "sign": true,
+              "varName": "foo",
               "type": "Foo",
               "userType": true,
               "reserved": false,
@@ -663,14 +582,8 @@
               "pos": 11,
               "nodeType": "reference",
               "sign": true,
+              "varName": "foo.a",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -685,6 +598,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 0
             },
             "type": "Foo"
@@ -740,14 +660,8 @@
                 "pos": 11,
                 "nodeType": "reference",
                 "sign": true,
+                "varName": "undefined.a",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -762,6 +676,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 4
               },
               {
@@ -772,14 +693,8 @@
                 "pos": 11,
                 "nodeType": "define",
                 "sign": true,
+                "varName": "undefined.b",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -794,6 +709,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 5
               },
               {
@@ -804,8 +726,11 @@
                 "pos": 11,
                 "nodeType": "define",
                 "sign": true,
+                "varName": "undefined.c",
                 "type": "Bar",
                 "userType": true,
+                "stored": 0,
+                "access": 1,
                 "reserved": false,
                 "led": null,
                 "std": null,
@@ -813,7 +738,6 @@
                   "def": {},
                   "typedef": {}
                 },
-                "stored": 0,
                 "members": [
                   {
                     "id": "(name)",
@@ -823,14 +747,8 @@
                     "pos": 14,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "undefined.c.barA",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -845,6 +763,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 6
                   },
                   {
@@ -855,14 +780,8 @@
                     "pos": 14,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "undefined.c.barB",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -877,10 +796,16 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 7
                   }
-                ],
-                "access": 1
+                ]
               }
             ]
           },
@@ -893,6 +818,7 @@
             "pos": 16,
             "nodeType": "reference",
             "sign": true,
+            "varName": "foo",
             "type": "Foo",
             "userType": true,
             "reserved": false,
@@ -912,14 +838,8 @@
                 "pos": 11,
                 "nodeType": "reference",
                 "sign": true,
+                "varName": "foo.a",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -934,6 +854,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 0
               },
               {
@@ -944,14 +871,8 @@
                 "pos": 11,
                 "nodeType": "define",
                 "sign": true,
+                "varName": "foo.b",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -966,6 +887,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 1
               },
               {
@@ -976,8 +904,11 @@
                 "pos": 11,
                 "nodeType": "define",
                 "sign": true,
+                "varName": "foo.c",
                 "type": "Bar",
                 "userType": true,
+                "stored": 0,
+                "access": 1,
                 "reserved": false,
                 "led": null,
                 "std": null,
@@ -985,7 +916,6 @@
                   "def": {},
                   "typedef": {}
                 },
-                "stored": 0,
                 "members": [
                   {
                     "id": "(name)",
@@ -995,14 +925,8 @@
                     "pos": 14,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "foo.c.barA",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1017,6 +941,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 2
                   },
                   {
@@ -1027,14 +958,8 @@
                     "pos": 14,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "foo.c.barB",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1049,10 +974,16 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 3
                   }
-                ],
-                "access": 1
+                ]
               }
             ],
             "rvalue": true
@@ -1084,6 +1015,7 @@
               "pos": 9,
               "nodeType": "reference",
               "sign": true,
+              "varName": "foo",
               "type": "Foo",
               "userType": true,
               "reserved": false,
@@ -1103,14 +1035,8 @@
                   "pos": 11,
                   "nodeType": "reference",
                   "sign": true,
+                  "varName": "foo.a",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -1125,6 +1051,13 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 0
                 },
                 {
@@ -1135,14 +1068,8 @@
                   "pos": 11,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "foo.b",
                   "type": "i32",
-                  "reserved": false,
-                  "led": null,
-                  "std": null,
-                  "scope": {
-                    "def": {},
-                    "typedef": {}
-                  },
                   "rvalue": false,
                   "initialExpression": {
                     "id": "(literal)",
@@ -1157,6 +1084,13 @@
                   },
                   "stored": 0,
                   "access": 1,
+                  "reserved": false,
+                  "led": null,
+                  "std": null,
+                  "scope": {
+                    "def": {},
+                    "typedef": {}
+                  },
                   "varIndex": 1
                 },
                 {
@@ -1167,8 +1101,11 @@
                   "pos": 11,
                   "nodeType": "define",
                   "sign": true,
+                  "varName": "foo.c",
                   "type": "Bar",
                   "userType": true,
+                  "stored": 0,
+                  "access": 1,
                   "reserved": false,
                   "led": null,
                   "std": null,
@@ -1176,7 +1113,6 @@
                     "def": {},
                     "typedef": {}
                   },
-                  "stored": 0,
                   "members": [
                     {
                       "id": "(name)",
@@ -1186,14 +1122,8 @@
                       "pos": 14,
                       "nodeType": "define",
                       "sign": true,
+                      "varName": "foo.c.barA",
                       "type": "i32",
-                      "reserved": false,
-                      "led": null,
-                      "std": null,
-                      "scope": {
-                        "def": {},
-                        "typedef": {}
-                      },
                       "rvalue": false,
                       "initialExpression": {
                         "id": "(literal)",
@@ -1208,6 +1138,13 @@
                       },
                       "stored": 0,
                       "access": 1,
+                      "reserved": false,
+                      "led": null,
+                      "std": null,
+                      "scope": {
+                        "def": {},
+                        "typedef": {}
+                      },
                       "varIndex": 2
                     },
                     {
@@ -1218,14 +1155,8 @@
                       "pos": 14,
                       "nodeType": "define",
                       "sign": true,
+                      "varName": "foo.c.barB",
                       "type": "i32",
-                      "reserved": false,
-                      "led": null,
-                      "std": null,
-                      "scope": {
-                        "def": {},
-                        "typedef": {}
-                      },
                       "rvalue": false,
                       "initialExpression": {
                         "id": "(literal)",
@@ -1240,10 +1171,16 @@
                       },
                       "stored": 0,
                       "access": 1,
+                      "reserved": false,
+                      "led": null,
+                      "std": null,
+                      "scope": {
+                        "def": {},
+                        "typedef": {}
+                      },
                       "varIndex": 3
                     }
-                  ],
-                  "access": 1
+                  ]
                 }
               ],
               "rvalue": false
@@ -1257,14 +1194,8 @@
               "pos": 11,
               "nodeType": "reference",
               "sign": true,
+              "varName": "foo.a",
               "type": "i32",
-              "reserved": false,
-              "led": null,
-              "std": null,
-              "scope": {
-                "def": {},
-                "typedef": {}
-              },
               "rvalue": false,
               "initialExpression": {
                 "id": "(literal)",
@@ -1279,6 +1210,13 @@
               },
               "stored": 0,
               "access": 1,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
               "varIndex": 0
             },
             "type": "Foo"
@@ -1331,6 +1269,7 @@
                 "pos": 16,
                 "nodeType": "reference",
                 "sign": true,
+                "varName": "foo",
                 "type": "Foo",
                 "userType": true,
                 "reserved": false,
@@ -1350,14 +1289,8 @@
                     "pos": 11,
                     "nodeType": "reference",
                     "sign": true,
+                    "varName": "foo.a",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1372,6 +1305,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 0
                   },
                   {
@@ -1382,14 +1322,8 @@
                     "pos": 11,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "foo.b",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1404,6 +1338,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 1
                   },
                   {
@@ -1414,8 +1355,11 @@
                     "pos": 11,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "foo.c",
                     "type": "Bar",
                     "userType": true,
+                    "stored": 0,
+                    "access": 1,
                     "reserved": false,
                     "led": null,
                     "std": null,
@@ -1423,7 +1367,6 @@
                       "def": {},
                       "typedef": {}
                     },
-                    "stored": 0,
                     "members": [
                       {
                         "id": "(name)",
@@ -1433,14 +1376,8 @@
                         "pos": 14,
                         "nodeType": "define",
                         "sign": true,
+                        "varName": "foo.c.barA",
                         "type": "i32",
-                        "reserved": false,
-                        "led": null,
-                        "std": null,
-                        "scope": {
-                          "def": {},
-                          "typedef": {}
-                        },
                         "rvalue": false,
                         "initialExpression": {
                           "id": "(literal)",
@@ -1455,6 +1392,13 @@
                         },
                         "stored": 0,
                         "access": 1,
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        },
                         "varIndex": 2
                       },
                       {
@@ -1465,14 +1409,8 @@
                         "pos": 14,
                         "nodeType": "define",
                         "sign": true,
+                        "varName": "foo.c.barB",
                         "type": "i32",
-                        "reserved": false,
-                        "led": null,
-                        "std": null,
-                        "scope": {
-                          "def": {},
-                          "typedef": {}
-                        },
                         "rvalue": false,
                         "initialExpression": {
                           "id": "(literal)",
@@ -1487,10 +1425,16 @@
                         },
                         "stored": 0,
                         "access": 1,
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        },
                         "varIndex": 3
                       }
-                    ],
-                    "access": 1
+                    ]
                   }
                 ],
                 "rvalue": true
@@ -1504,14 +1448,8 @@
                 "pos": 11,
                 "nodeType": "reference",
                 "sign": true,
+                "varName": "foo.a",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -1526,6 +1464,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 0
               },
               "type": "Foo"
@@ -1567,14 +1512,8 @@
                     "pos": 11,
                     "nodeType": "reference",
                     "sign": true,
+                    "varName": "undefined.a",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1589,6 +1528,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 4
                   },
                   {
@@ -1599,14 +1545,8 @@
                     "pos": 11,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "undefined.b",
                     "type": "i32",
-                    "reserved": false,
-                    "led": null,
-                    "std": null,
-                    "scope": {
-                      "def": {},
-                      "typedef": {}
-                    },
                     "rvalue": false,
                     "initialExpression": {
                       "id": "(literal)",
@@ -1621,6 +1561,13 @@
                     },
                     "stored": 0,
                     "access": 1,
+                    "reserved": false,
+                    "led": null,
+                    "std": null,
+                    "scope": {
+                      "def": {},
+                      "typedef": {}
+                    },
                     "varIndex": 5
                   },
                   {
@@ -1631,8 +1578,11 @@
                     "pos": 11,
                     "nodeType": "define",
                     "sign": true,
+                    "varName": "undefined.c",
                     "type": "Bar",
                     "userType": true,
+                    "stored": 0,
+                    "access": 1,
                     "reserved": false,
                     "led": null,
                     "std": null,
@@ -1640,7 +1590,6 @@
                       "def": {},
                       "typedef": {}
                     },
-                    "stored": 0,
                     "members": [
                       {
                         "id": "(name)",
@@ -1650,14 +1599,8 @@
                         "pos": 14,
                         "nodeType": "define",
                         "sign": true,
+                        "varName": "undefined.c.barA",
                         "type": "i32",
-                        "reserved": false,
-                        "led": null,
-                        "std": null,
-                        "scope": {
-                          "def": {},
-                          "typedef": {}
-                        },
                         "rvalue": false,
                         "initialExpression": {
                           "id": "(literal)",
@@ -1672,6 +1615,13 @@
                         },
                         "stored": 0,
                         "access": 1,
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        },
                         "varIndex": 6
                       },
                       {
@@ -1682,14 +1632,8 @@
                         "pos": 14,
                         "nodeType": "define",
                         "sign": true,
+                        "varName": "undefined.c.barB",
                         "type": "i32",
-                        "reserved": false,
-                        "led": null,
-                        "std": null,
-                        "scope": {
-                          "def": {},
-                          "typedef": {}
-                        },
                         "rvalue": false,
                         "initialExpression": {
                           "id": "(literal)",
@@ -1704,10 +1648,16 @@
                         },
                         "stored": 0,
                         "access": 1,
+                        "reserved": false,
+                        "led": null,
+                        "std": null,
+                        "scope": {
+                          "def": {},
+                          "typedef": {}
+                        },
                         "varIndex": 7
                       }
-                    ],
-                    "access": 1
+                    ]
                   }
                 ]
               },
@@ -1720,14 +1670,8 @@
                 "pos": 11,
                 "nodeType": "reference",
                 "sign": true,
+                "varName": "undefined.a",
                 "type": "i32",
-                "reserved": false,
-                "led": null,
-                "std": null,
-                "scope": {
-                  "def": {},
-                  "typedef": {}
-                },
                 "rvalue": false,
                 "initialExpression": {
                   "id": "(literal)",
@@ -1742,6 +1686,13 @@
                 },
                 "stored": 0,
                 "access": 1,
+                "reserved": false,
+                "led": null,
+                "std": null,
+                "scope": {
+                  "def": {},
+                  "typedef": {}
+                },
                 "varIndex": 4
               },
               "type": "Foo"
