@@ -188,8 +188,6 @@ test('test-fucntion-call',async t=>{
     console.log(inst.exports.main());
 });
 
-
-
 function getInstance(obj){
   const bin = new WebAssembly.Module(obj);
   const inst = new WebAssembly.Instance(bin,{});
