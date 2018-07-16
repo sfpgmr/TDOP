@@ -651,7 +651,7 @@ export default function make_parse() {
       this.third = a;
     } else {
       this.nodeType = 'binary';
-      if (left.nodeType === 'name') {
+      if (left.nodeType === 'name' || left.nodeType === 'reference') {
         const ft = scope.find(left.value);
         if (ft.nodeType === 'function') {
           this.nodeType = 'call';
@@ -661,7 +661,7 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = a;
       this.second.rvalue = true;
-      if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&
+      if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&  left.nodeType !== 'reference' &&
         left.nodeType !== 'name' && left.id !== '(' &&
         left.id !== '&&' && left.id !== '||' && left.id !== '?') {
         error('Expected a variable name.', left);
@@ -936,7 +936,7 @@ export default function make_parse() {
       if (token.id !== ')') {
         // 引数を取り出して配列に格納する
         while (true) {
-          if (token.nodeType !== 'define') {
+          if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
             error('Expected a parameter name.', token);
           }
           advance();
@@ -970,6 +970,7 @@ export default function make_parse() {
             t.members = assignMembers(t.typeRef);
           } else {
             t.varIndex = funcScope.index();
+            t.stored = constants.STORED_LOCAL;
           }
 
           a.push(t);
@@ -1164,6 +1165,7 @@ export default function make_parse() {
     const s = statements();
     advance('(end)');
     scope.pop();
+    console.log('** parse end **');
     return {
       id: '(program)',
       scope: scopeTop,
