@@ -5,6 +5,7 @@
   "main": "index.mjs",
   "types": "index.d.ts",
   "scripts": {
+    "debug": "node --experimental-modules --inspect-brk ./tests/test.mjs",
     "test": "node --experimental-modules ./tests/test.mjs",
     "run": "node --experimental-modules .",
     "web": "node --experimental-modules static-server.js"
