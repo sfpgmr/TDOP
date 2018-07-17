@@ -193,7 +193,7 @@ test('test-for',async t=>{
   `
   export i32 main(){
     i32 b = 0;
-    for(i32 c = 0;c < 4;++c) {
+    for(i32 c = 0;c < 4;c+=1) {
       b = b + 1;
     }
     return b;// 4
@@ -205,6 +205,26 @@ test('test-for',async t=>{
     t.equal(inst.exports.main(),4);
     console.log(inst.exports.main());
 });
+
+test('test-if',async t=>{
+  const testSrc = 
+  `
+  export i32 main(i32 a){
+    if(a == 1){
+      return 1;
+    } else {
+      return 0;
+    }
+  };
+      `;
+
+    const obj = await compile(t.name,testSrc);
+    const inst = getInstance(obj);
+    t.equal(inst.exports.main(2),0);
+    t.equal(inst.exports.main(1),1);
+    console.log(inst.exports.main());
+});
+
 
 function getInstance(obj){
   const bin = new WebAssembly.Module(obj);

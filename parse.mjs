@@ -474,7 +474,7 @@ export default function make_parse() {
       super({ id: id });
       if (typeof nud === 'function') this.nud = nud;
     }
-    nud(rvalue = true) {
+    nud(rvalue = false) {
       scope.reserve(this);
       this.first = expression(70);
       this.rvalue = this.first.rvalue = rvalue;
@@ -843,7 +843,7 @@ export default function make_parse() {
     // 終了条件
     this.second = statement();
     // ループ終端時の動作
-    this.third = expression(0);
+    this.third = expression(0,false);
     advance(')');
     // for文の本体
     this.fourth = block();

@@ -21,8 +21,14 @@
      )
     )
     (block
+     (set_local $0
+      (i32.add
+       (get_local $0)
+       (i32.const 1)
+      )
+     )
     )
-    (tee_local $1
+    (set_local $1
      (i32.add
       (get_local $1)
       (i32.const 1)

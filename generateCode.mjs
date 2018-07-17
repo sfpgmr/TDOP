@@ -6,14 +6,17 @@ function error (message, t = this) {
   throw t;
 }
 
+let binaryen;
+
 export default async function generateCode(ast,binaryen_) {
 
-  let binaryen;
-  await new Promise((resolve,reject)=>{
-    binaryen = binaryen_({onRuntimeInitialized:m=>{
-     resolve();
-    }});
-  });
+  if(!binaryen) {
+    await new Promise((resolve,reject)=>{
+      binaryen = binaryen_({onRuntimeInitialized:m=>{
+       resolve();
+      }});
+    });
+  } 
   // debugger;
   // const binaryen = await new Promise(
   //   (resolve,reject)=>{
@@ -676,6 +679,9 @@ export default async function generateCode(ast,binaryen_) {
         m.type = l.type;
         assignment(m,results,false);
       }
+      if(top){
+        return results.length == 1 ?  results[0] : module.block(null,results);
+      } 
     } else if(left.members){
       const leftMembers = left.members;
       const rightMembers = right.members;
@@ -694,6 +700,9 @@ export default async function generateCode(ast,binaryen_) {
         error('不正な代入：左辺と右辺の型が違います',e);
       }
       results.push(setValue(left,expression(right)));
+      if(top){
+        return results.length == 1 ?  results[0] : module.block(null,results);
+      } 
     } else {
       error('不正な代入',e);
     }
@@ -703,8 +712,9 @@ export default async function generateCode(ast,binaryen_) {
 
   function block(s){
     console.log('** block() **');
-
-    return module.block(null,generate(s.first));
+    let temp = generate(s.first);
+    !(temp instanceof Array) && (temp = [temp]);
+    return module.block(null,temp);
   }
 
   function statement(s) {
