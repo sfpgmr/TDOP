@@ -183,7 +183,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           } else {
             error('Bad hexdecimal or hexdecimal floating point number.',make('f32',str + c ));
           }
-        } else if(c == 'l' || c == 'L') {
+        } else if(c == 'd' || c == 'D') {
           if(hexfp){
             str += c;
             ++i;
@@ -285,9 +285,23 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++i;
           ++posx;
           c = source[i];
-        } else if(c == 'l' || c == 'L'){
+        } else if(c == 'd' || c == 'D'){
           type = 'f64';
           int = false;
+          str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'u' || c == 'U'){
+          type = 'u32';
+          int = true;
+          str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'l' || c == 'L') {
+          type = 'u64';
+          int = true;
           str += c;
           ++i;
           ++posx;

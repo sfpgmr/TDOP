@@ -1,25 +1,20 @@
 'use strict';
 import test from 'tape-async';
-import generateCode from '../generateCode.mjs';
-import tokenize from '../tokens.mjs';
-import make_parse from '../parse.mjs';
-import fs from 'fs';
-import path from 'path';
-import binaryen from '../binaryen-wasm.js';
+import * as compiler from './compiler.mjs';
+import './test-expressions-add.mjs';
 
-const parse = make_parse();
 
-test('test-expression-add',async t=>{
-  const testSrc = 
-`
-  export i32 main(){
-    i32 a = 2,b = 3;
-    return a + b;
-  };
-`;
-    const inst = await compileAndInstanciate(t.name,testSrc);
-    t.equal(inst.exports.main(),5);
-});
+const types = [
+  {type: 'i32',literalPrefix:'',literalSuffix: ''},
+  {type: 'u32',literalPrefix:'',literalSuffix: 'u'},
+  {type: 'f32',literalPrefix:'',literalSuffix: 'f'},
+  {type: 'i64',literalPrefix:'',literalSuffix: ''},
+  {type: 'u64',literalPrefix:'',literalSuffix: 'u'},
+  {type: 'f64',literalPrefix:'',literalSuffix: ''},
+  {type: 'string',literalPrefix: ['"',"'"],literalSuffix:['"',"'"]}
+ ];
+
+//test_expression_add();
 
 test('test-expression-sub',async t=>{
   const testSrc = 
@@ -30,8 +25,7 @@ test('test-expression-sub',async t=>{
   };
 `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
     t.equal(inst.exports.main(),-1);
     console.log(inst.exports.main());
 });
@@ -46,8 +40,7 @@ test('test-expression-mul',async t=>{
   };
 `;
 
-    const obj = await compile('test-expression-mul',testSrc);
-    const inst = getInstance(obj);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
     t.equal(inst.exports.main(),6);
     console.log(inst.exports.main());
 });
@@ -61,9 +54,8 @@ test('test-expression-div',async t=>{
   };
 `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    t.equal(inst.exports.main(),2);
+const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+t.equal(inst.exports.main(),2);
     console.log(inst.exports.main());
 });
 
@@ -81,9 +73,8 @@ type Foo {
   };
 `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    t.equal(inst.exports.main(),20);
+const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
 
@@ -103,9 +94,8 @@ type Foo {
   };
 `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    console.log(inst.exports.main());
+const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+console.log(inst.exports.main());
     t.equal(inst.exports.main(),12);
 });
 
@@ -134,11 +124,12 @@ test('test-type03-nest',async t=>{
     return foo.a * foo1.a;
   };`;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    t.equal(inst.exports.main(),20);
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+  t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
+
+
 
 test('test-type03-nest2',async t=>{
   const testSrc = 
@@ -162,9 +153,8 @@ test('test-type03-nest2',async t=>{
     return foo.c.barA;
   };`;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    t.equal(inst.exports.main(),20);
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+  t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
 
@@ -182,8 +172,7 @@ test('test-fucntion-call',async t=>{
   };
     `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
     t.equal(inst.exports.main(),4);
     console.log(inst.exports.main());
 });
@@ -200,9 +189,8 @@ test('test-for',async t=>{
   };
       `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
-    t.equal(inst.exports.main(),4);
+      const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+      t.equal(inst.exports.main(),4);
     console.log(inst.exports.main());
 });
 
@@ -218,42 +206,9 @@ test('test-if',async t=>{
   };
       `;
 
-    const obj = await compile(t.name,testSrc);
-    const inst = getInstance(obj);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
     t.equal(inst.exports.main(2),0);
     t.equal(inst.exports.main(1),1);
     console.log(inst.exports.main());
 });
-
-
-function getInstance(obj){
-  const bin = new WebAssembly.Module(obj);
-  const inst = new WebAssembly.Instance(bin,{});
-  return inst;
-}
-
-const exceptProperties = ['parent','typeRef','detail'];
-
-async function compile(name,src){
-    const tokens = tokenize(src);
-    const ast = parse(tokens);
-    const json = JSON.stringify(ast,
-      (key,value)=>{
-        return exceptProperties.includes(key) ? undefined : value; 
-      } 
-      , 2);
-    
-    fs.writeFileSync(`./tests/out/${name}.json`, json, 'utf8');
-    const module = await generateCode(ast,binaryen);
-    module.validate();
-    fs.writeFileSync(`./tests/out/${name}.wat`,module.emitText(),'utf8');
-    const compiled = module.emitBinary();
-    fs.writeFileSync(`./tests/out/${name}.wasm`,compiled);
-    return compiled;    
-}
-
-async function compileAndInstanciate(name,src){
-  const obj = await compile(name,src);
-  return getInstance(obj);
-}
 

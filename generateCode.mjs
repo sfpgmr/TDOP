@@ -67,7 +67,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function generate_(s) {
-    console.log('node type: ',!s,s.nodeType);
+    //console.log('node type: ',!s,s.nodeType);
     switch (s.nodeType) {
     case 'define':
       return define(s);
@@ -111,7 +111,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 関数定義
   function functionStatement(funcNode) {
-    console.log('** define_() **');
+    //console.log('** define_() **');
     // 関数本体
     const wasmStatement = [];
     
@@ -145,7 +145,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 変数定義
   function define_(d,vars = localVars){
-    console.log('** define_() **');
+    //console.log('** define_() **');
     if(!d.userType){
         // WASM ネイティブ型
         // ローカル
@@ -247,7 +247,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 変数定義
   function define(statement,results = []) {
-    console.log('** define() **');
+    //console.log('** define() **');
     // statement.first.forEach(d => {
     //   const result = define_(d);
     //   if(result instanceof Array){
@@ -288,12 +288,18 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function literal(e) {
-    console.log('** literal() **');
+    //console.log('** literal() **');
     switch (e.type) {
     case 'i32':
       // return module.setLocal()
       return module.i32.const(parseInt(e.value, 10));
+    case 'u32':
+      // return module.setLocal()
+      return module.i32.const(parseInt(e.value, 10));
     case 'i64':
+      /* 64bit整数への対応コードが必要 */
+      return module.i64.const(parseInt(e.value, 10));
+    case 'u64':
       /* 64bit整数への対応コードが必要 */
       return module.i64.const(parseInt(e.value, 10));
     case 'f32':
@@ -306,7 +312,7 @@ export default async function generateCode(ast,binaryen_) {
   
 
   function binary(e) {
-    console.log('** binary() **');
+    //console.log('** binary() **');
     switch (e.value) {
     // 代入
     case '=':
@@ -373,7 +379,7 @@ export default async function generateCode(ast,binaryen_) {
 
   function setValue(n,v,e)
   {
-    console.log('** setValue() **');
+    //console.log('** setValue() **');
     !e && (e = n); 
     if(e.rvalue){
       switch(n.stored){
@@ -391,7 +397,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function getValue(e){
-    console.log('** getValue() **');
+    //console.log('** getValue() **');
     const n = e.first; 
     return (n.stored == constants.STORED_LOCAL) ?  module.getLocal(n.varIndex,n.type) : module.getGlobal(n.value,n.type);
   }
@@ -460,7 +466,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function binOp(name,e,sign = false){
-    console.log(`** binOp(${name}) **`);
+    //console.log(`** binOp(${name}) **`);
 
     //debugger;
     const left = e.first,right = e.second;
@@ -468,7 +474,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function dotOp(e){
-    console.log('** dotOp() **');
+    //console.log('** dotOp() **');
  
     if(e.second.id == '.'){
       const ret = dotOp(e.second);
@@ -499,7 +505,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function logicalOr(e){
-    console.log('** logicalOr() **');
+    //console.log('** logicalOr() **');
 
     const left = e.first,right = e.second;
     const t = module[left.type];
@@ -628,7 +634,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function name(e) {
-    console.log('** name() **');
+    //console.log('** name() **');
     const nativeType = binaryen[e.type];
     if(nativeType){
       switch(e.stored){
@@ -656,7 +662,7 @@ export default async function generateCode(ast,binaryen_) {
 
   // 代入 // 
   function assignment(e,results = [],top = true) {
-    console.log('** assignment() **');
+    //console.log('** assignment() **');
     const left = e.first,right = e.second;
     
 
@@ -711,14 +717,14 @@ export default async function generateCode(ast,binaryen_) {
 
 
   function block(s){
-    console.log('** block() **');
+    //console.log('** block() **');
     let temp = generate(s.first);
     !(temp instanceof Array) && (temp = [temp]);
     return module.block(null,temp);
   }
 
   function statement(s) {
-    console.log('** statement() **');
+    //console.log('** statement() **');
 
     switch(s.id){
     case 'return':

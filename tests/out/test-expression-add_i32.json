@@ -14,7 +14,7 @@
       "nodeType": "function",
       "sign": true,
       "varName": "main",
-      "type": "u32",
+      "type": "i32",
       "export": true,
       "reserved": false,
       "led": null,
@@ -34,7 +34,7 @@
           "nodeType": "define",
           "sign": true,
           "varName": "a",
-          "type": "u32",
+          "type": "i32",
           "reserved": false,
           "led": null,
           "std": null,
@@ -45,13 +45,13 @@
           "rvalue": false,
           "initialExpression": {
             "id": "(literal)",
-            "value": "2u",
+            "value": "2",
             "lbp": 0,
             "line": 3,
-            "pos": 20,
+            "pos": 19,
             "nodeType": "literal",
             "sign": false,
-            "type": "u32",
+            "type": "i32",
             "rvalue": true
           },
           "varIndex": 0,
@@ -62,10 +62,10 @@
           "value": "b",
           "lbp": 0,
           "line": 3,
-          "pos": 22,
+          "pos": 21,
           "nodeType": "define",
           "sign": true,
-          "type": "u32",
+          "type": "i32",
           "rvalue": false,
           "reserved": false,
           "led": null,
@@ -76,13 +76,13 @@
           },
           "initialExpression": {
             "id": "(literal)",
-            "value": "3u",
+            "value": "3",
             "lbp": 0,
             "line": 3,
-            "pos": 27,
+            "pos": 25,
             "nodeType": "literal",
             "sign": false,
-            "type": "u32",
+            "type": "i32",
             "rvalue": true
           },
           "varIndex": 1,
@@ -114,7 +114,7 @@
               "nodeType": "reference",
               "sign": true,
               "varName": "a",
-              "type": "u32",
+              "type": "i32",
               "reserved": false,
               "led": null,
               "std": null,
@@ -125,13 +125,13 @@
               "rvalue": true,
               "initialExpression": {
                 "id": "(literal)",
-                "value": "2u",
+                "value": "2",
                 "lbp": 0,
                 "line": 3,
-                "pos": 20,
+                "pos": 19,
                 "nodeType": "literal",
                 "sign": false,
-                "type": "u32",
+                "type": "i32",
                 "rvalue": true
               },
               "varIndex": 0,
@@ -146,7 +146,7 @@
               "pos": 22,
               "nodeType": "reference",
               "sign": true,
-              "type": "u32",
+              "type": "i32",
               "rvalue": true,
               "reserved": false,
               "led": null,
@@ -157,21 +157,21 @@
               },
               "initialExpression": {
                 "id": "(literal)",
-                "value": "3u",
+                "value": "3",
                 "lbp": 0,
                 "line": 3,
-                "pos": 27,
+                "pos": 25,
                 "nodeType": "literal",
                 "sign": false,
-                "type": "u32",
+                "type": "i32",
                 "rvalue": true
               },
               "varIndex": 1,
               "stored": 0
             },
-            "type": "u32"
+            "type": "i32"
           },
-          "type": "u32"
+          "type": "i32"
         }
       ]
     }
