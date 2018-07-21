@@ -1,7 +1,7 @@
 'use strict';
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
-import './test-expressions-add.mjs';
+import './test-expressions-arithmetic.mjs';
 
 
 const types = [
@@ -15,50 +15,6 @@ const types = [
  ];
 
 //test_expression_add();
-
-test('test-expression-sub',async t=>{
-  const testSrc = 
-`
-  export i32 main(){
-    i32 a = 2,b = 3;
-    return a - b;
-  };
-`;
-
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
-    t.equal(inst.exports.main(),-1);
-    console.log(inst.exports.main());
-});
-
-
-test('test-expression-mul',async t=>{
-  const testSrc = 
-`
-  export i32 main(){
-    i32 a = 2,b = 3;
-    return a * b;
-  };
-`;
-
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
-    t.equal(inst.exports.main(),6);
-    console.log(inst.exports.main());
-});
-
-test('test-expression-div',async t=>{
-  const testSrc = 
-`
-  export i32 main(){
-    i32 a = 6,b = 3;
-    return a / b;
-  };
-`;
-
-const inst = await compiler.compileAndInstanciate(t.name,testSrc);
-t.equal(inst.exports.main(),2);
-    console.log(inst.exports.main());
-});
-
 
 test('test-type01',async t=>{
   const testSrc = 

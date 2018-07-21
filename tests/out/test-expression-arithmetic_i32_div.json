@@ -1,0 +1,179 @@
+{
+  "id": "(program)",
+  "scope": {
+    "def": {},
+    "typedef": {}
+  },
+  "statements": [
+    {
+      "id": "type",
+      "value": "main",
+      "lbp": 0,
+      "line": 2,
+      "pos": 25,
+      "nodeType": "function",
+      "sign": true,
+      "varName": "main",
+      "type": "i32",
+      "export": true,
+      "reserved": false,
+      "led": null,
+      "std": null,
+      "scope": {
+        "def": {},
+        "typedef": {}
+      },
+      "params": [],
+      "statements": [
+        {
+          "id": "(name)",
+          "value": "a",
+          "lbp": 0,
+          "line": 3,
+          "pos": 17,
+          "nodeType": "define",
+          "sign": true,
+          "varName": "a",
+          "type": "i32",
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "rvalue": false,
+          "initialExpression": {
+            "id": "(literal)",
+            "value": "4",
+            "lbp": 0,
+            "line": 3,
+            "pos": 21,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "varIndex": 0,
+          "stored": 0
+        },
+        {
+          "id": "(name)",
+          "value": "b",
+          "lbp": 0,
+          "line": 3,
+          "pos": 23,
+          "nodeType": "define",
+          "sign": true,
+          "type": "i32",
+          "rvalue": false,
+          "reserved": false,
+          "led": null,
+          "std": null,
+          "scope": {
+            "def": {},
+            "typedef": {}
+          },
+          "initialExpression": {
+            "id": "(literal)",
+            "value": "2",
+            "lbp": 0,
+            "line": 3,
+            "pos": 27,
+            "nodeType": "literal",
+            "sign": false,
+            "type": "i32",
+            "rvalue": true
+          },
+          "varIndex": 1,
+          "stored": 0
+        },
+        {
+          "id": "return",
+          "value": "return",
+          "lbp": 0,
+          "line": 4,
+          "pos": 18,
+          "nodeType": "statement",
+          "sign": true,
+          "rvalue": false,
+          "first": {
+            "id": "/",
+            "value": "/",
+            "lbp": 60,
+            "line": 4,
+            "pos": 22,
+            "nodeType": "binary",
+            "sign": true,
+            "first": {
+              "id": "(name)",
+              "value": "a",
+              "lbp": 0,
+              "line": 4,
+              "pos": 20,
+              "nodeType": "reference",
+              "sign": true,
+              "varName": "a",
+              "type": "i32",
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "rvalue": true,
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "4",
+                "lbp": 0,
+                "line": 3,
+                "pos": 21,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "varIndex": 0,
+              "stored": 0
+            },
+            "rvalue": true,
+            "second": {
+              "id": "(name)",
+              "value": "b",
+              "lbp": 0,
+              "line": 4,
+              "pos": 24,
+              "nodeType": "reference",
+              "sign": true,
+              "type": "i32",
+              "rvalue": true,
+              "reserved": false,
+              "led": null,
+              "std": null,
+              "scope": {
+                "def": {},
+                "typedef": {}
+              },
+              "initialExpression": {
+                "id": "(literal)",
+                "value": "2",
+                "lbp": 0,
+                "line": 3,
+                "pos": 27,
+                "nodeType": "literal",
+                "sign": false,
+                "type": "i32",
+                "rvalue": true
+              },
+              "varIndex": 1,
+              "stored": 0
+            },
+            "type": "i32"
+          },
+          "type": "i32"
+        }
+      ]
+    }
+  ]
+}

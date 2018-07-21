@@ -125,18 +125,46 @@ export default async function generateCode(ast,binaryen_) {
     const funcName = funcNode.value;
 
     // 戻り値の型
-    const funcReturnType = binaryen[funcNode.type];
+    let funcReturnType = binaryen[funcNode.type];
+
+    if(!funcReturnType){
+      switch (funcNode.type){
+        case 'u32':
+        case 'u64':
+          const realType = 'i' + funcNode.type.slice(-2);
+          funcReturnType = binaryen[realType];
+        break;
+        default:
+          // TODO: 戻り値がユーザー定義型だった場合どうする？
+          error('Bad Return Type',funcNode);
+      }
+    } 
+    
 
     // 関数パラメータ
     if (funcNode.params) {
       const funcParams = funcNode.params;
       funcParams.forEach(p => {
         paramInits.push(define_(p,null));
-        paramTypes.push(binaryen[p.type]);
+
+        let paramType = binaryen[p.type];
+        if(!paramType){
+          switch (p.type){
+            case 'u32':
+            case 'u64':
+              const realType = 'i' + p.type.slice(-2);
+              funcReturnType = binaryen[realType];
+            break;
+            default:
+              // TODO: 戻り値がユーザー定義型だった場合どうする？
+              error('Bad Parameter Type',p);
+          }
+        } 
+        paramTypes.push(binaryen[paramType]);
       });
     }
     const statements = generate(funcNode.statements);
-    const ftype = module.addFunctionType(funcNode.value, binaryen[funcNode.type],paramTypes);
+    const ftype = module.addFunctionType(funcNode.value, funcReturnType,paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
     if(funcNode.export){
       module.addFunctionExport(funcNode.value,funcNode.value);
@@ -149,18 +177,28 @@ export default async function generateCode(ast,binaryen_) {
     if(!d.userType){
         // WASM ネイティブ型
         // ローカル
+        let varType = binaryen[d.type];
+        let varTypeObj = module[d.type];
+        if(!varType){
+          const t = 'i' + d.type.slice(-2);
+          varType = binaryen[t];
+          varTypeObj = module[t];
+        }
+        (!varType) && error('Bad Type',d.type);
         switch(d.stored){
-          case constants.STORED_LOCAL:
-            vars && vars.push(binaryen[d.type]);
+        case constants.STORED_LOCAL:
+          {
+            vars && vars.push(varType);
             if(d.initialExpression){
               return  module.setLocal(d.varIndex, expression(d.initialExpression));
             }
             return null;
+          }
           case constants.STORED_GLOBAL:
             if(d.initialExpression){
-              return module.addGlobal(d.value, binaryen[d.type], true, expression(d.initialExpression));
+              return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
             } else {
-              return module.addGlobal(d.value, binaryen[d.type], true, module[d.type].const(0));
+              return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
             }
         }
     } else {
@@ -410,7 +448,9 @@ export default async function generateCode(ast,binaryen_) {
       case 'i32':
       case 'i64':
       {
-        const op = t[sign ? name + '_s' : name];
+        let op = t[name];
+        (!op) && (op = t[sign ? name + '_s' : name + '_u']);
+
         if(op){
           return op(expression(left),expression(right));
         } else {
@@ -421,9 +461,10 @@ export default async function generateCode(ast,binaryen_) {
       case 'f32':
       case 'f64':
         {
-          const op = t[sign ? name + '_s' : name];
+          let op = t[name];
+          (!op) && (op = t[sign ? name + '_s' : name + '_u']);
           if(op) {
-            op(expression(left),expression(right));
+            return op(expression(left),expression(right));
           } else {
             error('Bad Operation',left);
           }
@@ -435,7 +476,11 @@ export default async function generateCode(ast,binaryen_) {
       case 'u32':
       case 'u64':
         {
-          const op = module['i' + left.type.slice(-2)][sign?name + '_u':name];
+          const realType = 'i' + left.type.slice(-2);
+          const t = module[realType];
+          let op = t[name];
+          (!op) && (op = t[sign ? name + '_s' : name + '_u']);
+  
           if(op) {
             return op(expression(left),expression(right));
           } else {
@@ -445,10 +490,10 @@ export default async function generateCode(ast,binaryen_) {
         break;
       default:
         {
-          // 左の型を調べる
           const l = expression(left);
           const r = expression(right);
-          const op = module['i' + left.type.slice(-2)][sign?name + '_u':name];
+          let op = module['i' + left.type.slice(-2)][name];
+          (!op) && (op = module['i' + left.type.slice(-2)][sign?name + '_s':name + '_u']);
           if((typeof l != 'number') || (typeof r != 'number')){
             error('Bad Expression',left);
           }
@@ -470,6 +515,7 @@ export default async function generateCode(ast,binaryen_) {
 
     //debugger;
     const left = e.first,right = e.second;
+    left.sign && (sign = left.sign);
     return binOp_(name,e,left,right,sign);
   }
 
@@ -644,8 +690,21 @@ export default async function generateCode(ast,binaryen_) {
           return module.getGlobal(e.value, binaryen[e.type]);
       }
     } else {
-      // ネイティブ型ではないのでオブジェクトを返す
-      return e.scope.find(e.value);
+      switch(e.type){
+        case 'u32':
+        case 'u64':
+        {
+          const type = 'i' + e.type.slice(-2);
+          switch(e.stored){
+            case constants.STORED_LOCAL:
+              return module.getLocal(e.varIndex, binaryen[type]);
+            case constants.STORED_GLOBAL:
+              return module.getGlobal(e.value, binaryen[type]);
+          }
+        }
+        default:
+        return e.scope.find(e.value);
+      }
     }
   }
 

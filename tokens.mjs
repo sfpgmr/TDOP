@@ -277,30 +277,29 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             c = source[i];
           } while (c >= '0' && c <= '9');
         }
+        let _64 = false;
 
-        if(c == 'f' || c == 'F'){
-          type = 'f32';
-          int = false;
+        if(c == 'l' || c == 'L'){
+          // 64bit Type
+          _64 = true;
+          if(type == 'i32'){
+            type = 'i64';
+          }
           str += c;
           ++i;
           ++posx;
           c = source[i];
-        } else if(c == 'd' || c == 'D'){
-          type = 'f64';
+        }
+
+        if(c == 'f' || c == 'F'){
+          type = _64 ? 'f64' : 'f32';
           int = false;
           str += c;
           ++i;
           ++posx;
           c = source[i];
         } else if(c == 'u' || c == 'U'){
-          type = 'u32';
-          int = true;
-          str += c;
-          ++i;
-          ++posx;
-          c = source[i];
-        } else if(c == 'l' || c == 'L') {
-          type = 'u64';
+          type = _64 ? 'u64' : 'u32';
           int = true;
           str += c;
           ++i;
