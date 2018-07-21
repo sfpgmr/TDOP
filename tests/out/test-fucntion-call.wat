@@ -1,8 +1,8 @@
 (module
- (type $𩸽 (func (param none none) (result i32)))
+ (type $𩸽 (func (param i32 i32) (result i32)))
  (type $main (func (result i32)))
  (export "main" (func $main))
- (func $𩸽 (; 0 ;) (type $𩸽) (param $0 none) (param $1 none) (result i32)
+ (func $𩸽 (; 0 ;) (type $𩸽) (param $0 i32) (param $1 i32) (result i32)
   (return
    (i32.mul
     (get_local $0)

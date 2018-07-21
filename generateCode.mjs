@@ -160,7 +160,7 @@ export default async function generateCode(ast,binaryen_) {
               error('Bad Parameter Type',p);
           }
         } 
-        paramTypes.push(binaryen[paramType]);
+        paramTypes.push(paramType);
       });
     }
     const statements = generate(funcNode.statements);
