@@ -939,11 +939,12 @@ export default function make_parse() {
           if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
             error('Expected a parameter name.', token);
           }
+          const type = token;
           advance();
           // 変数名
           const t = token;
 
-          t.type = this.type;
+          t.type = type.type;
           if(this.userType){
             t.userType = this.userType;
             t.typeRef = this;

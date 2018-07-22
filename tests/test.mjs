@@ -2,6 +2,7 @@
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
 import './test-expressions-arithmetic.mjs';
+import './test-expressions-logical.mjs';
 
 
 const types = [

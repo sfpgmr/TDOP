@@ -62,7 +62,7 @@ test('test-expression-logical', async t => {
      } else {
        return 0;
      }
-   }
+   };
    `;
     try {
       let testName = `${t.name}_${tp.type}_not`;
@@ -73,7 +73,8 @@ test('test-expression-logical', async t => {
       result = inst.exports.main(2);
       t.equal(result, 1, testName + '_2');
     } catch (e) {
-      t.fail(e + ' : ' + e.stack);
+      console.log(e,e.stack);
+      t.fail(e);
     }
   }
 });

@@ -25,6 +25,8 @@ export default async function generateCode(ast,binaryen_) {
   //     });
   //   });
   const module = new binaryen.Module();
+  const i32_ = module.i32;
+
   
   //  const exp = new binaryen.Expression();
 
@@ -153,7 +155,7 @@ export default async function generateCode(ast,binaryen_) {
             case 'u32':
             case 'u64':
               const realType = 'i' + p.type.slice(-2);
-              funcReturnType = binaryen[realType];
+              paramType = binaryen[realType];
             break;
             default:
               // TODO: 戻り値がユーザー定義型だった場合どうする？
@@ -534,41 +536,42 @@ export default async function generateCode(ast,binaryen_) {
   function logicalAnd(e){
     const left = e.first,right = e.second;
     const t = module[left.type];
-    if(t){
-      return t.and(t.ne(expression(left),t.const(0,0)),t.ne(expression(right),t.const(0,0)));
-    } else {
+    //if(t){
+      return i32_.and(i32_.ne(expression(left),i32_.const(0,0)),i32_.ne(expression(right),i32_.const(0,0)));
+    /*} else {
       switch(left.type){
       case 'u32':
       case 'u64':
       {
-        const t = module['i' + left.type.slice(-2)];
-        return t.and(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+        //const t = module['i' + left.type.slice(-2)];
+        return i32_.and(i32_.ne(expression(left),i32_.const(0)),i32_.ne(expression(right),i32_.const(0)));
       }
       default:
         error('Bad Type.',left);
       }
-    }
+    }*/
   }
+
 
   function logicalOr(e){
     //console.log('** logicalOr() **');
 
     const left = e.first,right = e.second;
-    const t = module[left.type];
-    if(t){
-      return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
-    } else {
+    //const t = module[left.type];
+    //if(t){
+      return i32_.or(i32_.ne(expression(left),i32_.const(0)),i32_.ne(expression(right),i32_.const(0)));
+    /*} else {
       switch(left.type){
       case 'u32':
       case 'u64':
       {
         const t = module['i' + left.type.slice(-2)];
-        return t.or(t.ne(expression(left),t.const(0)),t.ne(expression(right),t.const(0)));
+        return module.i32.or(module.i32.ne(expression(left),t.const(0)),module.i32.ne(expression(right),t.const(0)));
       }
       default:
         error('Bad Type.',left);
       }
-    }
+    }*/
   }
 
   function unary(e) {
@@ -603,31 +606,32 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function not(left){
-    switch(left.type){
-    case 'i32':
-    case 'u32':
-      return module.i32.xor(expression(left),module.i32.const(1));
-    case 'i64':
-    case 'u64':
-      return module.i64.xor(expression(left),module.i64.const(0,1));
-    case 'f32':
-      return module.i32.reinterpret(
-        module.select(
-          module.i32.eq(module.f32.reinterpret(expression(left)),module.i32.const(0x80000000)),
-          module.i32.const(0x80000000),
-          module.f32.reinterpret(expression(left))
-        )
-      );
-    case 'f64':
-      return module.i64.reinterpret(
-        module.select(
-          module.i64.eq(module.f64.reinterpret(expression(left)),module.i64.const(0,0x80000000)),
-          module.i64.const(0,0x80000000),
-          module.f64.reinterpret(expression(left))
-        )
-      );
+    return i32_.eqz(expression(left));
+    // switch(left.type){
+    // case 'i32':
+    // case 'u32':
+    //   return module.i32.xor(expression(left),module.i32.const(1));
+    // case 'i64':
+    // case 'u64':
+    //   return module.i64.xor(expression(left),module.i64.const(0,1));
+    // case 'f32':
+    //   return module.i32.reinterpret(
+    //     module.select(
+    //       module.i32.eq(module.f32.reinterpret(expression(left)),module.i32.const(0x80000000)),
+    //       module.i32.const(0x80000000),
+    //       module.f32.reinterpret(expression(left))
+    //     )
+    //   );
+    // case 'f64':
+    //   return module.i64.reinterpret(
+    //     module.select(
+    //       module.i64.eq(module.f64.reinterpret(expression(left)),module.i64.const(0,0x80000000)),
+    //       module.i64.const(0,0x80000000),
+    //       module.f64.reinterpret(expression(left))
+    //     )
+    //   );
 
-    }
+    // }
   }
 
   function bitNot(left){
