@@ -44,6 +44,7 @@ test('test-expression-logical', async t => {
           };
         `;
       const testName = `${t.name}_${tp.type}_${op.name}`;
+      console.log(testName);
       try {
         const inst = await compiler.compileAndInstanciate(testName, testSrc);
         const result = inst.exports.main();
@@ -65,6 +66,7 @@ test('test-expression-logical', async t => {
    `;
     try {
       let testName = `${t.name}_${tp.type}_not`;
+      console.log(testName);
       const inst = await compiler.compileAndInstanciate(testName, testSrc);
       let result = inst.exports.main(1);
       t.equal(result, 0, testName + '_1');
