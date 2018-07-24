@@ -29,8 +29,9 @@
           "lbp": 0,
           "line": 2,
           "pos": 15,
-          "nodeType": "name",
+          "nodeType": "reference",
           "sign": true,
+          "varName": "a",
           "type": "i32",
           "reserved": false,
           "led": null,
@@ -49,7 +50,7 @@
           "lbp": 0,
           "line": 2,
           "pos": 21,
-          "nodeType": "name",
+          "nodeType": "reference",
           "sign": true,
           "type": "i32",
           "reserved": false,
@@ -90,6 +91,7 @@
               "pos": 14,
               "nodeType": "reference",
               "sign": true,
+              "varName": "a",
               "type": "i32",
               "reserved": false,
               "led": null,
@@ -157,7 +159,6 @@
           "pos": 9,
           "nodeType": "define",
           "sign": true,
-          "varName": "b",
           "type": "i32",
           "reserved": false,
           "led": null,
@@ -167,6 +168,9 @@
             "typedef": {}
           },
           "rvalue": false,
+          "varIndex": 0,
+          "stored": 0,
+          "varName": "b",
           "initialExpression": {
             "id": "(literal)",
             "value": "2",
@@ -177,9 +181,7 @@
             "sign": false,
             "type": "i32",
             "rvalue": true
-          },
-          "varIndex": 0,
-          "stored": 0
+          }
         },
         {
           "id": "return",
@@ -222,8 +224,9 @@
                   "lbp": 0,
                   "line": 2,
                   "pos": 15,
-                  "nodeType": "name",
+                  "nodeType": "reference",
                   "sign": true,
+                  "varName": "a",
                   "type": "i32",
                   "reserved": false,
                   "led": null,
@@ -242,7 +245,7 @@
                   "lbp": 0,
                   "line": 2,
                   "pos": 21,
-                  "nodeType": "name",
+                  "nodeType": "reference",
                   "sign": true,
                   "type": "i32",
                   "reserved": false,
@@ -283,6 +286,7 @@
                       "pos": 14,
                       "nodeType": "reference",
                       "sign": true,
+                      "varName": "a",
                       "type": "i32",
                       "reserved": false,
                       "led": null,
@@ -333,7 +337,6 @@
                 "pos": 14,
                 "nodeType": "reference",
                 "sign": true,
-                "varName": "b",
                 "type": "i32",
                 "reserved": false,
                 "led": null,
@@ -343,6 +346,9 @@
                   "typedef": {}
                 },
                 "rvalue": true,
+                "varIndex": 0,
+                "stored": 0,
+                "varName": "b",
                 "initialExpression": {
                   "id": "(literal)",
                   "value": "2",
@@ -353,9 +359,7 @@
                   "sign": false,
                   "type": "i32",
                   "rvalue": true
-                },
-                "varIndex": 0,
-                "stored": 0
+                }
               },
               {
                 "id": "(name)",
@@ -365,7 +369,6 @@
                 "pos": 16,
                 "nodeType": "reference",
                 "sign": true,
-                "varName": "b",
                 "type": "i32",
                 "reserved": false,
                 "led": null,
@@ -375,6 +378,9 @@
                   "typedef": {}
                 },
                 "rvalue": true,
+                "varIndex": 0,
+                "stored": 0,
+                "varName": "b",
                 "initialExpression": {
                   "id": "(literal)",
                   "value": "2",
@@ -385,9 +391,7 @@
                   "sign": false,
                   "type": "i32",
                   "rvalue": true
-                },
-                "varIndex": 0,
-                "stored": 0
+                }
               }
             ],
             "type": "i32"

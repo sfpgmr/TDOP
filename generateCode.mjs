@@ -34,7 +34,25 @@ export default async function generateCode(ast,binaryen_) {
   //module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
   let localVars;
   let varIndex = 0;
-  let postOpcodes = [];
+  let postOpcodes;
+  class PostOpCodes extends Array {
+    constructor(){
+      super();
+    }
+    create()
+    {
+      const current = new PostOpCodes();
+      current.parent = this;
+      postOpcodes = current;
+    }
+    pop(){
+      if(this.parent){
+        postOpcodes = this.parent;
+      }
+      return this;
+    }
+  }
+  postOpcodes = new PostOpCodes();
   let blockId = 0;
   let currentBrakePoint;
   //module.addMemoryImport('test','test','a');
@@ -812,45 +830,54 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function ifStatement(s){
+    postOpcodes.create();
     const condition = expression(s.first);
-    const thenStatemnts = generate(s.second);
-    const elseStatements = s.third && generate(s.third);
+    let ops = postOpcodes.pop();
+    let thenStatemnts = generate(s.second)[0];
+    if(ops.length){
+      thenStatemnts = module.block(null,ops.concat(thenStatemnts));
+    }
+    let elseStatements = s.third && generate(s.third)[0];
+    if(ops.length && elseStatements){
+      elseStatements = module.block(null,ops.concat(elseStatements));
+    }
     return module.if(condition,thenStatemnts,elseStatements);
   }
 
   function not_(c){
-    let condition = expression(c);
+    return module.i32.eqz(expression(c));
+    // let condition = expression(c);
     
-    let type = module[c.type];
-    if(type){
-      if(type.eqz){
-        condition = type.eqz(condition);
-      } else {
-        switch(c.type){
-        case 'f32':
-          condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
-          break;
-        case 'f64':
-          condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
-          break;
-        default:
-          error('Bad.Type',c);
-        }
-      }
-    } else {
-      switch(c){
-      case 'u32':
-      case 'u64':
-        {
-          type = module['i' + c.type.slice(-2)];
-          condition = type.eqz(condition);
-        }
-        break;
-      default:
-        error('Bad Type',c);
-      }
-    }
-    return condition;  
+    // let type = module[c.type];
+    // if(type){
+    //   if(type.eqz){
+    //     condition = type.eqz(condition);
+    //   } else {
+    //     switch(c.type){
+    //     case 'f32':
+    //       condition = module.i32.eq(module.f32.reinterpret(condition),module.i32.const(0x80000000));
+    //       break;
+    //     case 'f64':
+    //       condition = module.i64.eq(module.f64.reinterpret(condition),module.i64.const(0,0x80000000));
+    //       break;
+    //     default:
+    //       error('Bad.Type',c);
+    //     }
+    //   }
+    // } else {
+    //   switch(c){
+    //   case 'u32':
+    //   case 'u64':
+    //     {
+    //       type = module['i' + c.type.slice(-2)];
+    //       condition = type.eqz(condition);
+    //     }
+    //     break;
+    //   default:
+    //     error('Bad Type',c);
+    //   }
+    // }
+    // return condition;  
   }
 
   function whileStatement(s){
@@ -860,13 +887,17 @@ export default async function generateCode(ast,binaryen_) {
     let stmt = generate(s.second);
     stmt = stmt instanceof Array ? stmt : [stmt];
     
+    postOpcodes.create();
     let condition = not_(s.first);
-    return module.block(bid,[
+    let ops = postOpcodes.pop();
+    return module.block(null,[module.block(bid,[
       module.loop(lid,module.block(null,[
         module.br_if(bid,condition),
+        ...ops,
         ...stmt,
         module.break(lid)
-      ]))]);
+      ]))]),...ops
+    ]);
   }
 
   function doStatement(s){
@@ -875,15 +906,19 @@ export default async function generateCode(ast,binaryen_) {
     const lid = 'loop' + (blockId++).toString(10);
     let stmt = generate(s.second);
     stmt = stmt instanceof Array ? stmt : [stmt];
-    
+
+    postOpcodes.create();
     let condition = not_(s.first);
+    let postOps = postOpcodes.pop();
     
-    return module.block(bid,[
+    return module.block(null,[module.block(bid,[
       module.loop(lid,module.block(null,[
         ...stmt,
         module.br_if(bid,condition),
+        ...postOps,
         module.break(lid)
-      ]))]);    
+      ]))]),...postOps
+    ]);    
   }
 
   function forStatement(s){
@@ -893,22 +928,34 @@ export default async function generateCode(ast,binaryen_) {
     const lid = 'loop' + (blockId++).toString(10);
 
     let initStmt = generate(s.first);
+    
+    postOpcodes.create();
     let condition = not_(s.second);
+    let postOpsCond = postOpcodes.pop();
+
+    postOpcodes.create();
     let conditionAfter = expression(s.third);
+    let postOpsAfter = postOpcodes.pop();
+
     let stmt = generate(s.fourth);
 
     initStmt = initStmt instanceof Array ? initStmt : [initStmt]; 
     conditionAfter = conditionAfter instanceof Array ? conditionAfter : [conditionAfter];
     stmt = stmt instanceof Array ? stmt : [stmt];
 
-    return module.block(bid,[
+    return module.block(null,[module.block(bid,[
       ...initStmt,
       module.loop(lid,module.block(null,[
         module.br_if(bid,condition),
+        ...postOpsCond,
         ...stmt,
         ...conditionAfter,
+        ...postOpsAfter,
         module.break(lid)
-      ]))]);    
+      ]))]),
+      ...postOpsCond,
+      ...postOpsAfter
+    ]);    
     
   }
 
@@ -924,13 +971,23 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function postInc(s){
-    postOpcodes.push(inc(s.first));
-    return name(s.first);
+    s.first.rvalue = false;
+    if(s.rvalue){
+      postOpcodes.push(inc(s.first));
+      return name(s.first);
+    } else {
+      return inc(s.first);      
+    }
   }
 
   function postDec(s){
-    postOpcodes.push(dec(s.first));
-    return name(s.first);
+    s.first.rvalue = false;
+    if(s.rvalue){
+      postOpcodes.push(dec(s.first));
+      return name(s.first);
+    } else {
+      return dec(s.first);
+    }
   }
   
   generate(statements);

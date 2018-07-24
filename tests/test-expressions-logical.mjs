@@ -2,16 +2,7 @@
 
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
-
-const types = [
-  { type: 'i32', literalPrefix: '', literalSuffix: '' },
-  { type: 'u32', literalPrefix: '', literalSuffix: 'u' },
-  { type: 'f32', literalPrefix: '', literalSuffix: 'f' },
-  { type: 'f64', literalPrefix: '', literalSuffix: 'lf' },
-  { type: 'i64', literalPrefix: '', literalSuffix: 'l', skip: true },
-  { type: 'u64', literalPrefix: '', literalSuffix: 'lu', skip: true },
-  // {type: 'string',literalPrefix: ['"',"'"],literalSuffix:['"',"'"]}
-];
+import types from './test-types.mjs';
 
 const ops = [
   { name: 'and', a: 3, b: 3, c: 3, op: '&&', result: 1 },
@@ -44,13 +35,13 @@ test('test-expression-logical', async t => {
           };
         `;
       const testName = `${t.name}_${tp.type}_${op.name}`;
-      console.log(testName);
       try {
         const inst = await compiler.compileAndInstanciate(testName, testSrc);
         const result = inst.exports.main();
         t.equal(result, op.result, testName);
       } catch (e) {
-        t.fail(e + ' : ' + e.stack);
+        console.log(e,e.stack);
+        t.fail(testName);
       }
     }
     // Not Test
@@ -64,18 +55,18 @@ test('test-expression-logical', async t => {
      }
    };
    `;
-    try {
-      let testName = `${t.name}_${tp.type}_not`;
-      console.log(testName);
-      const inst = await compiler.compileAndInstanciate(testName, testSrc);
-      let result = inst.exports.main(1);
-      t.equal(result, 0, testName + '_1');
-      result = inst.exports.main(2);
-      t.equal(result, 1, testName + '_2');
+   let testName = `${t.name}_${tp.type}_not`;
+   let inst,result1,result2;
+   try {
+      inst = await compiler.compileAndInstanciate(testName, testSrc);
+      result1 = inst.exports.main(1);
+      result2 = inst.exports.main(2);
     } catch (e) {
       console.log(e,e.stack);
-      t.fail(e);
+      t.fail(testName);
     }
+    t.equal(result1, 0, testName + '_1');
+    t.equal(result2, 1, testName + '_2');
   }
 });
 

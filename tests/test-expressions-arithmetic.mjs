@@ -3,15 +3,7 @@
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
 
-const types = [
-  { type: 'i32', literalPrefix: '', literalSuffix: '' },
-  { type: 'u32', literalPrefix: '', literalSuffix: 'u' },
-  { type: 'f32', literalPrefix: '', literalSuffix: 'f' },
-  { type: 'f64', literalPrefix: '', literalSuffix: 'lf' },
-  { type: 'i64', literalPrefix: '', literalSuffix: 'l', skip: true },
-  { type: 'u64', literalPrefix: '', literalSuffix: 'lu', skip: true },
-  // {type: 'string',literalPrefix: ['"',"'"],literalSuffix:['"',"'"]}
-];
+import types from './test-types.mjs';
 
 const ops = [
   { name: 'add', 'a': '3', 'b': '2', op: '+', result: 5 },
@@ -38,38 +30,67 @@ test('test-expression-arithmetic', async t => {
           };
         `;
       const testName = `${t.name}_${tp.type}_${op.name}`;
+      let inst,result;
       try {
-        const inst = await compiler.compileAndInstanciate(testName, testSrc);
-        const result = inst.exports.main();
-        t.equal(result, op.result, testName);
+        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        result = inst.exports.main();
       } catch (e) {
-        t.fail(e + ' : ' + e.stack);
+        t.fail(testName);
       }
+      t.equal(result, op.result, testName);
     }
-    // // inc/dec
-    // const  incDecOps = [
-    //   { name: 'preInc',  op: '--', result: 5 },
+    // inc/dec
+    const incDecOps = [
+      { name: 'inc', op: '++', result: 1 },
+      { name: 'dec', op: '--', result: 1 }
+    ];
+    for (const op of incDecOps) {
+      const testSrc =
+        `
+      export i32 main(){
+        ${tp.type} a,b;
+        ${op.op}a;
+        if(a != b${op.op}){
+          if(a == b){
+            return 1;
+          } else {
+            return 2;
+          }
+        }
+        return 3;
+      };
+    `;
+      let testName = `${t.name}_${tp.type}_${op.name}_1`;
+      let inst,result;
+      try {
+        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        result = inst.exports.main();
+      } catch (e) {
+        console.log(e, e.stack);
+        t.fail(testName);
+      }
+      t.equal(result, op.result, testName);
+      const testSrc2 =
+        `
+      export i32 main(){
+        ${tp.type} a,b;
+        ${op.op}a;
+        b${op.op};
+        return a == b;
+      };
+    `;
+      testName = `${t.name}_${tp.type}_${op.name}_2`;
+      try {
+        inst = await compiler.compileAndInstanciate(testName, testSrc2);
+        result = inst.exports.main();
+      } catch (e) {
+        console.log(e, e.stack);
+        t.fail(testName);
+      }
+      t.equal(result, op.result, testName);
 
-    // ];
-    // const testSrc =
-    //   `
-    //   export i32 main(){
-    //     ${tp.type} a,b;
-    //     ++a;
-    //     if(a != b++){
-    //       if(a == b){
-    //         return 1;
-    //       } else {
-    //         return 2;
-    //       }
-    //     }
-    //     return 0;
-    //   };
-    // `;
+    }
   }
-
-
-
 });
 
 

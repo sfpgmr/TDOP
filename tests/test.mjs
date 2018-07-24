@@ -1,19 +1,12 @@
 'use strict';
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
+import types from './test-types.mjs';
 import './test-expressions-arithmetic.mjs';
 import './test-expressions-logical.mjs';
+import './test-expressions-condition.mjs';
+import './test-expressions-loop.mjs';
 
-
-const types = [
-  {type: 'i32',literalPrefix:'',literalSuffix: ''},
-  {type: 'u32',literalPrefix:'',literalSuffix: 'u'},
-  {type: 'f32',literalPrefix:'',literalSuffix: 'f'},
-  {type: 'i64',literalPrefix:'',literalSuffix: ''},
-  {type: 'u64',literalPrefix:'',literalSuffix: 'u'},
-  {type: 'f64',literalPrefix:'',literalSuffix: ''},
-  {type: 'string',literalPrefix: ['"',"'"],literalSuffix:['"',"'"]}
- ];
 
 //test_expression_add();
 

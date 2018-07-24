@@ -33,7 +33,6 @@
           "pos": 11,
           "nodeType": "define",
           "sign": true,
-          "varName": "b",
           "type": "i32",
           "reserved": false,
           "led": null,
@@ -43,6 +42,9 @@
             "typedef": {}
           },
           "rvalue": false,
+          "varIndex": 0,
+          "stored": 0,
+          "varName": "b",
           "initialExpression": {
             "id": "(literal)",
             "value": "0",
@@ -53,9 +55,7 @@
             "sign": false,
             "type": "i32",
             "rvalue": true
-          },
-          "varIndex": 0,
-          "stored": 0
+          }
         },
         {
           "id": "for",
@@ -232,7 +232,6 @@
                   "pos": 9,
                   "nodeType": "reference",
                   "sign": true,
-                  "varName": "b",
                   "type": "i32",
                   "reserved": false,
                   "led": null,
@@ -242,6 +241,9 @@
                     "typedef": {}
                   },
                   "rvalue": false,
+                  "varIndex": 0,
+                  "stored": 0,
+                  "varName": "b",
                   "initialExpression": {
                     "id": "(literal)",
                     "value": "0",
@@ -252,9 +254,7 @@
                     "sign": false,
                     "type": "i32",
                     "rvalue": true
-                  },
-                  "varIndex": 0,
-                  "stored": 0
+                  }
                 },
                 "rvalue": false,
                 "second": {
@@ -273,7 +273,6 @@
                     "pos": 13,
                     "nodeType": "reference",
                     "sign": true,
-                    "varName": "b",
                     "type": "i32",
                     "reserved": false,
                     "led": null,
@@ -283,6 +282,9 @@
                       "typedef": {}
                     },
                     "rvalue": true,
+                    "varIndex": 0,
+                    "stored": 0,
+                    "varName": "b",
                     "initialExpression": {
                       "id": "(literal)",
                       "value": "0",
@@ -293,9 +295,7 @@
                       "sign": false,
                       "type": "i32",
                       "rvalue": true
-                    },
-                    "varIndex": 0,
-                    "stored": 0
+                    }
                   },
                   "rvalue": true,
                   "second": {
@@ -335,7 +335,6 @@
             "pos": 14,
             "nodeType": "reference",
             "sign": true,
-            "varName": "b",
             "type": "i32",
             "reserved": false,
             "led": null,
@@ -345,6 +344,9 @@
               "typedef": {}
             },
             "rvalue": true,
+            "varIndex": 0,
+            "stored": 0,
+            "varName": "b",
             "initialExpression": {
               "id": "(literal)",
               "value": "0",
@@ -355,9 +357,7 @@
               "sign": false,
               "type": "i32",
               "rvalue": true
-            },
-            "varIndex": 0,
-            "stored": 0
+            }
           },
           "type": "i32"
         }
