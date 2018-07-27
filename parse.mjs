@@ -594,6 +594,14 @@ export default function make_parse() {
   infix('*', 60);
   infix('/', 60);
 
+  infix('<<',45);//shl
+  infix('>>',45);//shr_s
+  infix('>>>',45);//shr_u
+  infix('<<&',45);// rotl
+  infix('>>&',45);// rotr
+  infix('&',43);// and
+  infix('|',43);// or
+  infix('^',43);// xor
 
 
   infix('.', 80, function (left, rvalue = true) {
@@ -710,6 +718,8 @@ export default function make_parse() {
     !this.type && (this.type = left.type);
     return this;
   });
+  
+  prefix('~',80);
 
 
   prefix('(', function (rvalue = true) {

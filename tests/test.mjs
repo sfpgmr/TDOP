@@ -1,10 +1,10 @@
 'use strict';
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
-import types from './test-types.mjs';
 import './test-expressions-arithmetic.mjs';
-import './test-expressions-logical.mjs';
 import './test-expressions-condition.mjs';
+import './test-expressions-logical.mjs';
+import './test-expressions-bitwise.mjs';
 import './test-expressions-loop.mjs';
 
 

@@ -4,6 +4,7 @@ import test from 'tape-async';
 import * as compiler from './compiler.mjs';
 import types from './test-types.mjs';
 
+{
 const ops = [
   { name: 'eq-1', 'a': '3', 'b': '3', op: '==', result: 1 },
   { name: 'eq-2', 'a': '3', 'b': '2', op: '==', result: 0 },
@@ -34,7 +35,7 @@ test('test-expression-condition', async t => {
     if (tp.skip) {
       continue;
     }
-    if (tp.type.charAt(0) == 'f') {
+    if(tp.type.charAt(0) == 'f' && tp.literalSuffix.substring(0,2) != '.0') {
       tp.literalSuffix = '.0' + tp.literalSuffix;
     }
     for (const op of ops) {
@@ -61,5 +62,6 @@ test('test-expression-condition', async t => {
     }
   }
 });
+}
 
 

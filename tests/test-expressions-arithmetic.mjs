@@ -5,6 +5,8 @@ import * as compiler from './compiler.mjs';
 
 import types from './test-types.mjs';
 
+{
+
 const ops = [
   { name: 'add', 'a': '3', 'b': '2', op: '+', result: 5 },
   { name: 'sub', 'a': '3', 'b': '2', op: '-', result: 1 },
@@ -17,16 +19,21 @@ test('test-expression-arithmetic', async t => {
     if (tp.skip) {
       continue;
     }
-    if (tp.type.charAt(0) == 'f') {
+    if (tp.type.charAt(0) == 'f' && tp.literalSuffix.substring(0,2) != '.0') {
       tp.literalSuffix = '.0' + tp.literalSuffix;
     }
     for (const op of ops) {
       if (op.skip) continue;
       const testSrc =
         `
-          export ${tp.type} main(){
+          export i32 main(){
             ${tp.type} a = ${tp.literalPrefix}${op.a}${tp.literalSuffix},b = ${tp.literalPrefix}${op.b}${tp.literalSuffix};
-            return a ${op.op} b;
+            ${tp.type} ans =  a ${op.op} b; 
+            if(ans == ${tp.literalPrefix}${op.result}${tp.literalSuffix}){
+              return 1;
+            } else {
+              return 0;
+            }
           };
         `;
       const testName = `${t.name}_${tp.type}_${op.name}`;
@@ -37,7 +44,7 @@ test('test-expression-arithmetic', async t => {
       } catch (e) {
         t.fail(testName);
       }
-      t.equal(result, op.result, testName);
+      t.equal(result, 1, testName);
     }
     // inc/dec
     const incDecOps = [
@@ -93,4 +100,5 @@ test('test-expression-arithmetic', async t => {
   }
 });
 
+}
 

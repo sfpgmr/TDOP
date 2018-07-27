@@ -345,25 +345,25 @@ export default async function generateCode(ast,binaryen_) {
     }
   }
 
-  function literal(e) {
+  function literal(e,minus = false) {
     //console.log('** literal() **');
     switch (e.type) {
     case 'i32':
       // return module.setLocal()
-      return module.i32.const(parseInt(e.value, 10));
+      return module.i32.const( parseInt(e.value, 10) * (minus ? -1 : 1));
     case 'u32':
       // return module.setLocal()
-      return module.i32.const(parseInt(e.value, 10));
+      return module.i32.const(parseInt(e.value, 10) * (minus ? -1 : 1));
     case 'i64':
       /* 64bit整数への対応コードが必要 */
-      return module.i64.const(parseInt(e.value, 10));
+      return module.i64.const(parseInt(e.value, 10) * (minus ? -1 : 1));
     case 'u64':
       /* 64bit整数への対応コードが必要 */
-      return module.i64.const(parseInt(e.value, 10));
+      return module.i64.const(parseInt(e.value, 10) * (minus ? -1 : 1));
     case 'f32':
-      return module.f32.const(parseFloat(e.value));
+      return module.f32.const(parseFloat(e.value) * (minus ? -1 : 1));
     case 'f64':
-      return module.f64.const(parseFloat(e.value));
+      return module.f64.const(parseFloat(e.value) * (minus ? -1 : 1));
     }
     error('Bad Type',e);
   }
@@ -420,13 +420,15 @@ export default async function generateCode(ast,binaryen_) {
       return binOp('and',e);
     case '|':
       return binOp('or',e);
-    case '<<<':
-      return binOp('shl',e);
-    case '>>>':
-      return binOp('shr',e,true);
     case '<<':
-      return binOp('rotl',e);
+      return binOp('shl',e);
     case '>>':
+      return binOp('shr',e,true);
+    case '>>>':
+      return binOp('shr',e,false);
+    case '<<&':
+      return binOp('rotl',e);
+    case '>>&':
       return binOp('rotr',e);
     // ドット演算子
     case '.':
@@ -610,6 +612,9 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   function neg(left){
+    if(left.nodeType == 'literal'){
+      return literal(left,true);
+    }
     switch(left.type){
     case 'i32':
     case 'u32':
@@ -782,16 +787,21 @@ export default async function generateCode(ast,binaryen_) {
       if(top){
         return results.length == 1 ?  results[0] : module.block(null,results);
       } 
-    } else if(module[left.type]){
+    } else {
       if(left.type != right.type){
         error('不正な代入：左辺と右辺の型が違います',e);
+      }
+      let type = module[left.type];
+      if(!type){
+        type = module['i' + left.type.slice(-2)];
+        if(!type){
+          error('不正な代入',e);
+        }
       }
       results.push(setValue(left,expression(right)));
       if(top){
         return results.length == 1 ?  results[0] : module.block(null,results);
       } 
-    } else {
-      error('不正な代入',e);
     }
   }
 

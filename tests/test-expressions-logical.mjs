@@ -4,6 +4,7 @@ import test from 'tape-async';
 import * as compiler from './compiler.mjs';
 import types from './test-types.mjs';
 
+{
 const ops = [
   { name: 'and', a: 3, b: 3, c: 3, op: '&&', result: 1 },
   { name: 'and', a: 3, b: 3, c: 2, op: '&&', result: 0 },
@@ -18,7 +19,7 @@ test('test-expression-logical', async t => {
     if (tp.skip) {
       continue;
     }
-    if (tp.type.charAt(0) == 'f') {
+    if (tp.type.charAt(0) == 'f' && tp.literalSuffix.substring(0,2) != '.0') {
       tp.literalSuffix = '.0' + tp.literalSuffix;
     }
     for (const op of ops) {
@@ -46,8 +47,8 @@ test('test-expression-logical', async t => {
     }
     // Not Test
     const testSrc = `
-   export i32 main(${tp.type} b){
-     ${tp.type} a = ${tp.literalPrefix}1${tp.literalSuffix};
+   export i32 main(){
+     ${tp.type} a = ${tp.literalPrefix}1${tp.literalSuffix},b = ${tp.literalPrefix}2${tp.literalSuffix};
      if(!(a == b)){
        return 1;
      } else {
@@ -60,14 +61,14 @@ test('test-expression-logical', async t => {
    try {
       inst = await compiler.compileAndInstanciate(testName, testSrc);
       result1 = inst.exports.main(1);
-      result2 = inst.exports.main(2);
     } catch (e) {
       console.log(e,e.stack);
       t.fail(testName);
     }
-    t.equal(result1, 0, testName + '_1');
-    t.equal(result2, 1, testName + '_2');
+    t.equal(result1, 1, testName + '_1');
   }
 });
+
+}
 
 

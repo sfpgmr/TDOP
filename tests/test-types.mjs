@@ -3,8 +3,8 @@ const types = [
   { type: 'u32', literalPrefix: '', literalSuffix: 'u' },
   { type: 'f32', literalPrefix: '', literalSuffix: 'f' },
   { type: 'f64', literalPrefix: '', literalSuffix: 'lf' },
-  { type: 'i64', literalPrefix: '', literalSuffix: 'l', skip: true },
-  { type: 'u64', literalPrefix: '', literalSuffix: 'lu', skip: true },
+  { type: 'i64', literalPrefix: '', literalSuffix: 'l' },
+  { type: 'u64', literalPrefix: '', literalSuffix: 'lu' },
   // {type: 'string',literalPrefix: ['"',"'"],literalSuffix:['"',"'"]}
 ];
 
