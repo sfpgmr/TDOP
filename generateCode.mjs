@@ -356,10 +356,14 @@ export default async function generateCode(ast,binaryen_) {
       return module.i32.const(parseInt(e.value, 10) * (minus ? -1 : 1));
     case 'i64':
       /* 64bit整数への対応コードが必要 */
-      return module.i64.const(parseInt(e.value, 10) * (minus ? -1 : 1));
+      {const v = parseInt(e.value, 10) * (minus ? -1 : 1);
+      const h = v >= 0 ? 0: -1;
+      return module.i64.const(v,h);}
     case 'u64':
       /* 64bit整数への対応コードが必要 */
-      return module.i64.const(parseInt(e.value, 10) * (minus ? -1 : 1));
+      {const v = parseInt(e.value, 10) * (minus ? -1 : 1);
+      const h = v >= 0 ? 0: -1;
+      return module.i64.const(v,h);}
     case 'f32':
       return module.f32.const(parseFloat(e.value) * (minus ? -1 : 1));
     case 'f64':
