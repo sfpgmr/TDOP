@@ -5,3 +5,4 @@ export const ACCESS_PROTECTED = 3 | 0;
 export const STORED_LOCAL = 0 | 0;
 export const STORED_GLOBAL = 1 | 0;
 export const STORED_HEAP = 2 | 0;
+

@@ -345,29 +345,66 @@ export default async function generateCode(ast,binaryen_) {
     }
   }
 
+  function parseInt_(e,minus = false){
+    switch (e.kind){
+      case 'hex':
+        return parseInt(e.value.substr(2,e.value.length - 3), 16) * (minus ? -1 : 1);
+      break;
+      case 'binary':
+        return parseInt(e.value.substr(2,e.value.length - 3), 2) * (minus ? -1 : 1);
+      break;
+      default:
+        return parseInt(e.value, 10) * (minus ? -1 : 1);
+    }
+  }
+
+  function parseInt64(e,minus = false){
+    switch (e.kind){
+      case 'hex':
+        return parseInt(e.value.substr(2,e.value.length - 3), 16) * (minus ? -1 : 1);
+      break;
+      case 'binary':
+        return parseInt(e.value.substr(2,e.value.length - 3), 2) * (minus ? -1 : 1);
+      break;
+      default:
+        return parseInt(e.value, 10) * (minus ? -1 : 1);
+    }
+  }
+
+  function parseFloat_(e,minus = false){
+    switch(e.kind){
+      case 'hex':
+      case 'binary':
+      default:
+        return parseFloat(e.value,10) * (minus ? -1 : 1);
+    }
+  }
+
   function literal(e,minus = false) {
     //console.log('** literal() **');
     switch (e.type) {
     case 'i32':
       // return module.setLocal()
-      return module.i32.const( parseInt(e.value, 10) * (minus ? -1 : 1));
+      return module.i32.const(parseInt_(e,minus));
     case 'u32':
       // return module.setLocal()
-      return module.i32.const(parseInt(e.value, 10) * (minus ? -1 : 1));
+      return module.i32.const(parseInt_(e,minus));
     case 'i64':
       /* 64bit整数への対応コードが必要 */
-      {const v = parseInt(e.value, 10) * (minus ? -1 : 1);
-      const h = v >= 0 ? 0: -1;
-      return module.i64.const(v,h);}
+      {
+        const v = parseInt_(e,minus);
+        const h = v >= 0 ? 0: -1;
+        return module.i64.const(v,h);
+      }
     case 'u64':
       /* 64bit整数への対応コードが必要 */
-      {const v = parseInt(e.value, 10) * (minus ? -1 : 1);
+      {const v = parseInt_(e,minus);
       const h = v >= 0 ? 0: -1;
       return module.i64.const(v,h);}
     case 'f32':
-      return module.f32.const(parseFloat(e.value) * (minus ? -1 : 1));
+      return module.f32.const(parseFloat_(e.value,minus));
     case 'f64':
-      return module.f64.const(parseFloat(e.value) * (minus ? -1 : 1));
+      return module.f64.const(parseFloat_(e.value,minus));
     }
     error('Bad Type',e);
   }

@@ -1,3 +1,5 @@
+import { EPROTONOSUPPORT } from "constants";
+
 // tokens.mjs
 // 2016-01-13
 
@@ -126,96 +128,160 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
 
       if(c == '0' && (nc == 'x' || nc == 'X')){
         //debugger;
-        let type = 'int';
+        let type = 'i32';
         let kind = 'hex';
+        let unsigend = false;
+        let b64 = false;
+        let hexCount = 0;
+        let float = false;
         // 16進数
         c = nc;
-        let hexfp = false;
+        //let hexfp = false;
         do {
-          str += c;
+          if(str != ' '){
+            str += c;
+            ++hexCount;
+          }
           ++i;
           ++posx;
           c = source[i];
-        } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+        } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == ' ' || c == 'x' || c == 'X' );
 
-        if(c == '.'){
-          // 16進浮動小数 少数部
-          do {
-            str += c;
-            ++i;
-            ++posx;
-            c = source[i];
-            hexfp = true;
-          } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+        // if(c == '.'){
+        //   // 16進浮動小数 少数部
+        //   do {
+        //     str += c;
+        //     ++i;
+        //     ++posx;
+        //     c = source[i];
+        //     hexfp = true;
+        //   } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+        // }
+
+        if(c == 'l'){
+          b64 = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
         }
 
-        if(c == 'p' || c == 'P'){
-          // 16進浮動小数 指数部
-          let first = true;
-
-          do {
-            str += c;
-            ++i;
-            ++posx;
-            c = source[i];
-            if(first && (c == '+' || c == '-')){
-              first = false;
-              str += c;
-              ++i;
-              ++posx;
-              c = source[i];
-              continue;
-            } 
-            first = false;
-          } while((c >= '0' && c <= '9'));
-          hexfp = true;
-        } else if(hexfp) {
-          error('Bad hexdecimal floating point number.',make('hexfp',str + c));
+        if(c == 'u'){
+          unsigend = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
         }
 
-        if(c == 'f' || c == 'F'){
-          if(hexfp){
-            str += c;
-            ++i;
-            ++posx;
-            type = 'f32';
-            kind = 'hex';
-          } else {
-            error('Bad hexdecimal or hexdecimal floating point number.',make('f32',str + c ));
-          }
-        } else if(c == 'd' || c == 'D') {
-          if(hexfp){
-            str += c;
-            ++i;
-            ++posx;
-            type = 'f64';
-            kind = 'hex';
-          } else {
-            error('Bad hexdecimal or hexdecimal floating point number.',make('hex',str + c ));
-          }
-        } else if(hexfp) {
-          error('Bad hexdecimal or hexdecimal floating point number.',make('hex',str + c ));
+        if(c == 'f'){
+          float = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
         }
 
-        c = source[i];
+
+        // if(c == 'p' || c == 'P'){
+        //   // 16進浮動小数 指数部
+        //   let first = true;
+
+        //   do {
+        //     str += c;
+        //     ++i;
+        //     ++posx;
+        //     c = source[i];
+        //     if(first && (c == '+' || c == '-')){
+        //       first = false;
+        //       str += c;
+        //       ++i;
+        //       ++posx;
+        //       c = source[i];
+        //       continue;
+        //     } 
+        //     first = false;
+        //   } while((c >= '0' && c <= '9'));
+        //   hexfp = true;
+        // } else if(hexfp) {
+        //   error('Bad hexdecimal floating point number.',make('hexfp',str + c));
+        // }
+
+        // if(hexfp){
+        //   type = b64 ? 'f64' : 'f32';
+        //   kind = 'hex';
+        // } else {
+        //   type = (unsigend ? 'u' : 'i') + (b64 ? '64':'32');
+        //   error('Bad hexdecimal or hexdecimal floating point number.',make('f32',str + c ));
+        // }
+
+        // c = source[i];
+        
+        // フォーマットが正しいか確認する
+        if(hexCount > (b64?16:8)){
+          error(`hexが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'hex'}));
+        }        
+        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + (b64 ? '64':'32');
         result.push(make(type,str,{kind:kind}));
 
       } else if(c == '0' && (nc == 'b' || nc == 'B')) {
+        let type = 'i32';
+        let unsigend = false;
+        let float = false;
+        let b64 = false;
+        let bitCount = 0;
         // 2進数リテラル
+        
         str = c + nc;
+
         ++i;
         ++posx;
         c = source[i];
         // 2進数
         do {
-          c != ' ' && (str += c);
+          if(c != ' '){
+            str += c;
+            ++bitCount;
+          };
           ++i;
           ++posx;
           c = source[i];
-        } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B');
-        
+        } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B' );
+
         (str.charAt(str.length - 1) != 'b') && error('Invalid binary literal format.',make('binary',str+c));
-        result.push(make('int',str,{kind:'binary'}));
+
+
+        if(c == 'l'){
+          b64 = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        }
+
+        if(c == 'u'){
+          unsigend = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        }
+
+        if(c == 'f'){
+          float = true;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        }
+        // フォーマットが正しいか確認する
+        if(bitCount > (b64?64:32)){
+          error(`bitパターンが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'binary'}));
+        }
+
+        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + (b64 ? '64':'32');
+
+        result.push(make(type,str,{kind:'binary'}));
       }  else {
         // 数リテラル
         let type = 'i32';
@@ -285,7 +351,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           if(type == 'i32'){
             type = 'i64';
           }
-          str += c;
+          //str += c;
           ++i;
           ++posx;
           c = source[i];
@@ -301,7 +367,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         } else if(c == 'u' || c == 'U'){
           type = _64 ? 'u64' : 'u32';
           int = true;
-          str += c;
+          //str += c;
           ++i;
           ++posx;
           c = source[i];

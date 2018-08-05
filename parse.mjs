@@ -199,7 +199,7 @@ export default function make_parse() {
       if (!o) {
         error('Unknown operator.', t);
       }
-    } else if (a == 'string' || a == 'int' || a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
+    } else if (a == 'string' ||  a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
       o = symbol_table.get('(literal)');
       type = a;
       a = 'literal';
@@ -447,6 +447,9 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
+      if(this.first.type != this.second.type ){
+        error('type unmatch',e);
+      }
 
       !this.type && (this.type = left.type);
       this.assignment = true;
@@ -1030,6 +1033,9 @@ export default function make_parse() {
         //debugger;
         //t.second = expression(0);
         n.initialExpression = expression(0);
+        // if(n.initialExpression.nodeType == 'literal' && n.initialExpression.type == 'int'){
+        //   n.initialExpression.type = n.type;
+        // } 
         // TODO:型情報は式から得るようにしなければならない
         //t.second.type = this.type;
         //t.nodeType = 'binary';
