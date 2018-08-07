@@ -146,6 +146,11 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++posx;
           c = source[i];
         } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == ' ' || c == 'x' || c == 'X' );
+        if(str.charAt(str.length - 1).toLowerCase() == 'x'){
+          str = str.substr(0,str.length - 1);
+        } else {
+          error('Invalid hex literal format.',make('hex',str));
+        }
 
         // if(c == '.'){
         //   // 16進浮動小数 少数部
@@ -248,7 +253,12 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           c = source[i];
         } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B' );
 
-        (str.charAt(str.length - 1) != 'b') && error('Invalid binary literal format.',make('binary',str+c));
+        if(str.charAt(str.length - 1).toLowerCase() == 'b'){
+          str = str.substr(0,str.length - 1);
+        } else {
+          error('Invalid binary literal format.',make('binary',str+c));
+        }
+
 
 
         if(c == 'l'){

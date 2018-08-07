@@ -1,6 +1,6 @@
 import * as constants from './compilerConstants.mjs';
 
-function error (message, t = this) {
+function error(message, t = this) {
   t.name = 'Compiler Error';
   t.message = message;
   throw t;
@@ -8,15 +8,17 @@ function error (message, t = this) {
 
 let binaryen;
 
-export default async function generateCode(ast,binaryen_) {
+export default async function generateCode(ast, binaryen_) {
 
-  if(!binaryen) {
-    await new Promise((resolve,reject)=>{
-      binaryen = binaryen_({onRuntimeInitialized:m=>{
-       resolve();
-      }});
+  if (!binaryen) {
+    await new Promise((resolve, reject) => {
+      binaryen = binaryen_({
+        onRuntimeInitialized: m => {
+          resolve();
+        }
+      });
     });
-  } 
+  }
   // debugger;
   // const binaryen = await new Promise(
   //   (resolve,reject)=>{
@@ -27,7 +29,7 @@ export default async function generateCode(ast,binaryen_) {
   const module = new binaryen.Module();
   const i32_ = module.i32;
 
-  
+
   //  const exp = new binaryen.Expression();
 
   //module.setMemory(1, null, 'test1');
@@ -36,17 +38,16 @@ export default async function generateCode(ast,binaryen_) {
   let varIndex = 0;
   let postOpcodes;
   class PostOpCodes extends Array {
-    constructor(){
+    constructor() {
       super();
     }
-    create()
-    {
+    create() {
       const current = new PostOpCodes();
       current.parent = this;
       postOpcodes = current;
     }
-    pop(){
-      if(this.parent){
+    pop() {
+      if (this.parent) {
         postOpcodes = this.parent;
       }
       return this;
@@ -59,10 +60,10 @@ export default async function generateCode(ast,binaryen_) {
 
   const statements = ast.statements;
 
-  
+
   function generate(stmts) {
     const result = [];
-    if(stmts instanceof Array){
+    if (stmts instanceof Array) {
       stmts.forEach((stmt) => {
         const r = generate_(stmt);
         if (r instanceof Array) {
@@ -70,18 +71,18 @@ export default async function generateCode(ast,binaryen_) {
         } else if (r) {
           result.push(r);
         }
-        if(postOpcodes.length > 0){
+        if (postOpcodes.length > 0) {
           result.push(...postOpcodes);
           postOpcodes.length = 0;
-        } 
+        }
       });
     } else {
       let ops = generate_(stmts);
-      ops instanceof Array ? result.push(...ops):(ops && result.push(ops));
-      if(postOpcodes.length > 0){
+      ops instanceof Array ? result.push(...ops) : (ops && result.push(ops));
+      if (postOpcodes.length > 0) {
         result.push(...postOpcodes);
         postOpcodes.length = 0;
-      } 
+      }
     }
     return result;
   }
@@ -89,44 +90,44 @@ export default async function generateCode(ast,binaryen_) {
   function generate_(s) {
     //console.log('node type: ',!s,s.nodeType);
     switch (s.nodeType) {
-    case 'define':
-      return define(s);
-    case 'function':
-      return functionStatement(s);
-    case 'unary':
-      return expression(s);
-    case 'binary':
-      return expression(s);
-    case 'statement':
-      return statement(s);
-    case 'block':
-      return block(s);
-    case 'call':
-      return call(s);
-    case 'name':
-      return name(s);
-    case 'literal':
-      return literal(s);
-    case 'suffix':
-      return suffix(s);
-    case 'class':
-      return classDefinition(s);
-    default:
-      error('unrecognized nodetype',s);
-      break;
+      case 'define':
+        return define(s);
+      case 'function':
+        return functionStatement(s);
+      case 'unary':
+        return expression(s);
+      case 'binary':
+        return expression(s);
+      case 'statement':
+        return statement(s);
+      case 'block':
+        return block(s);
+      case 'call':
+        return call(s);
+      case 'name':
+        return name(s);
+      case 'literal':
+        return literal(s);
+      case 'suffix':
+        return suffix(s);
+      case 'class':
+        return classDefinition(s);
+      default:
+        error('unrecognized nodetype', s);
+        break;
     }
   }
 
-  function classDefinition(stmt){
+  function classDefinition(stmt) {
     return null;
   }
 
   // 関数呼び出し
-  function call(stmt){
+  function call(stmt) {
     //debugger;
     const func = stmt.first;
     const params = stmt.second;
-    return  module.call(func.value,params.map(e=>expression(e)),binaryen[stmt.type]);
+    return module.call(func.value, params.map(e => expression(e)), binaryen[stmt.type]);
   }
 
   // 関数定義
@@ -134,7 +135,7 @@ export default async function generateCode(ast,binaryen_) {
     //console.log('** define_() **');
     // 関数本体
     const wasmStatement = [];
-    
+
     // ローカル変数テーブル
     localVars = [];
     varIndex = 0;
@@ -147,86 +148,86 @@ export default async function generateCode(ast,binaryen_) {
     // 戻り値の型
     let funcReturnType = binaryen[funcNode.type];
 
-    if(!funcReturnType){
-      switch (funcNode.type){
+    if (!funcReturnType) {
+      switch (funcNode.type) {
         case 'u32':
         case 'u64':
           const realType = 'i' + funcNode.type.slice(-2);
           funcReturnType = binaryen[realType];
-        break;
+          break;
         default:
           // TODO: 戻り値がユーザー定義型だった場合どうする？
-          error('Bad Return Type',funcNode);
+          error('Bad Return Type', funcNode);
       }
-    } 
-    
+    }
+
 
     // 関数パラメータ
     if (funcNode.params) {
       const funcParams = funcNode.params;
       funcParams.forEach(p => {
-        paramInits.push(define_(p,null));
+        paramInits.push(define_(p, null));
 
         let paramType = binaryen[p.type];
-        if(!paramType){
-          switch (p.type){
+        if (!paramType) {
+          switch (p.type) {
             case 'u32':
             case 'u64':
               const realType = 'i' + p.type.slice(-2);
               paramType = binaryen[realType];
-            break;
+              break;
             default:
               // TODO: 戻り値がユーザー定義型だった場合どうする？
-              error('Bad Parameter Type',p);
+              error('Bad Parameter Type', p);
           }
-        } 
+        }
         paramTypes.push(paramType);
       });
     }
     const statements = generate(funcNode.statements);
-    const ftype = module.addFunctionType(funcNode.value, funcReturnType,paramTypes);
+    const ftype = module.addFunctionType(funcNode.value, funcReturnType, paramTypes);
     module.addFunction(funcNode.value, ftype, localVars, module.block(null, statements));
-    if(funcNode.export){
-      module.addFunctionExport(funcNode.value,funcNode.value);
+    if (funcNode.export) {
+      module.addFunctionExport(funcNode.value, funcNode.value);
     }
   }
 
   // 変数定義
-  function define_(d,vars = localVars){
+  function define_(d, vars = localVars) {
     //console.log('** define_() **');
-    if(!d.userType){
-        // WASM ネイティブ型
-        // ローカル
-        let varType = binaryen[d.type];
-        let varTypeObj = module[d.type];
-        if(!varType){
-          const t = 'i' + d.type.slice(-2);
-          varType = binaryen[t];
-          varTypeObj = module[t];
-        }
-        (!varType) && error('Bad Type',d.type);
-        switch(d.stored){
+    if (!d.userType) {
+      // WASM ネイティブ型
+      // ローカル
+      let varType = binaryen[d.type];
+      let varTypeObj = module[d.type];
+      if (!varType) {
+        const t = 'i' + d.type.slice(-2);
+        varType = binaryen[t];
+        varTypeObj = module[t];
+      }
+      (!varType) && error('Bad Type', d.type);
+      switch (d.stored) {
         case constants.STORED_LOCAL:
           {
             vars && vars.push(varType);
-            if(d.initialExpression){
-              return  module.setLocal(d.varIndex, expression(d.initialExpression));
+            if (d.initialExpression) {
+              return module.setLocal(d.varIndex, expression(d.initialExpression));
             }
             return null;
           }
-          case constants.STORED_GLOBAL:
-            if(d.initialExpression){
-              return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
-            } else {
-              return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
-            }
-        }
+        case constants.STORED_GLOBAL:
+          if (d.initialExpression) {
+            return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
+          } else {
+            return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
+          }
+      }
     } else {
       // ユーザー定義型
       const results = [];
-      d.members && d.members.forEach(m=>{
+      d.members && d.members.forEach(m => {
         const r = define(m);
-        (r instanceof Array) ? results.push(...r):(r && results.push(r));
+        (r instanceof Array) ? results.push(...r) : (r && results.push(r));
       });
       return results;
     }
@@ -269,7 +270,7 @@ export default async function generateCode(ast,binaryen_) {
     //     }
     //   } else {
     //     // ユーザー定義型
-       
+
     //     const typedef = d.scope.find(d.type,true);
     //     if(!typedef){
     //       error('Type Not Found.',d);
@@ -287,7 +288,7 @@ export default async function generateCode(ast,binaryen_) {
     //       };
     //       Object.assign(Object.create(d),d)
     //     });
-       
+
     //     //console.log(detail);
     //     const results = [];
     //     d.members.forEach(member=>{
@@ -304,7 +305,7 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   // 変数定義
-  function define(statement,results = []) {
+  function define(statement, results = []) {
     //console.log('** define() **');
     // statement.first.forEach(d => {
     //   const result = define_(d);
@@ -315,9 +316,9 @@ export default async function generateCode(ast,binaryen_) {
     //   }
     // });
     const result = define_(statement);
-    if(result instanceof Array){
+    if (result instanceof Array) {
       results.push(...result);
-    } else if(result) {
+    } else if (result) {
       results.push(result);
     }
     return results;
@@ -327,278 +328,411 @@ export default async function generateCode(ast,binaryen_) {
   // 式
   function expression(e) {
     switch (e.nodeType) {
-    case 'literal':
-      return literal(e);
-    case 'binary':
-      return binary(e);
-    case 'unary':
-      return unary(e);
-    case 'name':
-      return name(e);
-    case 'call':
-      return call(e);
-    case 'suffix':
-      return suffix(e);
-    case 'reference':
-    case 'define':
-      return name(e);
-    }
-  }
-
-  function parseInt_(e,minus = false){
-    switch (e.kind){
-      case 'hex':
-        return parseInt(e.value.substr(2,e.value.length - 3), 16) * (minus ? -1 : 1);
-      break;
+      case 'literal':
+        return literal(e);
       case 'binary':
-        return parseInt(e.value.substr(2,e.value.length - 3), 2) * (minus ? -1 : 1);
-      break;
-      default:
-        return parseInt(e.value, 10) * (minus ? -1 : 1);
+        return binary(e);
+      case 'unary':
+        return unary(e);
+      case 'name':
+        return name(e);
+      case 'call':
+        return call(e);
+      case 'suffix':
+        return suffix(e);
+      case 'reference':
+      case 'define':
+        return name(e);
     }
   }
 
-  function parseInt64(e,minus = false){
-    switch (e.kind){
+  function parseInt32(e, minus = false) {
+    let retVal = 0;
+    switch (e.kind) {
       case 'hex':
-        return parseInt(e.value.substr(2,e.value.length - 3), 16) * (minus ? -1 : 1);
-      break;
+        retVal =  parseInt(e.value.substr(2, e.value.length - 3), 16) * (minus ? -1 : 1);
+        break;
       case 'binary':
-        return parseInt(e.value.substr(2,e.value.length - 3), 2) * (minus ? -1 : 1);
-      break;
+        retVal =  parseInt(e.value.substr(2, e.value.length - 3), 2) * (minus ? -1 : 1);
+        break;
       default:
-        return parseInt(e.value, 10) * (minus ? -1 : 1);
+        retVal = parseInt(e.value, 10) * (minus ? -1 : 1);
     }
+    return module.i32.const(retVal);
   }
 
-  function parseFloat_(e,minus = false){
-    switch(e.kind){
+  /**
+ * 整数値をを64ビットの16進数文字列に変換するコード
+ */
+
+  // 整数は文字列の形で指定
+  //let numString = '-9223372036854775807';
+  //let numString = '9223372036854775809';
+  function decimalToHex(numString) {
+    let numArray = [];
+    let minus = false;
+    // 数値文字列を分割して配列に保存する
+    {
+      let i = 0;
+      for (const c of numString) {
+        if (c == '-') {
+          if (i == 0) {
+            minus = true;
+          } else {
+            throw new Error(`不正な文字:${c}`);
+          }
+        } else {
+          if (isNaN(c)) {
+            throw new Error(`不正な文字:${c}`);
+          }
+          numArray.push(parseInt(c, 10));
+        }
+        ++i;
+      }
+    }
+
+    // 変換結果を収める
+    let hex = [];
+    let b = 0;
+    let ans = [];
+    let remind = 0;
+
+    while (numArray.length > 0 || b > 15) {
+      b = 0;
+      ans = [];
+      remind = 0;
+      numArray.forEach(num => {
+        b = b * 10 + num;
+        if (b > 15) {
+          remind = b & 0b1111;
+          ans.push(b >> 4);
+          b = remind;
+        } else {
+          ans.push(0 | 0);
+          remind = b;
+        }
+      })
+
+      // 頭の0をとる
+      let i = 0;
+      while (ans[i] == 0) {
+        ++i;
+      }
+      numArray = ans.slice(i);
+      hex.unshift(remind);
+    }
+
+    if (hex.length > 16) {
+      throw new Error('64bit整数の範囲を超えています。');
+    }
+
+    // 桁揃え（16桁に）
+    if (hex.length < 16) {
+      let l = 16 - hex.length;
+      while (l > 0) {
+        hex.unshift(0);
+        --l;
+      }
+    }
+
+    // マイナス値の処理
+    if (minus) {
+      hex = hex.map(d => d ^ 0xf);
+      hex[15] += 1;
+      if (hex[15] > 15) {
+        hex[15] = 0;
+        for (let i = 14; i >= 0; --i) {
+          hex[i] += 1;
+          if (hex[i] < 16) {
+            break;
+          } else {
+            hex[i] = 0;
+          }
+        }
+      }
+      hex[0] |= 0b1000;//sign bitを立てる 
+    }
+    return hex.map(d => d.toString(16)).join('').padStart(16, '0');
+  }
+
+  function parseInt64(e, minus = false) {
+    let low, high;
+    switch (e.kind) {
+      case 'hex':
+        {
+          const hex = e.value.substr(2).padStart(16, '0');
+          high = parseInt(hex.substr(0, 8), 16);
+          low = parseInt(hex.slice(-8), 16);
+        }
+        break;
+      case 'binary':
+        {
+          const bin = e.value.substr(2).padStart(64, '0');
+          high = parseInt(hex.substr(0, 32), 2);
+          low = parseInt(hex.slice(-32), 2);
+        }
+        break;
+      default:
+        {
+          const hex = decimalToHex(e.value)
+          high = parseInt(hex.substr(0, 8), 16);
+          low = parseInt(hex.slice(-8), 16);
+        }
+    }
+    if (minus) {
+      low = ((low ^ 0xffffffff) + 1) & 0xffffffff;
+      high = ((high ^ 0xffffffff) + (low == 0) ? 1 : 0) | 0x80000000;
+    }
+    return module.i64.const(low, high);
+  }
+
+
+  function intToFloat32(intVal){
+    let sign = (intVal & 0x80000000) ? -1 : 1;
+    if(minus){
+      sign = sign * -1;
+    }
+    
+    let exponent = ((intVal & 0x78000000) >> 23) - 127;
+    let fraction = (intVal & 0x7ffffff) / 0x800000;
+  
+    retVal = parseFloat(`${sign<0?'-':''}1.${fraction}e${exponent}`);
+  }
+
+  function parseFloat32(e, minus = false) {
+    let retVal = 0;
+    switch (e.kind) {
+      case 'hex':
+      {
+        retVal = intToFloat32(parseInt(e.value.substr(2),16));
+      }
+      case 'binary':
+      {
+        retVal = intToFloat32(parseInt(e.value.substr(2),2));
+      }
+      default:
+        retVal =  parseFloat(e.value, 10) * (minus ? -1 : 1);
+    }
+    return module.f32.const(retVal);
+  }
+
+  function parseFloat64(e, minus = false) {
+    let retVal = 0;
+    switch (e.kind) {
       case 'hex':
       case 'binary':
       default:
-        return parseFloat(e.value,10) * (minus ? -1 : 1);
+        return parseFloat(e.value, 10) * (minus ? -1 : 1);
     }
   }
 
-  function literal(e,minus = false) {
+
+  function literal(e, minus = false) {
     //console.log('** literal() **');
     switch (e.type) {
-    case 'i32':
-      // return module.setLocal()
-      return module.i32.const(parseInt_(e,minus));
-    case 'u32':
-      // return module.setLocal()
-      return module.i32.const(parseInt_(e,minus));
-    case 'i64':
-      /* 64bit整数への対応コードが必要 */
-      {
-        const v = parseInt_(e,minus);
-        const h = v >= 0 ? 0: -1;
-        return module.i64.const(v,h);
-      }
-    case 'u64':
-      /* 64bit整数への対応コードが必要 */
-      {const v = parseInt_(e,minus);
-      const h = v >= 0 ? 0: -1;
-      return module.i64.const(v,h);}
-    case 'f32':
-      return module.f32.const(parseFloat_(e.value,minus));
-    case 'f64':
-      return module.f64.const(parseFloat_(e.value,minus));
+      case 'i32':
+      case 'u32':
+        return parseInt32(e, minus);
+      case 'i64':
+      case 'u64':
+        return parseInt64(e,minus);
+      case 'f32':
+        return parseFloat32(e.value, minus);
+      case 'f64':
+        return parseFloat64(e.value, minus);
     }
-    error('Bad Type',e);
+    error('Bad Type', e);
   }
-  
+
 
   function binary(e) {
     //console.log('** binary() **');
     switch (e.value) {
-    // 代入
-    case '=':
-      return assignment(e);
-    case '+':
-      return binOp('add',e);
-    case '-':
-      return binOp('sub',e);
-    case '*':
-      return binOp('mul',e);
-    case '%':
-      return binOp('rem',e,true);
-    case '/':
-      return binOp('div',e,true);
-    case '+=':
-      return setValue(e.first,binOp('add',e),e);
-    case '-=':
-      return setValue(e.first,binOp('sub',e),e);
-    case '*=':
-      return setValue(e.first,binOp('mul',e),e);
-    case '/=':
-      return setValue(e.first,binOp('div',e,true),e);
-    case '%=':
-      return setValue(e.first,binOp('rem',e,true),e);
-    // 比較
-    case '==':
-      return binOp('eq',e);
-    case '>':
-      return binOp('gt',e,true);
-    case '>=':
-      return binOp('ge',e,true);
-    case '<':
-      return binOp('lt',e,true);
-    case '<=':
-      return binOp('le',e,true);
-    case '!=':
-      return binOp('ne',e);
-    // 論理
-    case '&&':
-      return logicalAnd(e);
-    case '||':
-      return logicalOr(e);
-    // ビット演算
-    case '^':
-      return binOp('xor',e);
-    case '&':
-      return binOp('and',e);
-    case '|':
-      return binOp('or',e);
-    case '<<':
-      return binOp('shl',e);
-    case '>>':
-      return binOp('shr',e,true);
-    case '>>>':
-      return binOp('shr',e,false);
-    case '<<&':
-      return binOp('rotl',e);
-    case '>>&':
-      return binOp('rotr',e);
-    // ドット演算子
-    case '.':
-      return dotOp(e);
+      // 代入
+      case '=':
+        return assignment(e);
+      case '+':
+        return binOp('add', e);
+      case '-':
+        return binOp('sub', e);
+      case '*':
+        return binOp('mul', e);
+      case '%':
+        return binOp('rem', e, true);
+      case '/':
+        return binOp('div', e, true);
+      case '+=':
+        return setValue(e.first, binOp('add', e), e);
+      case '-=':
+        return setValue(e.first, binOp('sub', e), e);
+      case '*=':
+        return setValue(e.first, binOp('mul', e), e);
+      case '/=':
+        return setValue(e.first, binOp('div', e, true), e);
+      case '%=':
+        return setValue(e.first, binOp('rem', e, true), e);
+      // 比較
+      case '==':
+        return binOp('eq', e);
+      case '>':
+        return binOp('gt', e, true);
+      case '>=':
+        return binOp('ge', e, true);
+      case '<':
+        return binOp('lt', e, true);
+      case '<=':
+        return binOp('le', e, true);
+      case '!=':
+        return binOp('ne', e);
+      // 論理
+      case '&&':
+        return logicalAnd(e);
+      case '||':
+        return logicalOr(e);
+      // ビット演算
+      case '^':
+        return binOp('xor', e);
+      case '&':
+        return binOp('and', e);
+      case '|':
+        return binOp('or', e);
+      case '<<':
+        return binOp('shl', e);
+      case '>>':
+        return binOp('shr', e, true);
+      case '>>>':
+        return binOp('shr', e, false);
+      case '<<&':
+        return binOp('rotl', e);
+      case '>>&':
+        return binOp('rotr', e);
+      // ドット演算子
+      case '.':
+        return dotOp(e);
     }
-    error('Bad Binary Operator',e);
+    error('Bad Binary Operator', e);
   }
 
-  function setValue(n,v,e)
-  {
+  function setValue(n, v, e) {
     //console.log('** setValue() **');
-    !e && (e = n); 
-    if(e.rvalue){
-      switch(n.stored){
+    !e && (e = n);
+    if (e.rvalue) {
+      switch (n.stored) {
         case constants.STORED_LOCAL:
-          return module.teeLocal(n.varIndex,v);
+          return module.teeLocal(n.varIndex, v);
         case constants.STORED_GLOBAL:
-          return module.block(null,[
-            module.setGlobal(n.value,v),
-            module.getGlobal(n.value,n.type)
+          return module.block(null, [
+            module.setGlobal(n.value, v),
+            module.getGlobal(n.value, n.type)
           ]);
       }
     } else {
-      return (n.stored == constants.STORED_LOCAL) ? module.setLocal(n.varIndex,v) : module.setGlobal(n.value,v);// ** マングル化が必要 ***
+      return (n.stored == constants.STORED_LOCAL) ? module.setLocal(n.varIndex, v) : module.setGlobal(n.value, v);// ** マングル化が必要 ***
     }
   }
 
-  function getValue(e){
+  function getValue(e) {
     //console.log('** getValue() **');
-    const n = e.first; 
-    return (n.stored == constants.STORED_LOCAL) ?  module.getLocal(n.varIndex,n.type) : module.getGlobal(n.value,n.type);
+    const n = e.first;
+    return (n.stored == constants.STORED_LOCAL) ? module.getLocal(n.varIndex, n.type) : module.getGlobal(n.value, n.type);
   }
-  
 
-  function binOp_(name,e,left,right,sign){
-    const t =  module[left.type];
-    if(t){
-      switch(left.type){
-      case 'i32':
-      case 'i64':
-      {
-        let op = t[name];
-        (!op) && (op = t[sign ? name + '_s' : name + '_u']);
 
-        if(op){
-          return op(expression(left),expression(right));
-        } else {
-          error('Bad Operation',left);
-        }
-        break;
-      }
-      case 'f32':
-      case 'f64':
-        {
-          let op = t[name];
-          (!op) && (op = t[sign ? name + '_s' : name + '_u']);
-          if(op) {
-            return op(expression(left),expression(right));
-          } else {
-            error('Bad Operation',left);
+  function binOp_(name, e, left, right, sign) {
+    const t = module[left.type];
+    if (t) {
+      switch (left.type) {
+        case 'i32':
+        case 'i64':
+          {
+            let op = t[name];
+            (!op) && (op = t[sign ? name + '_s' : name + '_u']);
+
+            if (op) {
+              return op(expression(left), expression(right));
+            } else {
+              error('Bad Operation', left);
+            }
+            break;
           }
-        }
-        break;
+        case 'f32':
+        case 'f64':
+          {
+            let op = t[name];
+            (!op) && (op = t[sign ? name + '_s' : name + '_u']);
+            if (op) {
+              return op(expression(left), expression(right));
+            } else {
+              error('Bad Operation', left);
+            }
+          }
+          break;
       }
     } else {
-      switch(left.type){
-      case 'u32':
-      case 'u64':
-        {
-          const realType = 'i' + left.type.slice(-2);
-          const t = module[realType];
-          let op = t[name];
-          (!op) && (op = t[sign ? name + '_s' : name + '_u']);
-  
-          if(op) {
-            return op(expression(left),expression(right));
-          } else {
-            error('Bad Operation',left);
-          }
-        }
-        break;
-      default:
-        {
-          const l = expression(left);
-          const r = expression(right);
-          let op = module['i' + left.type.slice(-2)][name];
-          (!op) && (op = module['i' + left.type.slice(-2)][sign?name + '_s':name + '_u']);
-          if((typeof l != 'number') || (typeof r != 'number')){
-            error('Bad Expression',left);
-          }
-          return op(l,r);
-          //const lnative = module[l.type];
-          //const rnative = module[r.type];
+      switch (left.type) {
+        case 'u32':
+        case 'u64':
+          {
+            const realType = 'i' + left.type.slice(-2);
+            const t = module[realType];
+            let op = t[name];
+            (!op) && (op = t[sign ? name + '_s' : name + '_u']);
 
-          //if(lnative && rnative && l.type  == r.type){
-          //  return binOp_(name,e,l,r,sign);
-          //}
-        }
-//        error('Bad Type',left);
+            if (op) {
+              return op(expression(left), expression(right));
+            } else {
+              error('Bad Operation', left);
+            }
+          }
+          break;
+        default:
+          {
+            const l = expression(left);
+            const r = expression(right);
+            let op = module['i' + left.type.slice(-2)][name];
+            (!op) && (op = module['i' + left.type.slice(-2)][sign ? name + '_s' : name + '_u']);
+            if ((typeof l != 'number') || (typeof r != 'number')) {
+              error('Bad Expression', left);
+            }
+            return op(l, r);
+            //const lnative = module[l.type];
+            //const rnative = module[r.type];
+
+            //if(lnative && rnative && l.type  == r.type){
+            //  return binOp_(name,e,l,r,sign);
+            //}
+          }
+        //        error('Bad Type',left);
       }
     }
   }
 
-  function binOp(name,e,sign = false){
+  function binOp(name, e, sign = false) {
     //console.log(`** binOp(${name}) **`);
 
     //debugger;
-    const left = e.first,right = e.second;
+    const left = e.first, right = e.second;
     left.sign && (sign = left.sign);
-    return binOp_(name,e,left,right,sign);
+    return binOp_(name, e, left, right, sign);
   }
 
-  function dotOp(e){
+  function dotOp(e) {
     //console.log('** dotOp() **');
- 
-    if(e.second.id == '.'){
+
+    if (e.second.id == '.') {
       const ret = dotOp(e.second);
       e.type = ret.type;
       return ret;
     }
     e.type = e.second.type;
     return name(e.second);
-   }
+  }
 
-  function logicalAnd(e){
-    const left = e.first,right = e.second;
+  function logicalAnd(e) {
+    const left = e.first, right = e.second;
     const t = module[left.type];
     //if(t){
-      return i32_.and(i32_.ne(expression(left),i32_.const(0,0)),i32_.ne(expression(right),i32_.const(0,0)));
+    return i32_.and(i32_.ne(expression(left), i32_.const(0, 0)), i32_.ne(expression(right), i32_.const(0, 0)));
     /*} else {
       switch(left.type){
       case 'u32':
@@ -614,13 +748,13 @@ export default async function generateCode(ast,binaryen_) {
   }
 
 
-  function logicalOr(e){
+  function logicalOr(e) {
     //console.log('** logicalOr() **');
 
-    const left = e.first,right = e.second;
+    const left = e.first, right = e.second;
     //const t = module[left.type];
     //if(t){
-      return i32_.or(i32_.ne(expression(left),i32_.const(0)),i32_.ne(expression(right),i32_.const(0)));
+    return i32_.or(i32_.ne(expression(left), i32_.const(0)), i32_.ne(expression(right), i32_.const(0)));
     /*} else {
       switch(left.type){
       case 'u32':
@@ -637,39 +771,39 @@ export default async function generateCode(ast,binaryen_) {
 
   function unary(e) {
     switch (e.value) {
-    case '+':
-      return expression(e.first);
-    case '-':
-      return neg(e.first);
-    case '!':
-      return not(e.first);
-    case '~':
-      return bitNot(e.first);
-    case '++':
-      return inc(e.first);
-    case '--':
-      return dec(e.first);
+      case '+':
+        return expression(e.first);
+      case '-':
+        return neg(e.first);
+      case '!':
+        return not(e.first);
+      case '~':
+        return bitNot(e.first);
+      case '++':
+        return inc(e.first);
+      case '--':
+        return dec(e.first);
     }
   }
 
-  function neg(left){
-    if(left.nodeType == 'literal'){
-      return literal(left,true);
+  function neg(left) {
+    if (left.nodeType == 'literal') {
+      return literal(left, true);
     }
-    switch(left.type){
-    case 'i32':
-    case 'u32':
-      return module.i32.sub(module.i32.const(0),expression(left));
-    case 'i64':
-    case 'u64':
-      return module.i64.sub(module.i64.const(0,0),expression(left));
-    case 'f32':
-    case 'f64':
-      return module[left.type].neg(expression(left));
+    switch (left.type) {
+      case 'i32':
+      case 'u32':
+        return module.i32.sub(module.i32.const(0), expression(left));
+      case 'i64':
+      case 'u64':
+        return module.i64.sub(module.i64.const(0, 0), expression(left));
+      case 'f32':
+      case 'f64':
+        return module[left.type].neg(expression(left));
     }
   }
 
-  function not(left){
+  function not(left) {
     return i32_.eqz(expression(left));
     // switch(left.type){
     // case 'i32':
@@ -698,51 +832,51 @@ export default async function generateCode(ast,binaryen_) {
     // }
   }
 
-  function bitNot(left){
-    switch(left.type){
-    case 'i32':
-    case 'u32':
-      return module.i32.xor(expression(left),module.i32.const(0xffffffff));
-    case 'i64':
-    case 'u64':
-      return module.i64.xor(expression(left),module.i64.const(0xffffffff,0xffffffff));
-    default:
-      return error('Bad Operation',left);
+  function bitNot(left) {
+    switch (left.type) {
+      case 'i32':
+      case 'u32':
+        return module.i32.xor(expression(left), module.i32.const(0xffffffff));
+      case 'i64':
+      case 'u64':
+        return module.i64.xor(expression(left), module.i64.const(0xffffffff, 0xffffffff));
+      default:
+        return error('Bad Operation', left);
     }
   }
 
-  function inc(left){
+  function inc(left) {
     const builtinType = module[left.type];
-    if(builtinType){
-      return setValue(left,builtinType.add(expression(left),builtinType.const(1)));
+    if (builtinType) {
+      return setValue(left, builtinType.add(expression(left), builtinType.const(1)));
     } else {
-      switch(left.type){
-      case 'u32':
-      case 'u64':
-      {
-        const t = module['i' + left.type.slice(-2)];
-        return setValue(left,t.add(expression(left),t.const(1)));      
-      }
-      default:
-        error('Bad Type',left);
+      switch (left.type) {
+        case 'u32':
+        case 'u64':
+          {
+            const t = module['i' + left.type.slice(-2)];
+            return setValue(left, t.add(expression(left), t.const(1)));
+          }
+        default:
+          error('Bad Type', left);
       }
     }
   }
 
-  function dec(left){
+  function dec(left) {
     const builtinType = module[left.type];
-    if(builtinType){
-      return setValue(left,builtinType.sub(expression(left),builtinType.const(1)));
+    if (builtinType) {
+      return setValue(left, builtinType.sub(expression(left), builtinType.const(1)));
     } else {
-      switch(left.type){
-      case 'u32':
-      case 'u64':
-      {
-        const t = module['i' + left.type.slice(-2)];
-        return setValue(left,t.sub(expression(left),t.const(1)));      
-      }
-      default:
-        error('Bad Type',left);
+      switch (left.type) {
+        case 'u32':
+        case 'u64':
+          {
+            const t = module['i' + left.type.slice(-2)];
+            return setValue(left, t.sub(expression(left), t.const(1)));
+          }
+        default:
+          error('Bad Type', left);
       }
     }
   }
@@ -750,35 +884,35 @@ export default async function generateCode(ast,binaryen_) {
   function name(e) {
     //console.log('** name() **');
     const nativeType = binaryen[e.type];
-    if(nativeType){
-      switch(e.stored){
+    if (nativeType) {
+      switch (e.stored) {
         case constants.STORED_LOCAL:
           return module.getLocal(e.varIndex, binaryen[e.type]);
         case constants.STORED_GLOBAL:
           return module.getGlobal(e.value, binaryen[e.type]);
       }
     } else {
-      switch(e.type){
+      switch (e.type) {
         case 'u32':
         case 'u64':
-        {
-          const type = 'i' + e.type.slice(-2);
-          switch(e.stored){
-            case constants.STORED_LOCAL:
-              return module.getLocal(e.varIndex, binaryen[type]);
-            case constants.STORED_GLOBAL:
-              return module.getGlobal(e.value, binaryen[type]);
+          {
+            const type = 'i' + e.type.slice(-2);
+            switch (e.stored) {
+              case constants.STORED_LOCAL:
+                return module.getLocal(e.varIndex, binaryen[type]);
+              case constants.STORED_GLOBAL:
+                return module.getGlobal(e.value, binaryen[type]);
+            }
           }
-        }
         default:
-        return e.scope.find(e.value);
+          return e.scope.find(e.value);
       }
     }
   }
 
   // 左辺のドット構文の解析
-  function leftDotOp(e){
-    if(e.second.id == '.'){
+  function leftDotOp(e) {
+    if (e.second.id == '.') {
       const ret = leftDotOp(e.second);
       e.type = ret.type;
       return ret;
@@ -788,19 +922,19 @@ export default async function generateCode(ast,binaryen_) {
   }
 
   // 代入 // 
-  function assignment(e,results = [],top = true) {
+  function assignment(e, results = [], top = true) {
     //console.log('** assignment() **');
-    const left = e.first,right = e.second;
-    
+    const left = e.first, right = e.second;
 
-    if(left.value == '.'){
+
+    if (left.value == '.') {
       const l = leftDotOp(left);
-      if(module[l.type]){
-        const op = setValue(l,expression(right));
-        if(top){
-          if(results.length > 0){
+      if (module[l.type]) {
+        const op = setValue(l, expression(right));
+        if (top) {
+          if (results.length > 0) {
             results.push(op);
-            return module.block(null,results);
+            return module.block(null, results);
           } else {
             return op;
           }
@@ -808,97 +942,97 @@ export default async function generateCode(ast,binaryen_) {
           results.push(op);
         }
       } else {
-        let m = Object.assign(Object.create(e),e);
+        let m = Object.assign(Object.create(e), e);
         m.type = l.type;
-        assignment(m,results,false);
+        assignment(m, results, false);
       }
-      if(top){
-        return results.length == 1 ?  results[0] : module.block(null,results);
-      } 
-    } else if(left.members){
+      if (top) {
+        return results.length == 1 ? results[0] : module.block(null, results);
+      }
+    } else if (left.members) {
       const leftMembers = left.members;
       const rightMembers = right.members;
-      leftMembers.forEach((leftMember,i)=>{
-        const memberAssignmment = Object.assign(Object.create(e),e);
+      leftMembers.forEach((leftMember, i) => {
+        const memberAssignmment = Object.assign(Object.create(e), e);
         memberAssignmment.first = leftMember;
         memberAssignmment.second = rightMembers[i];
         e.type = leftMember.type;
-        assignment(memberAssignmment,results,false);
+        assignment(memberAssignmment, results, false);
       });
-      if(top){
-        return results.length == 1 ?  results[0] : module.block(null,results);
-      } 
+      if (top) {
+        return results.length == 1 ? results[0] : module.block(null, results);
+      }
     } else {
-      if(left.type != right.type){
-        error('不正な代入：左辺と右辺の型が違います',e);
+      if (left.type != right.type) {
+        error('不正な代入：左辺と右辺の型が違います', e);
       }
       let type = module[left.type];
-      if(!type){
+      if (!type) {
         type = module['i' + left.type.slice(-2)];
-        if(!type){
-          error('不正な代入',e);
+        if (!type) {
+          error('不正な代入', e);
         }
       }
-      results.push(setValue(left,expression(right)));
-      if(top){
-        return results.length == 1 ?  results[0] : module.block(null,results);
-      } 
+      results.push(setValue(left, expression(right)));
+      if (top) {
+        return results.length == 1 ? results[0] : module.block(null, results);
+      }
     }
   }
 
 
 
-  function block(s){
+  function block(s) {
     //console.log('** block() **');
     let temp = generate(s.first);
     !(temp instanceof Array) && (temp = [temp]);
-    return module.block(null,temp);
+    return module.block(null, temp);
   }
 
   function statement(s) {
     //console.log('** statement() **');
 
-    switch(s.id){
-    case 'return':
-      return module.return(expression(s.first));
-    case 'if':
-      return ifStatement(s);
-    case 'while':
-      return whileStatement(s);
-    case 'do':
-      return doStatement(s);
-    case 'break':
-      return breakStatement(s);
-    case 'for':
-      return forStatement(s);
-    default:
-      error('Bad Statement.',s);
+    switch (s.id) {
+      case 'return':
+        return module.return(expression(s.first));
+      case 'if':
+        return ifStatement(s);
+      case 'while':
+        return whileStatement(s);
+      case 'do':
+        return doStatement(s);
+      case 'break':
+        return breakStatement(s);
+      case 'for':
+        return forStatement(s);
+      default:
+        error('Bad Statement.', s);
     }
   }
 
-  function breakStatement(s){
+  function breakStatement(s) {
     return module.break(currentBrakePoint);
   }
 
-  function ifStatement(s){
+  function ifStatement(s) {
     postOpcodes.create();
     const condition = expression(s.first);
     let ops = postOpcodes.pop();
     let thenStatemnts = generate(s.second)[0];
-    if(ops.length){
-      thenStatemnts = module.block(null,ops.concat(thenStatemnts));
+    if (ops.length) {
+      thenStatemnts = module.block(null, ops.concat(thenStatemnts));
     }
     let elseStatements = s.third && generate(s.third)[0];
-    if(ops.length && elseStatements){
-      elseStatements = module.block(null,ops.concat(elseStatements));
+    if (ops.length && elseStatements) {
+      elseStatements = module.block(null, ops.concat(elseStatements));
     }
-    return module.if(condition,thenStatemnts,elseStatements);
+    return module.if(condition, thenStatemnts, elseStatements);
   }
 
-  function not_(c){
+  function not_(c) {
     return module.i32.eqz(expression(c));
     // let condition = expression(c);
-    
+
     // let type = module[c.type];
     // if(type){
     //   if(type.eqz){
@@ -931,29 +1065,29 @@ export default async function generateCode(ast,binaryen_) {
     // return condition;  
   }
 
-  function whileStatement(s){
+  function whileStatement(s) {
     const bid = 'while' + (blockId++).toString(10);
-    currentBrakePoint = bid; 
+    currentBrakePoint = bid;
     const lid = 'loop' + (blockId++).toString(10);
     let stmt = generate(s.second);
     stmt = stmt instanceof Array ? stmt : [stmt];
-    
+
     postOpcodes.create();
     let condition = not_(s.first);
     let ops = postOpcodes.pop();
-    return module.block(null,[module.block(bid,[
-      module.loop(lid,module.block(null,[
-        module.br_if(bid,condition),
+    return module.block(null, [module.block(bid, [
+      module.loop(lid, module.block(null, [
+        module.br_if(bid, condition),
         ...ops,
         ...stmt,
         module.break(lid)
-      ]))]),...ops
+      ]))]), ...ops
     ]);
   }
 
-  function doStatement(s){
+  function doStatement(s) {
     const bid = 'do' + (blockId++).toString(10);
-    currentBrakePoint = bid; 
+    currentBrakePoint = bid;
     const lid = 'loop' + (blockId++).toString(10);
     let stmt = generate(s.second);
     stmt = stmt instanceof Array ? stmt : [stmt];
@@ -961,25 +1095,25 @@ export default async function generateCode(ast,binaryen_) {
     postOpcodes.create();
     let condition = not_(s.first);
     let postOps = postOpcodes.pop();
-    
-    return module.block(null,[module.block(bid,[
-      module.loop(lid,module.block(null,[
+
+    return module.block(null, [module.block(bid, [
+      module.loop(lid, module.block(null, [
         ...stmt,
-        module.br_if(bid,condition),
+        module.br_if(bid, condition),
         ...postOps,
         module.break(lid)
-      ]))]),...postOps
-    ]);    
+      ]))]), ...postOps
+    ]);
   }
 
-  function forStatement(s){
+  function forStatement(s) {
 
     const bid = 'for' + (blockId++).toString(10);
-    currentBrakePoint = bid; 
+    currentBrakePoint = bid;
     const lid = 'loop' + (blockId++).toString(10);
 
     let initStmt = generate(s.first);
-    
+
     postOpcodes.create();
     let condition = not_(s.second);
     let postOpsCond = postOpcodes.pop();
@@ -990,57 +1124,57 @@ export default async function generateCode(ast,binaryen_) {
 
     let stmt = generate(s.fourth);
 
-    initStmt = initStmt instanceof Array ? initStmt : [initStmt]; 
+    initStmt = initStmt instanceof Array ? initStmt : [initStmt];
     conditionAfter = conditionAfter instanceof Array ? conditionAfter : [conditionAfter];
     stmt = stmt instanceof Array ? stmt : [stmt];
 
-    return module.block(null,[module.block(bid,[
+    return module.block(null, [module.block(bid, [
       ...initStmt,
-      module.loop(lid,module.block(null,[
-        module.br_if(bid,condition),
+      module.loop(lid, module.block(null, [
+        module.br_if(bid, condition),
         ...postOpsCond,
         ...stmt,
         ...conditionAfter,
         ...postOpsAfter,
         module.break(lid)
       ]))]),
-      ...postOpsCond,
-      ...postOpsAfter
-    ]);    
-    
+    ...postOpsCond,
+    ...postOpsAfter
+    ]);
+
   }
 
-  function suffix(s){
-    switch(s.id){
-    case '++':
-      return postInc(s);
-    case '--':
-      return postDec(s);
-    default:
-      error('Bad Operator',s);
+  function suffix(s) {
+    switch (s.id) {
+      case '++':
+        return postInc(s);
+      case '--':
+        return postDec(s);
+      default:
+        error('Bad Operator', s);
     }
   }
 
-  function postInc(s){
+  function postInc(s) {
     s.first.rvalue = false;
-    if(s.rvalue){
+    if (s.rvalue) {
       postOpcodes.push(inc(s.first));
       return name(s.first);
     } else {
-      return inc(s.first);      
+      return inc(s.first);
     }
   }
 
-  function postDec(s){
+  function postDec(s) {
     s.first.rvalue = false;
-    if(s.rvalue){
+    if (s.rvalue) {
       postOpcodes.push(dec(s.first));
       return name(s.first);
     } else {
       return dec(s.first);
     }
   }
-  
+
   generate(statements);
 
   return module;
