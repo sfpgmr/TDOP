@@ -487,7 +487,7 @@ export default async function generateCode(ast, binaryen_) {
   }
 
 
-  function intToFloat32(intVal){
+  function intToFloat32(intVal,minus){
     let sign = (intVal & 0x80000000) ? -1 : 1;
     if(minus){
       sign = sign * -1;
@@ -504,11 +504,11 @@ export default async function generateCode(ast, binaryen_) {
     switch (e.kind) {
       case 'hex':
       {
-        retVal = intToFloat32(parseInt(e.value.substr(2),16));
+        retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
       }
       case 'binary':
       {
-        retVal = intToFloat32(parseInt(e.value.substr(2),2));
+        retVal = intToFloat32(parseInt(e.value.substr(2),2),minus);
       }
       default:
         retVal =  parseFloat(e.value, 10) * (minus ? -1 : 1);
@@ -516,16 +516,38 @@ export default async function generateCode(ast, binaryen_) {
     return module.f32.const(retVal);
   }
 
+  function intToFloat64(low,high,minus){
+    let sign = (high & 0x80000000) ? -1 : 1;
+    if(minus){
+      sign = sign * -1;
+    }
+    let exponent = ((high & 0b01111111111100000000000000000000) >> 20) - 1023;
+    let fraction = ((high & 0b11111111111111111111) * 0x100000000 + low) / 0x8000000000000;
+    retVal = parseFloat(`${sign<0?'-':''}1.${fraction}e${exponent}`);    
+  }
+
   function parseFloat64(e, minus = false) {
     let retVal = 0;
     switch (e.kind) {
       case 'hex':
+        {
+          let value = e.value.substr(2).padStart(16,'0');
+          let low = parseInt(value.slice(-8),16);
+          let high = parseInt(value.substr(0,8),16);
+          retVal = intToFloat64(low,high,minus);
+        }
       case 'binary':
+      {
+        let value = e.value.substr(2).padStart(64,'0');
+        let low = parseInt(value.slice(-32),2);
+        let high = parseInt(value.substr(0,32),2);
+        retVal =  intToFloat64(low,high,minus);
+      }
       default:
-        return parseFloat(e.value, 10) * (minus ? -1 : 1);
+      retVal =  parseFloat(e.value) * (minus ? -1 : 1);
     }
+    return module.f64.const(retVal);
   }
-
 
   function literal(e, minus = false) {
     //console.log('** literal() **');
