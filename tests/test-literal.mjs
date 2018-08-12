@@ -18,7 +18,7 @@ import types from './test-types.mjs';
     { name: 'literal-bin-u64', type: 'u64', 'a': '0b1111 1111blu', result: '255lu' },
 
     { name: 'literal-bin-f32', type: 'f32', 'a': '0b 0 01111100 0100000 00000000 00000000 bf', result: '0.15625f' },
-    { name: 'literal-bin-f64', type: 'f64', 'a': '0b 0 00001111100 0100000000000000000000000000000000000000000000000000 blf', result: '0.15625lf' },
+    { name: 'literal-bin-f64', type: 'f64', 'a': '0b 0 01111111100 0100000000000000000000000000000000000000000000000000 blf', result: '0.15625lf' },
     { name: 'literal-hex-f32-1', type: 'f32', 'a': '0x3e200000xf', result: '0.15625f' },
     { name: 'literal-hex-f32-2', type: 'f32', 'a': '0xbe200000xf', result: '-0.15625f' },
     { name: 'literal-hex-f32-3', type: 'f32', 'a': '-0x3e200000xf', result: '-0.15625f' },
