@@ -23,7 +23,7 @@ import types from './test-types.mjs';
     { name: 'literal-hex-f32-2', type: 'f32', 'a': '0xbe200000xf', result: '-0.15625f' },
     { name: 'literal-hex-f32-3', type: 'f32', 'a': '-0x3e200000xf', result: '-0.15625f' },
     { name: 'literal-hex-f32-3', type: 'f32', 'a': '-0xbe200000xf', result: '0.15625f' },
-    { name: 'literal-hex-f64', type: 'f64', 'a': '0x7C4000000000000xlf', result: '0.15625lf' },
+    { name: 'literal-hex-f64', type: 'f64', 'a': '0x3fc4 0000 0000 0000xlf', result: '0.15625lf' },
 
     { name: 'literal-numeric-i32', type: 'i32', 'a': '65536', result: '65536' },
     { name: 'literal-numeric-i32', type: 'i32', 'a': '-65536', result: '-65536' },

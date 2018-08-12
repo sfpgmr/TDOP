@@ -3,11 +3,31 @@ import * as constants from './compilerConstants.mjs';
 const compilerWasmSrc = `
 (module
   (export "i32tof32" $i32tof32)
+  (export "i64tof64" $i64tof64)
+  ;; IEE754 float32のビットパターンを持つ32ビット整数値をf32に変換する
   (func $i32tof32 (param $i i32) (param $minus i32) (result f32)
     (f32.reinterpret/i32
       (i32.xor
           (get_local $i)
           (get_local $minus)
+      )
+    )
+  )
+  ;; IEEE754 float64のビットパターンを持つ2つの32ビット値（high,low）を元にして、64bit floatを返す
+  (func $i64tof64 (param $low i32) (param $high i32) (param $minus i32) (result f64)
+    (f64.reinterpret/i64
+      (i64.xor
+        (i64.or
+          (i64.shl 
+            (i64.extend_u(get_local $high))
+            (i64.const 32) 
+          )
+          (i64.extend_u (get_local $low))
+        )
+        (i64.shl
+          (i64.extend_u(get_local $minus))
+          (i64.const 32)
+        )
       )
     )
   )
@@ -535,13 +555,7 @@ export default async function generateCode(ast, binaryen_) {
 
   
   function intToFloat64(low,high,minus){
-    let sign = (high & 0x80000000) ? -1 : 1;
-    if(minus){
-      sign = sign * -1;
-    }
-    let exponent = ((high & 0b01111111111100000000000000000000) >> 20) - 1023;
-    let fraction = ((high & 0b11111111111111111111) * 0x100000000 + low) / 0x8000000000000;
-    return parseFloat(`${sign<0?'-':''}${fraction + 1.0}e${exponent}`);    
+    return literalLib.i64tof64(low,high,minus?0x80000000:0);
   }
 
   function parseFloat64(e, minus = false) {
