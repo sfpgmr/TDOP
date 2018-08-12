@@ -4,6 +4,7 @@
   // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "type": "node",
       "request": "launch",
@@ -31,8 +32,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test.mjs - use WSL",
-      "program": "${workspaceFolder}/tests/test.mjs",
+      "name": "test-literal.mjs - use WSL",
+      "program": "${workspaceFolder}/tests/test-literal.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

@@ -23,12 +23,13 @@ export async function compile(name,src){
       } 
       , 2);
     
-    fs.writeFileSync(`./tests/out/${name}.json`, json, 'utf8');
+    await fs.promises.writeFile(`./tests/out/${name}.json`, json, 'utf8');
     const module = await generateCode(ast,binaryen);
     module.validate();
-    fs.writeFileSync(`./tests/out/${name}.wat`,module.emitText(),'utf8');
+    const wat = module.emitText();
+    await fs.promises.writeFile(`./tests/out/${name}.wat`,wat,'utf8');
     const compiled = module.emitBinary();
-    fs.writeFileSync(`./tests/out/${name}.wasm`,compiled);
+    await fs.promises.writeFile(`./tests/out/${name}.wasm`,compiled);
     return compiled;    
 }
 

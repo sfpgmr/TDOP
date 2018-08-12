@@ -1,11 +1,30 @@
 import * as constants from './compilerConstants.mjs';
 
+const compilerWasmSrc = `
+(module
+  (export "i32tof32" $i32tof32)
+  (func $i32tof32 (param $i i32) (param $minus i32) (result f32)
+    (f32.reinterpret/i32
+      (i32.xor
+          (get_local $i)
+          (get_local $minus)
+      )
+    )
+  )
+ )
+`;
+
 function error(message, t = this) {
   t.name = 'Compiler Error';
   t.message = message;
   throw t;
 }
 
+export function getInstance(obj){
+  const bin = new WebAssembly.Module(obj);
+  const inst = new WebAssembly.Instance(bin,{});
+  return inst;
+}
 let binaryen;
 
 export default async function generateCode(ast, binaryen_) {
@@ -27,6 +46,9 @@ export default async function generateCode(ast, binaryen_) {
   //     });
   //   });
   const module = new binaryen.Module();
+  const literalLib = getInstance(binaryen.parseText(compilerWasmSrc).emitBinary()).exports;
+
+
   const i32_ = module.i32;
 
 
@@ -350,10 +372,10 @@ export default async function generateCode(ast, binaryen_) {
     let retVal = 0;
     switch (e.kind) {
       case 'hex':
-        retVal =  parseInt(e.value.substr(2, e.value.length - 3), 16) * (minus ? -1 : 1);
+        retVal =  parseInt(e.value.substr(2, e.value.length - 2), 16) * (minus ? -1 : 1);
         break;
       case 'binary':
-        retVal =  parseInt(e.value.substr(2, e.value.length - 3), 2) * (minus ? -1 : 1);
+        retVal =  parseInt(e.value.substr(2, e.value.length - 2), 2) * (minus ? -1 : 1);
         break;
       default:
         retVal = parseInt(e.value, 10) * (minus ? -1 : 1);
@@ -468,8 +490,8 @@ export default async function generateCode(ast, binaryen_) {
       case 'binary':
         {
           const bin = e.value.substr(2).padStart(64, '0');
-          high = parseInt(hex.substr(0, 32), 2);
-          low = parseInt(hex.slice(-32), 2);
+          high = parseInt(bin.substr(0, 32), 2);
+          low = parseInt(bin.slice(-32), 2);
         }
         break;
       default:
@@ -488,15 +510,7 @@ export default async function generateCode(ast, binaryen_) {
 
 
   function intToFloat32(intVal,minus){
-    let sign = (intVal & 0x80000000) ? -1 : 1;
-    if(minus){
-      sign = sign * -1;
-    }
-    
-    let exponent = ((intVal & 0x78000000) >> 23) - 127;
-    let fraction = (intVal & 0x7ffffff) / 0x800000;
-  
-    retVal = parseFloat(`${sign<0?'-':''}1.${fraction}e${exponent}`);
+    return literalLib.i32tof32(intVal,minus?0x80000000:0);
   }
 
   function parseFloat32(e, minus = false) {
@@ -505,10 +519,13 @@ export default async function generateCode(ast, binaryen_) {
       case 'hex':
       {
         retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
+        //retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
+        break;
       }
       case 'binary':
       {
         retVal = intToFloat32(parseInt(e.value.substr(2),2),minus);
+        break;
       }
       default:
         retVal =  parseFloat(e.value, 10) * (minus ? -1 : 1);
@@ -516,6 +533,7 @@ export default async function generateCode(ast, binaryen_) {
     return module.f32.const(retVal);
   }
 
+  
   function intToFloat64(low,high,minus){
     let sign = (high & 0x80000000) ? -1 : 1;
     if(minus){
@@ -523,7 +541,7 @@ export default async function generateCode(ast, binaryen_) {
     }
     let exponent = ((high & 0b01111111111100000000000000000000) >> 20) - 1023;
     let fraction = ((high & 0b11111111111111111111) * 0x100000000 + low) / 0x8000000000000;
-    retVal = parseFloat(`${sign<0?'-':''}1.${fraction}e${exponent}`);    
+    return parseFloat(`${sign<0?'-':''}${fraction + 1.0}e${exponent}`);    
   }
 
   function parseFloat64(e, minus = false) {
@@ -535,6 +553,7 @@ export default async function generateCode(ast, binaryen_) {
           let low = parseInt(value.slice(-8),16);
           let high = parseInt(value.substr(0,8),16);
           retVal = intToFloat64(low,high,minus);
+          break;
         }
       case 'binary':
       {
@@ -542,6 +561,7 @@ export default async function generateCode(ast, binaryen_) {
         let low = parseInt(value.slice(-32),2);
         let high = parseInt(value.substr(0,32),2);
         retVal =  intToFloat64(low,high,minus);
+        break;
       }
       default:
       retVal =  parseFloat(e.value) * (minus ? -1 : 1);
@@ -559,9 +579,9 @@ export default async function generateCode(ast, binaryen_) {
       case 'u64':
         return parseInt64(e,minus);
       case 'f32':
-        return parseFloat32(e.value, minus);
+        return parseFloat32(e, minus);
       case 'f64':
-        return parseFloat64(e.value, minus);
+        return parseFloat64(e, minus);
     }
     error('Bad Type', e);
   }

@@ -138,19 +138,22 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         c = nc;
         //let hexfp = false;
         do {
-          if(str != ' '){
+          if(c != ' ' && c != ''){
             str += c;
             ++hexCount;
           }
           ++i;
           ++posx;
           c = source[i];
-        } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == ' ' || c == 'x' || c == 'X' );
-        if(str.charAt(str.length - 1).toLowerCase() == 'x'){
-          str = str.substr(0,str.length - 1);
-        } else {
-          error('Invalid hex literal format.',make('hex',str));
+        } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == ' ' || c == '');
+
+        if(c == 'x' || c == 'X'){
+          ++i;
+          ++posx;
+          c = source[i];
         }
+        //  error('Invalid hex literal format.',make('hex',str));
+        //}
 
         // if(c == '.'){
         //   // 16進浮動小数 少数部
@@ -195,7 +198,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         //   do {
         //     str += c;
         //     ++i;
-        //     ++posx;
+        //     ++posx;gitchekou
         //     c = source[i];
         //     if(first && (c == '+' || c == '-')){
         //       first = false;
@@ -223,7 +226,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         // c = source[i];
         
         // フォーマットが正しいか確認する
-        if(hexCount > (b64?16:8)){
+        if(hexCount > (b64?18:10)){
           error(`hexが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'hex'}));
         }        
         type = (float ? 'f' : (unsigend ? 'u' : 'i')) + (b64 ? '64':'32');
@@ -251,13 +254,15 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++i;
           ++posx;
           c = source[i];
-        } while (c == ' ' || c == '0' || c =='1' || c == 'b' || c == 'B' );
+        } while (c == ' ' || c == '0' || c =='1' );
 
-        if(str.charAt(str.length - 1).toLowerCase() == 'b'){
-          str = str.substr(0,str.length - 1);
-        } else {
-          error('Invalid binary literal format.',make('binary',str+c));
+        if(c == 'b' || c == 'B'){
+          ++i;
+          ++posx;
+          c = source[i];
         }
+
+        //   error('Invalid binary literal format.',make('binary',str+c));
 
 
 
@@ -285,7 +290,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           c = source[i];
         }
         // フォーマットが正しいか確認する
-        if(bitCount > (b64?64:32)){
+        if(bitCount > (b64?66:34)){
           error(`bitパターンが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'binary'}));
         }
 
