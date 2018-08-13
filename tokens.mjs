@@ -1,5 +1,3 @@
-import { EPROTONOSUPPORT } from "constants";
-
 // tokens.mjs
 // 2016-01-13
 
