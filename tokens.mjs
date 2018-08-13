@@ -23,6 +23,7 @@
 /*jslint this */
 "use strict";
 
+
 // サロゲートペアを考慮した文字列配列化
 function stringToArray (str) {
   return str.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
