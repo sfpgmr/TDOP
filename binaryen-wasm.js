@@ -1830,7 +1830,7 @@ var ASM_CONSTS = [];
 
 STATIC_BASE = GLOBAL_BASE;
 
-STATICTOP = STATIC_BASE + 133104;
+STATICTOP = STATIC_BASE + 135760;
 /* global initializers */  __ATINIT__.push({ func: function() { __GLOBAL__I_000101() } }, { func: function() { __GLOBAL__sub_I_pass_cpp() } }, { func: function() { __GLOBAL__sub_I_iostream_cpp() } }, { func: function() { ___emscripten_environ_constructor() } }, { func: function() { __GLOBAL__sub_I_wasm_cpp() } }, { func: function() { __GLOBAL__sub_I_wasm_emscripten_cpp() } }, { func: function() { __GLOBAL__sub_I_threads_cpp() } }, { func: function() { __GLOBAL__sub_I_TrapMode_cpp() } }, { func: function() { __GLOBAL__sub_I_SSAify_cpp() } }, { func: function() { __GLOBAL__sub_I_SafeHeap_cpp() } }, { func: function() { __GLOBAL__sub_I_RelooperJumpThreading_cpp() } }, { func: function() { __GLOBAL__sub_I_Precompute_cpp() } }, { func: function() { __GLOBAL__sub_I_binaryen_c_cpp() } }, { func: function() { __GLOBAL__sub_I_OptimizeInstructions_cpp() } }, { func: function() { __GLOBAL__sub_I_Metrics_cpp() } }, { func: function() { __GLOBAL__sub_I_LogExecution_cpp() } }, { func: function() { __GLOBAL__sub_I_LegalizeJSInterface_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentMemory_cpp() } }, { func: function() { __GLOBAL__sub_I_InstrumentLocals_cpp() } }, { func: function() { __GLOBAL__sub_I_simple_ast_cpp() } }, { func: function() { __GLOBAL__sub_I_parser_cpp() } }, { func: function() { __GLOBAL__sub_I_optimizer_shared_cpp() } }, { func: function() { __GLOBAL__sub_I_shared_constants_cpp() } });
 
 
@@ -1839,7 +1839,7 @@ STATICTOP = STATIC_BASE + 133104;
 
 
 
-var STATIC_BUMP = 133104;
+var STATIC_BUMP = 135760;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 
@@ -2916,9 +2916,9 @@ function nullFunc_viijii(x) { err("Invalid function pointer called with signatur
 
 function nullFunc_vij(x) { err("Invalid function pointer called with signature 'vij'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this)");  err("Build with ASSERTIONS=2 for more info.");abort(x) }
 
-Module['wasmTableSize'] = 176256;
+Module['wasmTableSize'] = 177280;
 
-Module['wasmMaxTableSize'] = 176256;
+Module['wasmMaxTableSize'] = 177280;
 
 function invoke_i(index) {
   var sp = stackSave();
@@ -7976,6 +7976,11 @@ Module['PromoteFloat32'] = Module['_BinaryenPromoteFloat32']();
 Module['DemoteFloat64'] = Module['_BinaryenDemoteFloat64']();
 Module['ReinterpretInt32'] = Module['_BinaryenReinterpretInt32']();
 Module['ReinterpretInt64'] = Module['_BinaryenReinterpretInt64']();
+Module['ExtendS8Int32'] = Module['_BinaryenExtendS8Int32']();
+Module['ExtendS16Int32'] = Module['_BinaryenExtendS16Int32']();
+Module['ExtendS8Int64'] = Module['_BinaryenExtendS8Int64']();
+Module['ExtendS16Int64'] = Module['_BinaryenExtendS16Int64']();
+Module['ExtendS32Int64'] = Module['_BinaryenExtendS32Int64']();
 Module['AddInt32'] = Module['_BinaryenAddInt32']();
 Module['SubInt32'] = Module['_BinaryenSubInt32']();
 Module['MulInt32'] = Module['_BinaryenMulInt32']();
@@ -8209,6 +8214,12 @@ Module['Module'] = function(module) {
     },
     'reinterpret': function(value) {
       return Module['_BinaryenUnary'](module, Module['ReinterpretFloat32'], value);
+    },
+    'extend8_s': function(value) {
+      return Module['_BinaryenUnary'](module, Module['ExtendS8Int32'], value);
+    },
+    'extend16_s': function(value) {
+      return Module['_BinaryenUnary'](module, Module['ExtendS16Int32'], value);
     },
     'wrap': function(value) {
       return Module['_BinaryenUnary'](module, Module['WrapInt64'], value);
@@ -8450,6 +8461,15 @@ Module['Module'] = function(module) {
     },
     'reinterpret': function(value) {
       return Module['_BinaryenUnary'](module, Module['ReinterpretFloat64'], value);
+    },
+    'extend8_s': function(value) {
+      return Module['_BinaryenUnary'](module, Module['ExtendS8Int64'], value);
+    },
+    'extend16_s': function(value) {
+      return Module['_BinaryenUnary'](module, Module['ExtendS16Int64'], value);
+    },
+    'extend32_s': function(value) {
+      return Module['_BinaryenUnary'](module, Module['ExtendS32Int64'], value);
     },
     'extend_s': function(value) {
       return Module['_BinaryenUnary'](module, Module['ExtendSInt32'], value);
@@ -8893,6 +8913,11 @@ Module['Module'] = function(module) {
                                                            i32sToStack(paramTypes), paramTypes.length);
     });
   };
+  this['removeFunctionType'] = function(name) {
+    return preserveStack(function () {
+      return Module['_BinaryenRemoveFunctionType'](module, strToStack(name));
+    });
+  };
   this['addFunction'] = function(name, functionType, varTypes, body) {
     return preserveStack(function() {
       return Module['_BinaryenAddFunction'](module, strToStack(name), functionType, i32sToStack(varTypes), varTypes.length, body);
@@ -8999,19 +9024,19 @@ Module['Module'] = function(module) {
     return Module['_BinaryenSetStart'](module, start);
   };
   this['emitText'] = function() {
-    var old = Module['print'];
+    var old = out;
     var ret = '';
-    Module['print'] = function(x) { ret += x + '\n' };
+    out = function(x) { ret += x + '\n' };
     Module['_BinaryenModulePrint'](module);
-    Module['print'] = old;
+    out = old;
     return ret;
   };
   this['emitAsmjs'] = function() {
-    var old = Module['print'];
+    var old = out;
     var ret = '';
-    Module['print'] = function(x) { ret += x + '\n' };
+    out = function(x) { ret += x + '\n' };
     Module['_BinaryenModulePrintAsmjs'](module);
-    Module['print'] = old;
+    out = old;
     return ret;
   };
   this['validate'] = function() {
@@ -9386,11 +9411,11 @@ Module['emitText'] = function(expr) {
   if (typeof expr === 'object') {
     return expr.emitText();
   }
-  var old = Module['print'];
+  var old = out;
   var ret = '';
-  Module['print'] = function(x) { ret += x + '\n' };
+  out = function(x) { ret += x + '\n' };
   Module['_BinaryenExpressionPrint'](expr);
-  Module['print'] = old;
+  out = old;
   return ret;
 };
 
@@ -9444,6 +9469,14 @@ Module['setDebugInfo'] = function(on) {
 // Enables or disables C-API tracing
 Module['setAPITracing'] = function(on) {
   return Module['_BinaryenSetAPITracing'](on);
+};
+
+// Additional customizations
+
+Module['exit'] = function(status) {
+  // Instead of exiting silently on errors, always show an error with
+  // a stack trace, for debuggability.
+  if (status != 0) throw new Error('exiting due to error: ' + status);
 };
 }
 

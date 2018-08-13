@@ -516,14 +516,14 @@ export default async function generateCode(ast, binaryen_) {
         break;
       default:
         {
-          const hex = decimalToHex(e.value)
+          const hex = decimalToHex(e.value,minus);
           high = parseInt(hex.substr(0, 8), 16);
           low = parseInt(hex.slice(-8), 16);
         }
     }
     if (minus) {
       low = ((low ^ 0xffffffff) + 1) & 0xffffffff;
-      high = ((high ^ 0xffffffff) + (low == 0) ? 1 : 0) | 0x80000000;
+      high = ((high ^ 0xffffffff) + ((low == 0) ? 1 : 0));
     }
     return module.i64.const(low, high);
   }

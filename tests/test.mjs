@@ -6,6 +6,7 @@ import './test-expressions-condition.mjs';
 import './test-expressions-logical.mjs';
 import './test-expressions-bitwise.mjs';
 import './test-expressions-loop.mjs';
+import './test-literal.mjs';
 
 
 //test_expression_add();

@@ -447,9 +447,9 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
-      if(this.first.type != this.second.type ){
-        error('type unmatch',e);
-      }
+      // if(this.first.type != this.second.type ){
+      //   error('type unmatch',this);
+      // }
 
       !this.type && (this.type = left.type);
       this.assignment = true;

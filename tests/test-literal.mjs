@@ -25,16 +25,18 @@ import types from './test-types.mjs';
     { name: 'literal-hex-f32-3', type: 'f32', 'a': '-0xbe200000xf', result: '0.15625f' },
     { name: 'literal-hex-f64', type: 'f64', 'a': '0x3fc4 0000 0000 0000xlf', result: '0.15625lf' },
 
-    { name: 'literal-numeric-i32', type: 'i32', 'a': '65536', result: '65536' },
-    { name: 'literal-numeric-i32', type: 'i32', 'a': '-65536', result: '-65536' },
+    { name: 'literal-numeric-i32-1', type: 'i32', 'a': '65536', result: '65536' },
+    { name: 'literal-numeric-i32-2', type: 'i32', 'a': '-65536', result: '-65536' },
     { name: 'literal-numeric-u32', type: 'u32', 'a': '65536u', result: '65536u' },
-    { name: 'literal-numeric-i64', type: 'i64', 'a': '9223372036854775808l', result: '9223372036854775808l' },
-    { name: 'literal-numeric-u64', type: 'u64', 'a': '17293822569102704640lu', result: '17293822569102704640lu' },
+    { name: 'literal-numeric-i64-1', type: 'i64', 'a': '9223372036854775808l', result: '9223372036854775808l' },
+    { name: 'literal-numeric-i64-2', type: 'i64', 'a': '-10l', result: '-10l' },
+    { name: 'literal-numeric-u64-3', type: 'i64', 'a': '-4294967296lu', result: '-4294967296lu' },
+    { name: 'literal-numeric-u64-1', type: 'u64', 'a': '17293822569102704640lu', result: '17293822569102704640lu' },
+    { name: 'literal-numeric-u64-2', type: 'u64', 'a': '10lu', result: '10lu' },
     { name: 'literal-numeric-f32-1', type: 'f32', 'a': '0.15625f', result: '0.15625f' },
     { name: 'literal-numeric-f32-2', type: 'f32', 'a': '-0.15625f', result: '-0.15625f' },
     { name: 'literal-numeric-f64-3', type: 'f64', 'a': '0.15625lf', result: '0.15625lf' },
-    { name: 'literal-numeric-f64-4', type: 'f64', 'a': '-0.15625lf', result: '-0.15625lf' },
-
+    { name: 'literal-numeric-f64-4', type: 'f64', 'a': '-0.15625lf', result: '-0.15625lf' }
   ];
 
   test('test-expression-literal', async t => {
