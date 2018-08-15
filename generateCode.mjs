@@ -31,7 +31,7 @@ const compilerWasmSrc = `
       )
     )
   )
- )
+)
 `;
 
 function error(message, t = this) {
