@@ -40,9 +40,9 @@ function error(message, t = this) {
   throw t;
 }
 
-export function getInstance(obj){
+export function getInstance(obj) {
   const bin = new WebAssembly.Module(obj);
-  const inst = new WebAssembly.Instance(bin,{});
+  const inst = new WebAssembly.Instance(bin, {});
   return inst;
 }
 let binaryen;
@@ -74,7 +74,7 @@ export default async function generateCode(ast, binaryen_) {
 
   //  const exp = new binaryen.Expression();
 
-  //module.setMemory(1, null, 'test1');
+  module.setMemory(1,1);
   //module.addGlobal('t', binaryen.i32, true, module.i32.const(1));
   let localVars;
   let varIndex = 0;
@@ -392,10 +392,10 @@ export default async function generateCode(ast, binaryen_) {
     let retVal = 0;
     switch (e.kind) {
       case 'hex':
-        retVal =  parseInt(e.value.substr(2, e.value.length - 2), 16) * (minus ? -1 : 1);
+        retVal = parseInt(e.value.substr(2, e.value.length - 2), 16) * (minus ? -1 : 1);
         break;
       case 'binary':
-        retVal =  parseInt(e.value.substr(2, e.value.length - 2), 2) * (minus ? -1 : 1);
+        retVal = parseInt(e.value.substr(2, e.value.length - 2), 2) * (minus ? -1 : 1);
         break;
       default:
         retVal = parseInt(e.value, 10) * (minus ? -1 : 1);
@@ -516,7 +516,7 @@ export default async function generateCode(ast, binaryen_) {
         break;
       default:
         {
-          const hex = decimalToHex(e.value,minus);
+          const hex = decimalToHex(e.value, minus);
           high = parseInt(hex.substr(0, 8), 16);
           low = parseInt(hex.slice(-8), 16);
         }
@@ -529,33 +529,33 @@ export default async function generateCode(ast, binaryen_) {
   }
 
 
-  function intToFloat32(intVal,minus){
-    return literalLib.i32tof32(intVal,minus?0x80000000:0);
+  function intToFloat32(intVal, minus) {
+    return literalLib.i32tof32(intVal, minus ? 0x80000000 : 0);
   }
 
   function parseFloat32(e, minus = false) {
     let retVal = 0;
     switch (e.kind) {
       case 'hex':
-      {
-        retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
-        //retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
-        break;
-      }
+        {
+          retVal = intToFloat32(parseInt(e.value.substr(2), 16), minus);
+          //retVal = intToFloat32(parseInt(e.value.substr(2),16),minus);
+          break;
+        }
       case 'binary':
-      {
-        retVal = intToFloat32(parseInt(e.value.substr(2),2),minus);
-        break;
-      }
+        {
+          retVal = intToFloat32(parseInt(e.value.substr(2), 2), minus);
+          break;
+        }
       default:
-        retVal =  parseFloat(e.value, 10) * (minus ? -1 : 1);
+        retVal = parseFloat(e.value, 10) * (minus ? -1 : 1);
     }
     return module.f32.const(retVal);
   }
 
-  
-  function intToFloat64(low,high,minus){
-    return literalLib.i64tof64(low,high,minus?0x80000000:0);
+
+  function intToFloat64(low, high, minus) {
+    return literalLib.i64tof64(low, high, minus ? 0x80000000 : 0);
   }
 
   function parseFloat64(e, minus = false) {
@@ -563,22 +563,22 @@ export default async function generateCode(ast, binaryen_) {
     switch (e.kind) {
       case 'hex':
         {
-          let value = e.value.substr(2).padStart(16,'0');
-          let low = parseInt(value.slice(-8),16);
-          let high = parseInt(value.substr(0,8),16);
-          retVal = intToFloat64(low,high,minus);
+          let value = e.value.substr(2).padStart(16, '0');
+          let low = parseInt(value.slice(-8), 16);
+          let high = parseInt(value.substr(0, 8), 16);
+          retVal = intToFloat64(low, high, minus);
           break;
         }
       case 'binary':
-      {
-        let value = e.value.substr(2).padStart(64,'0');
-        let low = parseInt(value.slice(-32),2);
-        let high = parseInt(value.substr(0,32),2);
-        retVal =  intToFloat64(low,high,minus);
-        break;
-      }
+        {
+          let value = e.value.substr(2).padStart(64, '0');
+          let low = parseInt(value.slice(-32), 2);
+          let high = parseInt(value.substr(0, 32), 2);
+          retVal = intToFloat64(low, high, minus);
+          break;
+        }
       default:
-      retVal =  parseFloat(e.value) * (minus ? -1 : 1);
+        retVal = parseFloat(e.value) * (minus ? -1 : 1);
     }
     return module.f64.const(retVal);
   }
@@ -591,7 +591,7 @@ export default async function generateCode(ast, binaryen_) {
         return parseInt32(e, minus);
       case 'i64':
       case 'u64':
-        return parseInt64(e,minus);
+        return parseInt64(e, minus);
       case 'f32':
         return parseFloat32(e, minus);
       case 'f64':
@@ -673,6 +673,7 @@ export default async function generateCode(ast, binaryen_) {
     //console.log('** setValue() **');
     !e && (e = n);
     if (e.rvalue) {
+      // 式が右辺値である。
       switch (n.stored) {
         case constants.STORED_LOCAL:
           return module.teeLocal(n.varIndex, v);
@@ -839,6 +840,23 @@ export default async function generateCode(ast, binaryen_) {
         return inc(e.first);
       case '--':
         return dec(e.first);
+      case '*':
+        return pointer(e);
+    }
+  }
+
+  function pointer(e) {
+    switch (e.type) {
+      case 'i32':
+      case 'u32':
+        return module.i32.load(0,4,expression(e.first));
+      case 'i64':
+      case 'u64':
+        return module.i64.load(0,8,expression(e.first));
+      case 'f32':
+        return module.f32.load(0,4,expression(e.first));
+      case 'f64':
+        return module.f64.load(0,8,expression(e.first));
     }
   }
 
@@ -982,8 +1000,8 @@ export default async function generateCode(ast, binaryen_) {
     //console.log('** assignment() **');
     const left = e.first, right = e.second;
 
-
     if (left.value == '.') {
+      // ユーザー定義型のメンバー
       const l = leftDotOp(left);
       if (module[l.type]) {
         const op = setValue(l, expression(right));
@@ -1002,10 +1020,8 @@ export default async function generateCode(ast, binaryen_) {
         m.type = l.type;
         assignment(m, results, false);
       }
-      if (top) {
-        return results.length == 1 ? results[0] : module.block(null, results);
-      }
     } else if (left.members) {
+      // ユーザー定義型
       const leftMembers = left.members;
       const rightMembers = right.members;
       leftMembers.forEach((leftMember, i) => {
@@ -1015,9 +1031,16 @@ export default async function generateCode(ast, binaryen_) {
         e.type = leftMember.type;
         assignment(memberAssignmment, results, false);
       });
-      if (top) {
-        return results.length == 1 ? results[0] : module.block(null, results);
+    } else if(left.value == '*'){
+      // ポインタ
+      let type = module[right.type];
+      if (!type) {
+        type = module['i' + right.type.slice(-2)];
+        if (!type) {
+          error('不正な代入', e);
+        }
       }
+      results.push(type.store(0,4,expression(left.first),expression(right)));
     } else {
       if (left.type != right.type) {
         error('不正な代入：左辺と右辺の型が違います', e);
@@ -1030,9 +1053,10 @@ export default async function generateCode(ast, binaryen_) {
         }
       }
       results.push(setValue(left, expression(right)));
-      if (top) {
-        return results.length == 1 ? results[0] : module.block(null, results);
-      }
+    }
+
+    if (top) {
+      return results.length == 1 ? results[0] : module.block(null, results);
     }
   }
 

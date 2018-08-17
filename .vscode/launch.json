@@ -31,8 +31,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-literal.mjs - use WSL",
-      "program": "${workspaceFolder}/tests/test-literal.mjs",
+      "name": "test-pointer.mjs - use WSL",
+      "program": "${workspaceFolder}/tests/test-pointer.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

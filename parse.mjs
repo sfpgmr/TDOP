@@ -440,7 +440,7 @@ export default function make_parse() {
       super({ id: id, bp: 10 });
     }
     led(left, rvalue = true) {
-      if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name' && left.nodeType !== 'reference') {
+      if (left.id !== '*' && left.id !== '.' && left.id !== '[' && left.nodeType !== 'name' && left.nodeType !== 'reference') {
         error('Bad lvalue.', left);
       }
       this.first = left;
@@ -704,7 +704,7 @@ export default function make_parse() {
   //prefix('typeof');
 
   // ポインタが示す実体を参照する
-  prefix('*');
+  prefix('*').lbp = 70;
   // 変数のアドレスを取得する
   prefix('&');
   // ポインタメンバの参照
