@@ -23,6 +23,7 @@ import types from './test-types.mjs';
         i32 p = 0;
         *p = 32${type.literalSuffix};
         ${type.type} a = *p;
+        *p = *p;
         if( a == 32${type.literalSuffix}){
           return 1;
         } else {

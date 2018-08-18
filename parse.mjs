@@ -15,6 +15,10 @@ function error(message, t = this) {
   t.message = message;
   throw t;
 }
+// 型が決定してない識別子たち
+const undeterminedTypeIds = [
+
+];
 
 class FunctionScope {
   constructor() {
@@ -166,6 +170,7 @@ export default function make_parse() {
     }
   }
 
+  // tokenを進める
   function advance(id) {
     let a;
     let o;
@@ -233,8 +238,36 @@ export default function make_parse() {
     return token;
   }
 
+  function checkType(t,left){
+    if(!t.type){
+      if(left.type && t.value != '*'){
+        t.type = left.type;
+        undeterminedTypeIds.forEach(id=>{
+          if(!id.type){
+            id.type = left.type;
+          }
+        });
+        undeterminedTypeIds.length = 0;
+      } else {
+//        if(t.value == '*'){
+          undeterminedTypeIds.push(t);
+//        }
+      }
+    } 
+  }
+
+  function setDefaultType(){
+    undeterminedTypeIds.forEach(id=>{
+      if(!id.type){
+        id.type = 'i32';
+      }
+    });
+    undeterminedTypeIds.length = 0;
+  }
+  
+  // 式
   function expression(rbp, rvalue = true) {
-    //debugger;
+
     let left;
     let t = token;
 
@@ -244,10 +277,12 @@ export default function make_parse() {
       t = token;
       advance();
       left = t.led(left, rvalue);
-      !t.type && (t.type = left.type);
+      checkType(t,left);
     }
+    //checkType(t,left);
     return left;
   }
+
 
   function statement() {
     const n = token;
@@ -265,7 +300,10 @@ export default function make_parse() {
 
     // 変数定義
     if (n.dvd) {
-      return n.dvd(false);
+      const ret = n.dvd(false);
+      //undeterminedTypeIds.forEach(d=>{d.type = 'i32'});
+      //undeterminedTypeIds.length = 0;
+      return ret;
     }
 
     // 式
@@ -274,6 +312,8 @@ export default function make_parse() {
     // if (!v.assignment && v.id !== '(' && v.nodeType !== 'unary') {
     //   v.error('Bad expression statement.');
     // }
+    //undeterminedTypeIds.forEach(d=>{d.type = 'i32'});
+    //undeterminedTypeIds.length = 0;
     advance(';');
     return v;
   }
@@ -286,6 +326,11 @@ export default function make_parse() {
         break;
       }
       s = statement();
+      setDefaultType();
+
+      // 未決定の型の識別子があれば既定値に設定する
+      //undeterminedTypeIds.forEach(d=>{(!d.type)&&(d.type = 'i32')});
+      //undeterminedTypeIds.length = 0;
 
       if (s instanceof Array) {
         a.push(...s);
@@ -386,7 +431,8 @@ export default function make_parse() {
       this.second = expression(this.lbp);
       this.second.rvalue = true;
 
-      !this.type && (this.type = left.type);
+      checkType(this,left);
+      //!this.type && (this.type = left.type);
       // if(this.first.type != this.second.type){
       //   this.error('type unmatched.');
       // }
@@ -417,7 +463,8 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
-      !this.type && (this.type = left.type);
+      checkType(this,left)
+      //!this.type && (this.type = left.type);
       this.nodeType = 'binary';
       return this;
     }
@@ -451,7 +498,8 @@ export default function make_parse() {
       //   error('type unmatch',this);
       // }
 
-      !this.type && (this.type = left.type);
+      checkType(this,left);
+      //!this.type && (this.type = left.type);
       this.assignment = true;
       this.nodeType = 'binary';
       return this;
@@ -481,7 +529,8 @@ export default function make_parse() {
       scope.reserve(this);
       this.first = expression(70);
       this.rvalue = this.first.rvalue = rvalue;
-      !this.type && (this.type = this.first.type);
+      checkType(this,this.first);
+      //!this.type && (this.type = this.first.type);
       this.nodeType = 'unary';
       return this;
     }
@@ -502,7 +551,8 @@ export default function make_parse() {
   function suffix(id, led = function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
   }) {
@@ -568,7 +618,8 @@ export default function make_parse() {
     advance(':');
     this.third = expression(0);
     this.nodeType = 'ternary';
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -576,7 +627,8 @@ export default function make_parse() {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     advance();
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     this.second = token.name;
     this.second.rvalue = true;
   });
@@ -637,7 +689,8 @@ export default function make_parse() {
     });
     this.nodeType = 'binary';
     advance();
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -688,7 +741,8 @@ export default function make_parse() {
       }
     }
     advance(')');
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -718,7 +772,8 @@ export default function make_parse() {
     this.second = token;
     this.nodeType = 'binary';
     advance();
-    !this.type && (this.type = left.type);
+    checkType(this,left);
+    //!this.type && (this.type = left.type);
     return this;
   });
   
@@ -816,7 +871,8 @@ export default function make_parse() {
       error('Unreachable statement.', token);
     }
     this.nodeType = 'statement';
-    !this.type && (this.type = this.first.type);
+    checkType(this,this.first);
+    //!this.type && (this.type = this.first.type);
     return this;
   });
 
@@ -971,7 +1027,10 @@ export default function make_parse() {
             //const temp = token;
             advance('=');
             t.rvalue = false;
+            (!token.type) && (token.type = t.type);
             t.initialExpression = expression(0);
+
+//            checkType(t,)
             //n.first = t;
             //debugger;
             //n.second = expression(0);
@@ -1032,6 +1091,7 @@ export default function make_parse() {
         n.rvalue = false;
         //debugger;
         //t.second = expression(0);
+        (!token.type) && (token.type = n.type);
         n.initialExpression = expression(0);
         // if(n.initialExpression.nodeType == 'literal' && n.initialExpression.type == 'int'){
         //   n.initialExpression.type = n.type;
