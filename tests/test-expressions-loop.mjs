@@ -31,7 +31,7 @@ test('test-expression-loop-for', async t => {
       const testName = `${t.name}_${tp.type}`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e,e.stack);
@@ -68,7 +68,7 @@ test('test-expression-loop-while', async t => {
       const testName = `${t.name}_${tp.type}`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e,e.stack);
@@ -106,7 +106,7 @@ test('test-expression-do-while', async t => {
       const testName = `${t.name}_${tp.type}`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e,e.stack);

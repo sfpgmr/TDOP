@@ -65,7 +65,7 @@ import types from './test-types.mjs';
       const testName = `${op.name}`;
       let inst, result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e, e.stack);

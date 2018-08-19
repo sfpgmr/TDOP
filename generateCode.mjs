@@ -385,8 +385,15 @@ export default async function generateCode(ast, binaryen_) {
       case 'reference':
       case 'define':
         return name(e);
+      case 'cast':
+        return cast(e);
     }
   }
+
+  // キャスト
+  function cast(e){
+
+  };
 
   function parseInt32(e, minus = false) {
     let retVal = 0;

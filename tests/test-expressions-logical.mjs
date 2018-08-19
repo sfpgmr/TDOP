@@ -37,7 +37,7 @@ test('test-expression-logical', async t => {
         `;
       const testName = `${t.name}_${tp.type}_${op.name}`;
       try {
-        const inst = await compiler.compileAndInstanciate(testName, testSrc);
+        const inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         const result = inst.exports.main();
         t.equal(result, op.result, testName);
       } catch (e) {
@@ -59,7 +59,7 @@ test('test-expression-logical', async t => {
    let testName = `${t.name}_${tp.type}_not`;
    let inst,result1,result2;
    try {
-      inst = await compiler.compileAndInstanciate(testName, testSrc);
+      inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
       result1 = inst.exports.main(1);
     } catch (e) {
       console.log(e,e.stack);

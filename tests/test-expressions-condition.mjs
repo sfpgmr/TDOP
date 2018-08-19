@@ -53,7 +53,7 @@ test('test-expression-condition', async t => {
       const testName = `${t.name}_${tp.type}_${op.name}`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         t.fail(testName);

@@ -39,7 +39,7 @@ test('test-expression-arithmetic', async t => {
       const testName = `${t.name}_${tp.type}_${op.name}`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         t.fail(testName);
@@ -70,7 +70,7 @@ test('test-expression-arithmetic', async t => {
       let testName = `${t.name}_${tp.type}_${op.name}_1`;
       let inst,result;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc);
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e, e.stack);
@@ -88,7 +88,7 @@ test('test-expression-arithmetic', async t => {
     `;
       testName = `${t.name}_${tp.type}_${op.name}_2`;
       try {
-        inst = await compiler.compileAndInstanciate(testName, testSrc2);
+        inst = await compiler.compileAndInstanciate(testName, testSrc2,`./tests/out/${t.name}`);
         result = inst.exports.main();
       } catch (e) {
         console.log(e, e.stack);

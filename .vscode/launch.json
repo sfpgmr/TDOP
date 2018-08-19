@@ -31,8 +31,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-pointer.mjs - use WSL",
-      "program": "${workspaceFolder}/tests/test-pointer.mjs",
+      "name": "test-cast.mjs - use WSL",
+      "program": "${workspaceFolder}/tests/test-cast.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

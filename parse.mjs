@@ -238,13 +238,19 @@ export default function make_parse() {
     return token;
   }
 
+  function getType(t){
+    return t.type || (t.castType && t.castType.type);
+  }
+
   function checkType(t,left){
-    if(!t.type){
-      if(left.type && t.value != '*'){
-        t.type = left.type;
+    let type = getType(t);
+    if(!type){
+      let leftType = left.type || (left.castType && left.castType.type);
+      if(leftType && t.value != '*'){
+        t.type = leftType;
         undeterminedTypeIds.forEach(id=>{
           if(!id.type){
-            id.type = left.type;
+            id.type = leftType;
           }
         });
         undeterminedTypeIds.length = 0;
@@ -279,7 +285,6 @@ export default function make_parse() {
       left = t.led(left, rvalue);
       checkType(t,left);
     }
-    //checkType(t,left);
     return left;
   }
 
@@ -716,6 +721,7 @@ export default function make_parse() {
     } else {
       this.nodeType = 'binary';
       if (left.nodeType === 'name' || left.nodeType === 'reference') {
+        // 関数呼び出しではないか?
         const ft = scope.find(left.value);
         if (ft.nodeType === 'function') {
           this.nodeType = 'call';
@@ -781,7 +787,16 @@ export default function make_parse() {
 
 
   prefix('(', function (rvalue = true) {
-    const e = expression(0);
+    const e = expression(0,rvalue);
+    if(e.id == 'type'){
+      // キャストである
+      // e.id = 'cast';
+      e.nodeType = 'cast';
+      e.rvalue = rvalue;
+      advance(')');
+      e.first = expression(80,rvalue);
+      return e;
+    }
     this.rvalue = rvalue;
     advance(')');
     return e;

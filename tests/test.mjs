@@ -25,7 +25,7 @@ type Foo {
   };
 `;
 
-const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
 t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
@@ -46,7 +46,7 @@ type Foo {
   };
 `;
 
-const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
 console.log(inst.exports.main());
     t.equal(inst.exports.main(),12);
 });
@@ -76,7 +76,7 @@ test('test-type03-nest',async t=>{
     return foo.a * foo1.a;
   };`;
 
-  const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
   t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
@@ -105,7 +105,7 @@ test('test-type03-nest2',async t=>{
     return foo.c.barA;
   };`;
 
-  const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
   t.equal(inst.exports.main(),20);
     console.log(inst.exports.main());
 });
@@ -124,7 +124,7 @@ test('test-fucntion-call',async t=>{
   };
     `;
 
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
     t.equal(inst.exports.main(),4);
     console.log(inst.exports.main());
 });
@@ -141,7 +141,7 @@ test('test-for',async t=>{
   };
       `;
 
-      const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+      const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
       t.equal(inst.exports.main(),4);
     console.log(inst.exports.main());
 });
@@ -158,7 +158,7 @@ test('test-if',async t=>{
   };
       `;
 
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc);
+    const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
     t.equal(inst.exports.main(2),0);
     t.equal(inst.exports.main(1),1);
     console.log(inst.exports.main());
