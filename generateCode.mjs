@@ -391,8 +391,68 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   // キャスト
-  function cast(e){
+  const castOps = {
+    'i32': {
+      'i32':'nop',
+      'u32':'nop',
+      'i64':module.i32.wrap,
+      'u64':module.i32.wrap,
+      'f32':module.i32.trunc_s.f32,
+      'f64':module.i32.trunc_s.f64
+    },
+    'u32': {
+      'i32':'nop',
+      'u32':'nop',
+      'i64':module.i32.wrap,
+      'u64':module.i32.wrap,
+      'f32':module.i32.trunc_u.f32,
+      'f64':module.i32.trunc_u.f64
+    },
+    'i64': {
+      'i32':module.i64.extend_s,
+      'u32':module.i64.extend_s,
+      'i64':'nop',
+      'u64':'nop',
+      'f32':module.i64.trunc_s.f32,
+      'f64':module.i64.trunc_s.f64
+    },
+    'u64': {
+      'i32':module.i64.extend_u,
+      'u32':module.i64.extend_u,
+      'i64':'nop',
+      'u64':'nop',
+      'f32':module.i64.trunc_u.f32,
+      'f64':module.i64.trunc_u.f64
+    },
+    'f32': {
+      'i32':module.f32.convert_s.i32,
+      'u32':module.f32.convert_u.i32,
+      'i64':module.f32.convert_s.i64,
+      'u64':module.f32.convert_u.i64,
+      'f32':'nop',
+      'f64':module.f32.demote
+    },
+    'f64': {
+      'i32':module.f64.convert_s.i32,
+      'u32':module.f64.convert_u.i32,
+      'i64':module.f64.convert_s.i64,
+      'u64':module.f64.convert_u.i64,
+      'f32':module.f64.promote,
+      'f64':'nop'
+    }
+  };
 
+  function cast(e){
+    let castOp = castOps[e.type];
+    castOp && (castOp = castOp[e.first.type]);
+    if(castOp && castOp != 'nop'){
+      return castOp(expression(e.first));
+    } else if(castOp == 'nop'){
+      return expression(e.first);
+    }
+    if(!castOp){
+      error(`キャストができない型です。${e.type}`,e);
+    }
   };
 
   function parseInt32(e, minus = false) {
