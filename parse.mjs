@@ -787,11 +787,17 @@ export default function make_parse() {
 
 
   prefix('(', function (rvalue = true) {
+    let reinterpret = false;
+    if(token.id == '~'){
+      reinterpret = true;
+      advance();
+    }
     const e = expression(0,rvalue);
     if(e.id == 'type'){
       // キャストである
       // e.id = 'cast';
       e.nodeType = 'cast';
+      e.reinterpret = reinterpret;
       e.rvalue = rvalue;
       advance(')');
       e.first = expression(80,rvalue);
@@ -801,6 +807,7 @@ export default function make_parse() {
     advance(')');
     return e;
   });
+
 
   prefix('[', function (rvalue = true) {
     const a = [];
