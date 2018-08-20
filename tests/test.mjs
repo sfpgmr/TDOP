@@ -8,6 +8,7 @@ import './test-expressions-bitwise.mjs';
 import './test-expressions-loop.mjs';
 import './test-literal.mjs';
 import './test-pointer.mjs';
+import './test-cast.mjs';
 
 
 //test_expression_add();
