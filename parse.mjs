@@ -788,13 +788,14 @@ export default function make_parse() {
 
   prefix('(', function (rvalue = true) {
     let reinterpret = false;
-    if(token.id == '~'){
+    if(token.id == '^'){
       reinterpret = true;
       advance();
     }
-    const e = expression(0,rvalue);
+    let e = token;
     if(e.id == 'type'){
       // キャストである
+      advance();
       // e.id = 'cast';
       e.nodeType = 'cast';
       e.reinterpret = reinterpret;
@@ -802,6 +803,8 @@ export default function make_parse() {
       advance(')');
       e.first = expression(80,rvalue);
       return e;
+    } else {
+      e = expression(0,rvalue);
     }
     this.rvalue = rvalue;
     advance(')');

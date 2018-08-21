@@ -442,8 +442,32 @@ export default async function generateCode(ast, binaryen_) {
     }
   };
 
+  const reinterpretCastOps = {
+    'i32':{
+      'f32':module.i32.reinterpret
+    },
+    'u32':{
+      'f32':module.i32.reinterpret
+    },
+    'i64':{
+      'f64':module.i64.reinterpret
+    },
+    'u64':{
+      'f64':module.i64.reinterpret
+    },
+    'f32':{
+      'i32':module.f32.reinterpret,
+      'u32':module.f32.reinterpret
+    },
+    'f64':{
+      'i64':module.f64.reinterpret,
+      'u64':module.f64.reinterpret
+    }
+  };
+
   function cast(e){
-    let castOp = castOps[e.type];
+    const castOps_ = e.reinterpret ? reinterpretCastOps : castOps;
+    let castOp = castOps_[e.type];
     castOp && (castOp = castOp[e.first.type]);
     if(castOp && castOp != 'nop'){
       return castOp(expression(e.first));
