@@ -465,17 +465,32 @@ export default async function generateCode(ast, binaryen_) {
     }
   };
 
+  const pointerCasts = {
+    'i32':module.i32.load,
+    'u32':module.i32.load,
+    'i64':module.i64.load,
+    'u64':module.i64.load,
+    'f32':module.f32.load,
+    'f64':module.f64.load,
+  }
+
   function cast(e){
-    const castOps_ = e.reinterpret ? reinterpretCastOps : castOps;
-    let castOp = castOps_[e.type];
-    castOp && (castOp = castOp[e.first.type]);
-    if(castOp && castOp != 'nop'){
-      return castOp(expression(e.first));
-    } else if(castOp == 'nop'){
-      return expression(e.first);
-    }
-    if(!castOp){
-      error(`キャストができない型です。${e.type}`,e);
+    if(e.first.nodeType == 'unary' && e.first.value == '*'){
+      // 直下がポインタである場合
+      return pointer(e.first);
+    } else {
+      // それ以外
+      const castOps_ = e.reinterpret ? reinterpretCastOps : castOps;
+      let castOp = castOps_[e.type];
+      castOp && (castOp = castOp[e.first.type]);
+      if(castOp && castOp != 'nop'){
+        return castOp(expression(e.first));
+      } else if(castOp == 'nop'){
+        return expression(e.first);
+      }
+      if(!castOp){
+        error(`キャストができない型です。${e.type}`,e);
+      }
     }
   };
 
@@ -756,8 +771,28 @@ export default async function generateCode(ast, binaryen_) {
       // ドット演算子
       case '.':
         return dotOp(e);
+      case '[':
+        return array(e);
     }
     error('Bad Binary Operator', e);
+  }
+
+  function array(e){
+    const type = e.type;
+    switch (type) {
+      case 'i32':
+      case 'u32':
+        return module.i32.load(0,4,module.i32.add(expression(e.first),expression(e.second)));
+      case 'i64':
+      case 'u64':
+        return module.i64.load(0,8,module.i32.add(expression(e.first),expression(e.second)));
+      case 'f32':
+        return module.f32.load(0,4,module.i32.add(expression(e.first),expression(e.second)));
+      case 'f64':
+        return module.f64.load(0,8,module.i32.add(expression(e.first),expression(e.second)));
+      default:
+        error('まだ実装できてません。。',e);
+    }
   }
 
   function setValue(n, v, e) {
@@ -936,8 +971,9 @@ export default async function generateCode(ast, binaryen_) {
     }
   }
 
-  function pointer(e) {
-    switch (e.type) {
+  function pointer(e,castType) {
+    const type = castType || e.type;
+    switch (type) {
       case 'i32':
       case 'u32':
         return module.i32.load(0,4,expression(e.first));
@@ -948,6 +984,8 @@ export default async function generateCode(ast, binaryen_) {
         return module.f32.load(0,4,expression(e.first));
       case 'f64':
         return module.f64.load(0,8,expression(e.first));
+      default:
+        error('まだ実装できてません。。',e);
     }
   }
 
@@ -1132,6 +1170,16 @@ export default async function generateCode(ast, binaryen_) {
         }
       }
       results.push(type.store(0,4,expression(left.first),expression(right)));
+    } else if(left.value == '['){
+      let type = module[right.type];
+      if (!type) {
+        type = module['i' + right.type.slice(-2)];
+        if (!type) {
+          error('不正な代入', e);
+        }
+      }
+      results.push(type.store(0,4,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
+
     } else {
       if (left.type != right.type) {
         error('不正な代入：左辺と右辺の型が違います', e);

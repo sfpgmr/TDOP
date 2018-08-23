@@ -112,6 +112,32 @@ import types from './test-types.mjs';
       t.equal(result, 1, testName);
     }
   });
+
+  test('test-cast-pointer', async t => {
+      const testSrc = `
+      export i32 main(){
+        i32 ptr = 0x800;
+        *ptr = 0x3e200000x;
+        i32 a = (i32)((f32)*ptr + 2.0f);
+        if( a == 2){
+          return 1;
+        } else {
+          return 0;
+        }
+      };
+      `;
+      const testName = `${t.name}`;
+      let inst, result;
+      try {
+        inst = await compiler.compileAndInstanciate(testName, testSrc,`./tests/out/${t.name}`);
+        result = inst.exports.main();
+      } catch (e) {
+        console.log(e, e.stack);
+        t.fail(testName);
+      }
+      t.equal(result, 1, testName);
+  });
+
   // test('test-cast-2', async t => {
   //   for(const type of types){
   //     const testSrc = `
