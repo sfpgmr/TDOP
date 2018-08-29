@@ -4,6 +4,14 @@ const compilerWasmSrc = `
 (module
   (export "i32tof32" $i32tof32)
   (export "i64tof64" $i64tof64)
+  (export "i64add" $i64add)
+  (export "i64sub" $i64sub)
+  (export "i64mul" $i64mul)
+  (export "i64div_s" $i64div_s)
+  (export "i64div_u" $i64div_u)
+  (memory $memory 1)
+  (export "memory" (memory $memory))
+  
   ;; IEE754 float32のビットパターンを持つ32ビット整数値をf32に変換する
   (func $i32tof32 (param $i i32) (param $minus i32) (result f32)
     (f32.reinterpret/i32
@@ -13,6 +21,7 @@ const compilerWasmSrc = `
       )
     )
   )
+
   ;; IEEE754 float64のビットパターンを持つ2つの32ビット値（high,low）を元にして、64bit floatを返す
   (func $i64tof64 (param $low i32) (param $high i32) (param $minus i32) (result f64)
     (f64.reinterpret/i64
@@ -30,6 +39,31 @@ const compilerWasmSrc = `
         )
       )
     )
+  )
+
+  ;; メモリの先頭と+8バイトのオフセットの値を加算して、オフセット+16の位置に値を格納するメソッド
+  (func $i64add 
+    (i64.store (i32.const 16) (i64.add (i64.load_s (i32.const 0)) (i64.load (i32.const 8))))
+  )
+
+  ;; 減算
+  (func $i64sub 
+    (i64.store (i32.const 16) (i64.sub (i64.load (i32.const 0)) (i64.load (i32.const 8))))
+  )
+
+  ;; 乗算
+  (func $i64mul 
+    (i64.store (i32.const 16) (i64.mul (i64.load (i32.const 0)) (i64.load (i32.const 8))))
+  )
+
+  ;; 除算(符号あり)
+  (func $i64div_s
+    (i64.store (i32.const 16) (i64.div_s (i64.load (i32.const 0)) (i64.load (i32.const 8))))
+  )
+
+  ;; 除算(符号なし)
+  (func $i64div_u
+    (i64.store (i32.const 16) (i64.div_u (i64.load (i32.const 0)) (i64.load (i32.const 8))))
   )
 )
 `;
@@ -160,8 +194,9 @@ export default async function generateCode(ast, binaryen_) {
     }
   }
 
+  // class定義
   function classDefinition(stmt) {
-    return null;
+    return error('まだ実装されてません。',stmt);
   }
 
   // 関数呼び出し
@@ -235,115 +270,50 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   // 変数定義
+  const constants = new Map();
   function define_(d, vars = localVars) {
     //console.log('** define_() **');
-    if (!d.userType) {
-      // WASM ネイティブ型
-      // ローカル
-      let varType = binaryen[d.type];
-      let varTypeObj = module[d.type];
-      if (!varType) {
-        const t = 'i' + d.type.slice(-2);
-        varType = binaryen[t];
-        varTypeObj = module[t];
-      }
-      (!varType) && error('Bad Type', d.type);
-      switch (d.stored) {
-        case constants.STORED_LOCAL:
-          {
-            vars && vars.push(varType);
-            if (d.initialExpression) {
-              return module.setLocal(d.varIndex, expression(d.initialExpression));
-            }
-            return null;
-          }
-        case constants.STORED_GLOBAL:
-          if (d.initialExpression) {
-            return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
-          } else {
-            return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
-          }
-      }
+    if(d.const){
+      constants.set(d.value,staticExpression(d.initialExpression));
+      return null;
     } else {
-      // ユーザー定義型
-      const results = [];
-      d.members && d.members.forEach(m => {
-        const r = define(m);
-        (r instanceof Array) ? results.push(...r) : (r && results.push(r));
-      });
-      return results;
+      if (!d.userType) {
+        // WASM ネイティブ型
+        // ローカル
+        let varType = binaryen[d.type];
+        let varTypeObj = module[d.type];
+        if (!varType) {
+          const t = 'i' + d.type.slice(-2);
+          varType = binaryen[t];
+          varTypeObj = module[t];
+        }
+        (!varType) && error('Bad Type', d.type);
+        switch (d.stored) {
+          case constants.STORED_LOCAL:
+            {
+              vars && vars.push(varType);
+              if (d.initialExpression) {
+                return module.setLocal(d.varIndex, expression(d.initialExpression));
+              }
+              return null;
+            }
+          case constants.STORED_GLOBAL:
+            if (d.initialExpression) {
+              return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
+            } else {
+              return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
+            }
+        }
+      } else {
+        // ユーザー定義型
+        const results = [];
+        d.members && d.members.forEach(m => {
+          const r = define(m);
+          (r instanceof Array) ? results.push(...r) : (r && results.push(r));
+        });
+        return results;
+      }
     }
-    // switch (d.nodeType) {
-    // case 'binary':
-    //   // 初期値あり
-    //   if(binaryen[d.type]){
-    //     // WASM ネイティブ型
-    //     // ローカル
-    //     if (d.first.scope) {
-    //       const left = d.first;
-    //       vars && vars.push(binaryen[left.type]);
-    //       left.varIndex = varIndex++;
-    //       // 初期値の設定ステートメント
-    //       d.global = false;
-    //       return  module.setLocal(left.varIndex, expression(d.second));
-    //     } else {
-    //       module.addGlobal(d.first.value, binaryen[d.first.type], true, expression(d.second));
-    //       d.global = true;
-    //     }
-    //   } else {
-    //     // ユーザー定義型
-
-    //   }
-    //   break;
-    // case 'name':
-    //   //　初期値なし 
-    //   if(binaryen[d.type]){
-    //     // WASM ネイティブ型
-    //     if (d.scope) {
-    //       // ローカル
-    //       vars && vars.push(binaryen[d.type]);
-    //       d.varIndex = varIndex++;
-    //       d.global = false;
-    //       return module.setLocal(d.varIndex, module[d.type].const(0));
-    //     } else {
-    //       // グローバル
-    //       d.global = true;
-    //       return module.addGlobal(d.value, binaryen[d.type], true, module.i32.const(0));
-    //     }
-    //   } else {
-    //     // ユーザー定義型
-
-    //     const typedef = d.scope.find(d.type,true);
-    //     if(!typedef){
-    //       error('Type Not Found.',d);
-    //     }
-    //     const detail = typedef.detail.second;
-    //     d.members = new Map();
-    //     detail.forEach(d=>{
-    //       //d.members.set()          
-
-    //     });
-    //     d.members = detail.map(d=>{
-    //       return {
-    //         ref:d
-
-    //       };
-    //       Object.assign(Object.create(d),d)
-    //     });
-
-    //     //console.log(detail);
-    //     const results = [];
-    //     d.members.forEach(member=>{
-    //       const results_ = define(member);
-    //       if(results_ instanceof Array){
-    //         results.push(...results_);
-    //       } else {
-    //         results.push(results_);
-    //       }
-    //     });
-    //     return results;
-    //   }
-    // }
   }
 
   // 変数定義
@@ -385,9 +355,42 @@ export default async function generateCode(ast, binaryen_) {
       case 'reference':
       case 'define':
         return name(e);
+      case 'const':
+        return constantExpression(e);
       case 'cast':
         return cast(e);
     }
+  }
+
+  function constantExpression(e){
+    ret
+  }
+
+  function expressionConstant(e)
+  {
+    switch (e.nodeType) {
+      case 'literal':
+        return staticLiteral(e);
+      case 'binary':
+        return staticBinary(e);
+      case 'unary':
+        return unary(e);
+      case 'name':
+        return name(e);
+      case 'call':
+        return call(e);
+      case 'suffix':
+        return suffix(e);
+      case 'reference':
+      case 'define':
+        throw error('定数式では使用できません。',e);
+      case 'const':
+        return constantExpression(e);
+      case 'cast':
+        return cast(e);
+    }
+
+
   }
 
   // キャスト

@@ -31,8 +31,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-cast.mjs - use WSL",
-      "program": "${workspaceFolder}/tests/test-array.mjs",
+      "name": "test-const.mjs - use WSL",
+      "program": "${workspaceFolder}/tests/test-const.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

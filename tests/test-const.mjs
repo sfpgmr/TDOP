@@ -5,16 +5,16 @@ import * as compiler from './compiler.mjs';
 import types from './test-types.mjs';
 
 {
-  test('test-array', async t => {
+  test('test-const', async t => {
     for(const type of types){
       const testSrc = `
+      // 定数は常にグローバルスコープとなる
+      const CONST_A = 4${type.literalSuffix} * 2${type.literalSuffix};
+      const CONST_B = 2${type.literalSuffix} * CONST_A;
       export i32 main(){
-        i32 p = 0;
-        for(i32 i = 0;i < 10;++i){
-          p[i] = (${type.type})i;
-        }
-        ${type.type} a = p[9];
-        if( a == 9${type.literalSuffix}){
+        // ローカルスコープ
+        ${type.type} a = CONST_A * CONST_B;
+        if( a == 128${type.literalSuffix}){
           return 1;
         } else {
           return 0;

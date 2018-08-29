@@ -586,6 +586,11 @@ export default function make_parse() {
     return defineVarAndFunction.bind(token)();
   });
 
+  stmt('const', function () {
+    token.const = true;
+    return defineVarAndFunction.bind(token)();
+  });
+
   stmt('(name)');
 
   sym(':');
@@ -945,12 +950,33 @@ export default function make_parse() {
     return this;
   });
 
+  // 変数・関数定義
   function defineVarAndFunction(typedef = false) {
-    //debugger;
+
+    // 定数定義の場合
+    if(this.const){
+      advance();
+      if(token.id == '='){
+        const t = token;
+        advance('=');
+        this.rvalue = false;
+        //(!token.type) && (token.type = t.type);
+        this.initialExpression = expression(0);
+        checkType(this,this.initialExpression);
+        this.nodeType = 'define';
+        scope.define(this);
+        advance(';');
+        return this;
+      } else {
+        error('文法エラー：初期値が必要です。',this);
+      }
+    }
+
     let a = [];
     let n;
     advance();
     n = token;
+
     // ポインタ型かどうか
     if (n.id == '*') {
       advance();
@@ -1054,6 +1080,8 @@ export default function make_parse() {
             t.rvalue = false;
             (!token.type) && (token.type = t.type);
             t.initialExpression = expression(0);
+            checkType(t.initialExpression,t);
+
 
 //            checkType(t,)
             //n.first = t;
@@ -1118,6 +1146,7 @@ export default function make_parse() {
         //t.second = expression(0);
         (!token.type) && (token.type = n.type);
         n.initialExpression = expression(0);
+        checkType(n.initialExpression,n);
         // if(n.initialExpression.nodeType == 'literal' && n.initialExpression.type == 'int'){
         //   n.initialExpression.type = n.type;
         // } 
