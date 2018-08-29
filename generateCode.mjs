@@ -1,14 +1,9 @@
-import * as constants from './compilerConstants.mjs';
+import * as compilerConstants from './compilerConstants.mjs';
 
 const compilerWasmSrc = `
 (module
   (export "i32tof32" $i32tof32)
   (export "i64tof64" $i64tof64)
-  (export "i64add" $i64add)
-  (export "i64sub" $i64sub)
-  (export "i64mul" $i64mul)
-  (export "i64div_s" $i64div_s)
-  (export "i64div_u" $i64div_u)
   (memory $memory 1)
   (export "memory" (memory $memory))
   
@@ -40,31 +35,6 @@ const compilerWasmSrc = `
       )
     )
   )
-
-  ;; メモリの先頭と+8バイトのオフセットの値を加算して、オフセット+16の位置に値を格納するメソッド
-  (func $i64add 
-    (i64.store (i32.const 16) (i64.add (i64.load_s (i32.const 0)) (i64.load (i32.const 8))))
-  )
-
-  ;; 減算
-  (func $i64sub 
-    (i64.store (i32.const 16) (i64.sub (i64.load (i32.const 0)) (i64.load (i32.const 8))))
-  )
-
-  ;; 乗算
-  (func $i64mul 
-    (i64.store (i32.const 16) (i64.mul (i64.load (i32.const 0)) (i64.load (i32.const 8))))
-  )
-
-  ;; 除算(符号あり)
-  (func $i64div_s
-    (i64.store (i32.const 16) (i64.div_s (i64.load (i32.const 0)) (i64.load (i32.const 8))))
-  )
-
-  ;; 除算(符号なし)
-  (func $i64div_u
-    (i64.store (i32.const 16) (i64.div_u (i64.load (i32.const 0)) (i64.load (i32.const 8))))
-  )
 )
 `;
 
@@ -82,7 +52,7 @@ export function getInstance(obj) {
 let binaryen;
 
 export default async function generateCode(ast, binaryen_) {
-
+  let constant = false;
   if (!binaryen) {
     await new Promise((resolve, reject) => {
       binaryen = binaryen_({
@@ -99,7 +69,7 @@ export default async function generateCode(ast, binaryen_) {
   //       resolve(bin);
   //     });
   //   });
-  const module = new binaryen.Module();
+  let module = new binaryen.Module();
   const literalLib = getInstance(binaryen.parseText(compilerWasmSrc).emitBinary()).exports;
 
 
@@ -209,7 +179,7 @@ export default async function generateCode(ast, binaryen_) {
 
   // 関数定義
   function functionStatement(funcNode) {
-    //console.log('** define_() **');
+    //console.log('** defftypine_() **');
     // 関数本体
     const wasmStatement = [];
 
@@ -271,10 +241,11 @@ export default async function generateCode(ast, binaryen_) {
 
   // 変数定義
   const constants = new Map();
+
   function define_(d, vars = localVars) {
     //console.log('** define_() **');
     if(d.const){
-      constants.set(d.value,staticExpression(d.initialExpression));
+      constants.set(d.value,expressionConstant(d.initialExpression));
       return null;
     } else {
       if (!d.userType) {
@@ -289,7 +260,7 @@ export default async function generateCode(ast, binaryen_) {
         }
         (!varType) && error('Bad Type', d.type);
         switch (d.stored) {
-          case constants.STORED_LOCAL:
+          case compilerConstants.STORED_LOCAL:
             {
               vars && vars.push(varType);
               if (d.initialExpression) {
@@ -297,7 +268,7 @@ export default async function generateCode(ast, binaryen_) {
               }
               return null;
             }
-          case constants.STORED_GLOBAL:
+          case compilerConstants.STORED_GLOBAL:
             if (d.initialExpression) {
               return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
             } else {
@@ -341,7 +312,7 @@ export default async function generateCode(ast, binaryen_) {
   function expression(e) {
     switch (e.nodeType) {
       case 'literal':
-        return literal(e);
+        return literal(e,false);
       case 'binary':
         return binary(e);
       case 'unary':
@@ -354,6 +325,9 @@ export default async function generateCode(ast, binaryen_) {
         return suffix(e);
       case 'reference':
       case 'define':
+        if(constant){
+          error('定数式では使用できません',e);
+        }
         return name(e);
       case 'const':
         return constantExpression(e);
@@ -362,35 +336,30 @@ export default async function generateCode(ast, binaryen_) {
     }
   }
 
-  function constantExpression(e){
-    ret
-  }
 
   function expressionConstant(e)
   {
-    switch (e.nodeType) {
-      case 'literal':
-        return staticLiteral(e);
-      case 'binary':
-        return staticBinary(e);
-      case 'unary':
-        return unary(e);
-      case 'name':
-        return name(e);
-      case 'call':
-        return call(e);
-      case 'suffix':
-        return suffix(e);
-      case 'reference':
-      case 'define':
-        throw error('定数式では使用できません。',e);
-      case 'const':
-        return constantExpression(e);
-      case 'cast':
-        return cast(e);
-    }
+    let backup = module;
+    let constantBackup = constant;
+    constant = true;
+    module = new binaryen.Module();
+    module.setMemory(1,1,'output');
+    //module.addMemoryExport('0','output');
+    const ftype = module.addFunctionType('m',binaryen.none);
+    
+    let stmt = module[e.type].store(
+      0,4,module.i32.const(0),expression(e)
+    );
 
+    module.addFunction('m',ftype,[],stmt);
+    module.addFunctionExport('m','m');
 
+    let inst = getInstance(module.emitBinary());
+    inst.exports.m();
+    
+    module.dispose();
+    module = backup;
+    constant = constantBackup;
   }
 
   // キャスト
@@ -804,23 +773,23 @@ export default async function generateCode(ast, binaryen_) {
     if (e.rvalue) {
       // 式が右辺値である。
       switch (n.stored) {
-        case constants.STORED_LOCAL:
+        case compilerConstants.STORED_LOCAL:
           return module.teeLocal(n.varIndex, v);
-        case constants.STORED_GLOBAL:
+        case compilerConstants.STORED_GLOBAL:
           return module.block(null, [
             module.setGlobal(n.value, v),
             module.getGlobal(n.value, n.type)
           ]);
       }
     } else {
-      return (n.stored == constants.STORED_LOCAL) ? module.setLocal(n.varIndex, v) : module.setGlobal(n.value, v);// ** マングル化が必要 ***
+      return (n.stored == compilerConstants.STORED_LOCAL) ? module.setLocal(n.varIndex, v) : module.setGlobal(n.value, v);// ** マングル化が必要 ***
     }
   }
 
   function getValue(e) {
     //console.log('** getValue() **');
     const n = e.first;
-    return (n.stored == constants.STORED_LOCAL) ? module.getLocal(n.varIndex, n.type) : module.getGlobal(n.value, n.type);
+    return (n.stored == compilerConstants.STORED_LOCAL) ? module.getLocal(n.varIndex, n.type) : module.getGlobal(n.value, n.type);
   }
 
 
@@ -1092,9 +1061,9 @@ export default async function generateCode(ast, binaryen_) {
     const nativeType = binaryen[e.type];
     if (nativeType) {
       switch (e.stored) {
-        case constants.STORED_LOCAL:
+        case compilerConstants.STORED_LOCAL:
           return module.getLocal(e.varIndex, binaryen[e.type]);
-        case constants.STORED_GLOBAL:
+        case compilerConstants.STORED_GLOBAL:
           return module.getGlobal(e.value, binaryen[e.type]);
       }
     } else {
@@ -1104,9 +1073,9 @@ export default async function generateCode(ast, binaryen_) {
           {
             const type = 'i' + e.type.slice(-2);
             switch (e.stored) {
-              case constants.STORED_LOCAL:
+              case compilerConstants.STORED_LOCAL:
                 return module.getLocal(e.varIndex, binaryen[type]);
-              case constants.STORED_GLOBAL:
+              case compilerConstants.STORED_GLOBAL:
                 return module.getGlobal(e.value, binaryen[type]);
             }
           }
