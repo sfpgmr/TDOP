@@ -44,9 +44,9 @@ function error(message, t = this) {
   throw t;
 }
 
-export function getInstance(obj) {
+export function getInstance(obj,imports = {}) {
   const bin = new WebAssembly.Module(obj);
-  const inst = new WebAssembly.Instance(bin, {});
+  const inst = new WebAssembly.Instance(bin, imports);
   return inst;
 }
 let binaryen;
@@ -166,7 +166,7 @@ export default async function generateCode(ast, binaryen_) {
 
   // class定義
   function classDefinition(stmt) {
-    return error('まだ実装されてません。',stmt);
+    //return error('まだ実装されてません。',stmt);
   }
 
   // 関数呼び出し
@@ -325,17 +325,21 @@ export default async function generateCode(ast, binaryen_) {
         return suffix(e);
       case 'reference':
       case 'define':
-        if(constant){
-          error('定数式では使用できません',e);
-        }
         return name(e);
       case 'const':
-        return constantExpression(e);
+        return getConstant(e);
       case 'cast':
         return cast(e);
     }
   }
 
+
+  function getConstant(e){
+    let c = constants.get(e.value);
+    if(c) return c;
+    throw error('不正な定数を参照しました。',e);
+  }
+  //const memForConstants = new WebAssembly.Memory({initial:1,maximum:1});
 
   function expressionConstant(e)
   {
@@ -345,21 +349,65 @@ export default async function generateCode(ast, binaryen_) {
     module = new binaryen.Module();
     module.setMemory(1,1,'output');
     //module.addMemoryExport('0','output');
+    //module.addMemoryImport('0','js','mem');
     const ftype = module.addFunctionType('m',binaryen.none);
-    
-    let stmt = module[e.type].store(
-      0,4,module.i32.const(0),expression(e)
-    );
+    let stmt;
+    switch(e.type){
+      case 'i32':
+      case 'u32':
+        stmt = module.i32.store(0,4,module.i32.const(0),expression(e));
+        break;
+      case 'i64':
+      case 'u64':
+        stmt = module.i64.store(0,8,module.i32.const(0),expression(e));
+        break;
+      case 'f32':
+        stmt = module.f32.store(0,4,module.i32.const(0),expression(e));
+        break;
+      case 'f64':
+        stmt = module.f64.store(0,8,module.i32.const(0),expression(e));
+        break;
+      default:
+        error('定数式で処理できない型です。',e);
+    }
 
     module.addFunction('m',ftype,[],stmt);
     module.addFunctionExport('m','m');
 
-    let inst = getInstance(module.emitBinary());
-    inst.exports.m();
-    
+    let wasmInstance = getInstance(module.emitBinary()/*,{js:{mem:memForConstants}}*/);
+    let instruction;
+    wasmInstance.exports.m();
+    const mem = new DataView(wasmInstance.exports.output.buffer);
+    switch(e.type){
+      case 'i32':
+        instruction = (()=> { const v = mem.getInt32(0,true); return ()=>module.i32.const(v);})();
+        //instruction = module.i32.const(mem.getInt32(0,true));
+        break;
+      case 'u32':
+        instruction = (()=> { const v = mem.getUint32(0,true); return ()=>module.i32.const(v);})();
+        //instruction = module.i32.const(mem.getUint32(0,true));
+        break;
+      case 'i64':
+      case 'u64':
+        instruction = (()=> { const l = mem.getUint32(0,true),h = mem.getUint32(4,true); return ()=>module.i64.const(l,h);})();
+        //instruction = module.i64.const(mem.getUint32(0,true),mem.getUint32(4,true));
+        break;
+      case 'f32':
+        instruction = (()=> { const v = mem.getFloat32(0,true); return ()=>module.f32.const(v);})();
+        //instruction = module.f32.const(mem.getFloat32(0,true));
+        break;
+      case 'f64':
+        instruction = (()=> { const v = mem.getFloat64(0,true); return ()=>module.f64.const(v);})();
+        //instruction = module.f64.const(mem.getFloat64(0,true));
+        break;
+      default:
+        error('不正な型です。',e);
+        break;
+    }
     module.dispose();
     module = backup;
     constant = constantBackup;
+    return instruction;
   }
 
   // キャスト
@@ -1057,6 +1105,17 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function name(e) {
+
+    if(constant && (!e.const)){
+      error('定数式では使用できません',e);
+    }
+
+    if(e.const){
+      let constant = constants.get(e.value);
+      if(constant) return constant();
+      error('この定数は定義されていません。',e);
+    }
+
     //console.log('** name() **');
     const nativeType = binaryen[e.type];
     if (nativeType) {

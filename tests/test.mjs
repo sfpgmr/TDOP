@@ -10,6 +10,7 @@ import './test-literal.mjs';
 import './test-pointer.mjs';
 import './test-cast.mjs';
 import './test-array.mjs';
+import './test-const.mjs';
 
 
 //test_expression_add();

@@ -79,6 +79,7 @@ export default function make_parse() {
   let scope;
   let scopeTop;
   let funcScope = new FunctionScope();
+  let currentType = null;
 
   function createScope() {
     const s = new Scope(scope);
@@ -229,7 +230,10 @@ export default function make_parse() {
     o.members && (token.members = o.members);
     o.varIndex && (token.varIndex = o.varIndex);
     //token.type = a;
-    type && (token.type = type);
+    if(type) {
+      token.type = type;
+      currentType = type;
+    }
     t.kind && (token.kind = t.kind);
     o.userType && (token.userType = o.userType);
     ref && (token.nodeType = 'reference');
@@ -238,14 +242,10 @@ export default function make_parse() {
     return token;
   }
 
-  function getType(t){
-    return t.type || (t.castType && t.castType.type);
-  }
-
   function checkType(t,left){
-    let type = getType(t);
+    let type = t.type;
     if(!type){
-      let leftType = left.type || (left.castType && left.castType.type);
+      let leftType = left.type;
       if(leftType && t.value != '*'){
         t.type = leftType;
         undeterminedTypeIds.forEach(id=>{
@@ -265,10 +265,11 @@ export default function make_parse() {
   function setDefaultType(){
     undeterminedTypeIds.forEach(id=>{
       if(!id.type){
-        id.type = 'i32';
+        id.type = currentType || 'i32';
       }
     });
     undeterminedTypeIds.length = 0;
+    currentType = null;
   }
   
   // 式
