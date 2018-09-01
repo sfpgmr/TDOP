@@ -592,6 +592,8 @@ export default function make_parse() {
     return defineVarAndFunction.bind(token)();
   });
 
+
+
   stmt('(name)');
 
   sym(':');
@@ -791,6 +793,15 @@ export default function make_parse() {
   
   prefix('~',80);
 
+  prefix('sizeof', function (rvalue = true) {
+
+    advance('(');
+    this.first = expression(80,rvalue);
+    this.rvalue = rvalue;
+    this.nodeType = 'sizeof';
+    advance(')');
+    return this;
+  });
 
   prefix('(', function (rvalue = true) {
     let reinterpret = false;
@@ -1289,9 +1300,9 @@ export default function make_parse() {
     //global = scope;
     scopeTop = createScope();
     // ビルトイン 型
-    ['u32', 'u64', 'i32', 'i64', 'f32', 'f64', 'void', 'string']
+    [{name:'u32',size:4},{name:'u64',size:8},{name:'i32',size:4},{name:'i64',size:8}, {name:'f32',size:4}, {name:'f64',size:8},{name:'void',size:0},{name:'string'}]
       .forEach(t => {
-        scope.define({ id: 'type', value: t, type: t, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false });
+        scope.define({ id: 'type', value: t.name, type: t.name, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:t.size });
       });
     advance();
     const s = statements();

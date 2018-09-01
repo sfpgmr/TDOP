@@ -330,9 +330,14 @@ export default async function generateCode(ast, binaryen_) {
         return getConstant(e);
       case 'cast':
         return cast(e);
+      case 'sizeof':
+        return sizeof(e);
     }
   }
 
+  function sizeof(e){
+
+  }
 
   function getConstant(e){
     let c = constants.get(e.value);
