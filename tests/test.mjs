@@ -11,6 +11,7 @@ import './test-pointer.mjs';
 import './test-cast.mjs';
 import './test-array.mjs';
 import './test-const.mjs';
+import './test-sizeof.mjs';
 
 
 //test_expression_add();

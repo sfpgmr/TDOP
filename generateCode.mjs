@@ -336,7 +336,21 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function sizeof(e){
-
+    const v = e.first;
+    if(v.id == 'type'){
+      return module.i32.const(v.size);
+    } else {
+      if(v.type){
+        let typeinfo = v.scope.find(v.type,true);
+        if(typeinfo){
+          return module.i32.const(typeinfo.size);
+        } else {
+          error('sizeof',e);
+        }
+      } else {
+        error('sizeof',e);
+      }
+    }
   }
 
   function getConstant(e){
