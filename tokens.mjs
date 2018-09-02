@@ -357,29 +357,49 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
             c = source[i];
           } while (c >= '0' && c <= '9');
         }
-        let _64 = false;
+
+        let bitSize = 32;
 
         if(c == 'l' || c == 'L'){
           // 64bit Type
-          _64 = true;
+          bitSize = 64;
           if(type == 'i32'){
             type = 'i64';
           }
-          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 's' || c == 'S'){
+          bitSize = 8;
+          if(type == 'i32'){
+            type = 'i8';
+          }
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'w' || c == 'W'){
+          bitSize = 16;
+          if(type == 'i32'){
+            type = 'i16';
+          }
           ++i;
           ++posx;
           c = source[i];
         }
 
         if(c == 'f' || c == 'F'){
-          type = _64 ? 'f64' : 'f32';
-          int = false;
-          str += c;
-          ++i;
-          ++posx;
-          c = source[i];
+          if(bitSize >= 32){
+            type = 'f' + bitSize;
+            int = false;
+            str += c;
+            ++i;
+            ++posx;
+            c = source[i];
+          } else {
+            error("8bitおよび16bitの浮動小数点はサポートしていません。",make('number', str));
+          }
         } else if(c == 'u' || c == 'U'){
-          type = _64 ? 'u64' : 'u32';
+          type = 'u' + bitSize;
           int = true;
           //str += c;
           ++i;

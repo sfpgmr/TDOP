@@ -75,6 +75,19 @@ export default async function generateCode(ast, binaryen_) {
 
   const i32_ = module.i32;
 
+  // ビルトインタイプの追加定義情報をセットする
+  [
+    {type:'i8',alternativeType:'i32'},
+    {type:'i16',alternativeType:'i32'},
+    {type:'u8',alternativeType:'i32',unsigned:true},
+    {type:'u16',alternativeType:'i32',unsigned:true},
+    {type:'u32',alternativeType:'i32',unsigned:true},
+    {type:'u64',alternativeType:'i64',unsigned:true},
+  ].forEach(v=>{
+    const t = ast.scope.find(v.type,true);
+    t.alternativeTypeInfo = ast.scope.find(v.alternativeType,true);
+    t.unsigned = v.unsigned;
+  });
 
   //  const exp = new binaryen.Expression();
 
@@ -174,7 +187,7 @@ export default async function generateCode(ast, binaryen_) {
     //debugger;
     const func = stmt.first;
     const params = stmt.second;
-    return module.call(func.value, params.map(e => expression(e)), binaryen[stmt.type]);
+    return module.call(func.value, params.map(e => expression(e)), binaryen[stmt.type.value]);
   }
 
   // 関数定義
@@ -193,13 +206,13 @@ export default async function generateCode(ast, binaryen_) {
     const funcName = funcNode.value;
 
     // 戻り値の型
-    let funcReturnType = binaryen[funcNode.type];
+    let funcReturnType = binaryen[funcNode.type.value];
 
     if (!funcReturnType) {
-      switch (funcNode.type) {
+      switch (funcNode.type.value) {
         case 'u32':
         case 'u64':
-          const realType = 'i' + funcNode.type.slice(-2);
+          const realType = 'i' + funcNode.type.value.slice(-2);
           funcReturnType = binaryen[realType];
           break;
         default:
@@ -215,12 +228,12 @@ export default async function generateCode(ast, binaryen_) {
       funcParams.forEach(p => {
         paramInits.push(define_(p, null));
 
-        let paramType = binaryen[p.type];
+        let paramType = binaryen[p.type.value];
         if (!paramType) {
-          switch (p.type) {
+          switch (p.type.value) {
             case 'u32':
             case 'u64':
-              const realType = 'i' + p.type.slice(-2);
+              const realType = p.type.value.replace('u','i');
               paramType = binaryen[realType];
               break;
             default:
@@ -251,14 +264,14 @@ export default async function generateCode(ast, binaryen_) {
       if (!d.userType) {
         // WASM ネイティブ型
         // ローカル
-        let varType = binaryen[d.type];
-        let varTypeObj = module[d.type];
+        let varType = binaryen[d.type.value];
+        let varTypeObj = module[d.type.value];
         if (!varType) {
-          const t = 'i' + d.type.slice(-2);
+          const t = d.type.value.replace('u','i');
           varType = binaryen[t];
           varTypeObj = module[t];
         }
-        (!varType) && error('Bad Type', d.type);
+        (!varType) && error('Bad Type', d);
         switch (d.stored) {
           case compilerConstants.STORED_LOCAL:
             {
@@ -341,7 +354,7 @@ export default async function generateCode(ast, binaryen_) {
       return module.i32.const(v.size);
     } else {
       if(v.type){
-        let typeinfo = v.scope.find(v.type,true);
+        let typeinfo = v.type;
         if(typeinfo){
           return module.i32.const(typeinfo.size);
         } else {
@@ -371,7 +384,7 @@ export default async function generateCode(ast, binaryen_) {
     //module.addMemoryImport('0','js','mem');
     const ftype = module.addFunctionType('m',binaryen.none);
     let stmt;
-    switch(e.type){
+    switch(e.type.value){
       case 'i32':
       case 'u32':
         stmt = module.i32.store(0,4,module.i32.const(0),expression(e));
@@ -397,7 +410,7 @@ export default async function generateCode(ast, binaryen_) {
     let instruction;
     wasmInstance.exports.m();
     const mem = new DataView(wasmInstance.exports.output.buffer);
-    switch(e.type){
+    switch(e.type.value){
       case 'i32':
         instruction = (()=> { const v = mem.getInt32(0,true); return ()=>module.i32.const(v);})();
         //instruction = module.i32.const(mem.getInt32(0,true));
@@ -520,15 +533,15 @@ export default async function generateCode(ast, binaryen_) {
     } else {
       // それ以外
       const castOps_ = e.reinterpret ? reinterpretCastOps : castOps;
-      let castOp = castOps_[e.type];
-      castOp && (castOp = castOp[e.first.type]);
+      let castOp = castOps_[e.type.value];
+      castOp && (castOp = castOp[e.first.type.value]);
       if(castOp && castOp != 'nop'){
         return castOp(expression(e.first));
       } else if(castOp == 'nop'){
         return expression(e.first);
       }
       if(!castOp){
-        error(`キャストができない型です。${e.type}`,e);
+        error(`キャストができない型です。${e.type.value}`,e);
       }
     }
   };
@@ -730,7 +743,7 @@ export default async function generateCode(ast, binaryen_) {
 
   function literal(e, minus = false) {
     //console.log('** literal() **');
-    switch (e.type) {
+    switch (e.type.value) {
       case 'i32':
       case 'u32':
         return parseInt32(e, minus);
@@ -817,7 +830,7 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function array(e){
-    const type = e.type;
+    const type = e.type.value;
     switch (type) {
       case 'i32':
       case 'u32':
@@ -845,7 +858,7 @@ export default async function generateCode(ast, binaryen_) {
         case compilerConstants.STORED_GLOBAL:
           return module.block(null, [
             module.setGlobal(n.value, v),
-            module.getGlobal(n.value, n.type)
+            module.getGlobal(n.value, n.type.value)
           ]);
       }
     } else {
@@ -856,14 +869,14 @@ export default async function generateCode(ast, binaryen_) {
   function getValue(e) {
     //console.log('** getValue() **');
     const n = e.first;
-    return (n.stored == compilerConstants.STORED_LOCAL) ? module.getLocal(n.varIndex, n.type) : module.getGlobal(n.value, n.type);
+    return (n.stored == compilerConstants.STORED_LOCAL) ? module.getLocal(n.varIndex, n.type.value) : module.getGlobal(n.value, n.type.value);
   }
 
 
   function binOp_(name, e, left, right, sign) {
     const t = module[left.type];
     if (t) {
-      switch (left.type) {
+      switch (left.type.value) {
         case 'i32':
         case 'i64':
           {
@@ -891,11 +904,11 @@ export default async function generateCode(ast, binaryen_) {
           break;
       }
     } else {
-      switch (left.type) {
+      switch (left.type.value) {
         case 'u32':
         case 'u64':
           {
-            const realType = 'i' + left.type.slice(-2);
+            const realType = 'i' + left.type.value.slice(-2);
             const t = module[realType];
             let op = t[name];
             (!op) && (op = t[sign ? name + '_s' : name + '_u']);
@@ -911,20 +924,13 @@ export default async function generateCode(ast, binaryen_) {
           {
             const l = expression(left);
             const r = expression(right);
-            let op = module['i' + left.type.slice(-2)][name];
-            (!op) && (op = module['i' + left.type.slice(-2)][sign ? name + '_s' : name + '_u']);
+            let op = module['i' + left.type.value.slice(-2)][name];
+            (!op) && (op = module['i' + left.type.value.slice(-2)][sign ? name + '_s' : name + '_u']);
             if ((typeof l != 'number') || (typeof r != 'number')) {
               error('Bad Expression', left);
             }
             return op(l, r);
-            //const lnative = module[l.type];
-            //const rnative = module[r.type];
-
-            //if(lnative && rnative && l.type  == r.type){
-            //  return binOp_(name,e,l,r,sign);
-            //}
           }
-        //        error('Bad Type',left);
       }
     }
   }
@@ -952,43 +958,13 @@ export default async function generateCode(ast, binaryen_) {
 
   function logicalAnd(e) {
     const left = e.first, right = e.second;
-    const t = module[left.type];
-    //if(t){
     return i32_.and(i32_.ne(expression(left), i32_.const(0, 0)), i32_.ne(expression(right), i32_.const(0, 0)));
-    /*} else {
-      switch(left.type){
-      case 'u32':
-      case 'u64':
-      {
-        //const t = module['i' + left.type.slice(-2)];
-        return i32_.and(i32_.ne(expression(left),i32_.const(0)),i32_.ne(expression(right),i32_.const(0)));
-      }
-      default:
-        error('Bad Type.',left);
-      }
-    }*/
   }
 
 
   function logicalOr(e) {
-    //console.log('** logicalOr() **');
-
     const left = e.first, right = e.second;
-    //const t = module[left.type];
-    //if(t){
     return i32_.or(i32_.ne(expression(left), i32_.const(0)), i32_.ne(expression(right), i32_.const(0)));
-    /*} else {
-      switch(left.type){
-      case 'u32':
-      case 'u64':
-      {
-        const t = module['i' + left.type.slice(-2)];
-        return module.i32.or(module.i32.ne(expression(left),t.const(0)),module.i32.ne(expression(right),t.const(0)));
-      }
-      default:
-        error('Bad Type.',left);
-      }
-    }*/
   }
 
   function unary(e) {
@@ -1012,10 +988,15 @@ export default async function generateCode(ast, binaryen_) {
 
   function pointer(e,castType) {
     const type = castType || e.type;
-    switch (type) {
-      case 'i32':
-      case 'u32':
-        return module.i32.load(0,4,expression(e.first));
+    switch (type.value) {
+      case 'i8':
+        return module[type.alternativeTypeInfo.value].load8_s(0,0,expression(e.first));
+      case 'u8':
+        return module[type.alternativeTypeInfo.value].load8_u(0,0,expression(e.first));
+      case 'i16':
+        return module[type.alternativeTypeInfo.value].load16_s(0,0,expression(e.first));
+      case 'u16':
+        return module[type.alternativeTypeInfo.value].load16_u(0,0,expression(e.first));
       case 'i64':
       case 'u64':
         return module.i64.load(0,8,expression(e.first));
@@ -1032,7 +1013,11 @@ export default async function generateCode(ast, binaryen_) {
     if (left.nodeType == 'literal') {
       return literal(left, true);
     }
-    switch (left.type) {
+    switch (left.type.value) {
+      case 'i8':
+      case 'u8':
+      case 'i16':
+      case 'u16':
       case 'i32':
       case 'u32':
         return module.i32.sub(module.i32.const(0), expression(left));
@@ -1041,41 +1026,20 @@ export default async function generateCode(ast, binaryen_) {
         return module.i64.sub(module.i64.const(0, 0), expression(left));
       case 'f32':
       case 'f64':
-        return module[left.type].neg(expression(left));
+        return module[left.type.value].neg(expression(left));
     }
   }
 
   function not(left) {
     return i32_.eqz(expression(left));
-    // switch(left.type){
-    // case 'i32':
-    // case 'u32':
-    //   return module.i32.xor(expression(left),module.i32.const(1));
-    // case 'i64':
-    // case 'u64':
-    //   return module.i64.xor(expression(left),module.i64.const(0,1));
-    // case 'f32':
-    //   return module.i32.reinterpret(
-    //     module.select(
-    //       module.i32.eq(module.f32.reinterpret(expression(left)),module.i32.const(0x80000000)),
-    //       module.i32.const(0x80000000),
-    //       module.f32.reinterpret(expression(left))
-    //     )
-    //   );
-    // case 'f64':
-    //   return module.i64.reinterpret(
-    //     module.select(
-    //       module.i64.eq(module.f64.reinterpret(expression(left)),module.i64.const(0,0x80000000)),
-    //       module.i64.const(0,0x80000000),
-    //       module.f64.reinterpret(expression(left))
-    //     )
-    //   );
-
-    // }
   }
 
   function bitNot(left) {
-    switch (left.type) {
+    switch (left.type.value) {
+      case 'i8':
+      case 'u8':
+      case 'i16':
+      case 'u16':
       case 'i32':
       case 'u32':
         return module.i32.xor(expression(left), module.i32.const(0xffffffff));
@@ -1088,15 +1052,15 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function inc(left) {
-    const builtinType = module[left.type];
+    const builtinType = module[left.type.value];
     if (builtinType) {
       return setValue(left, builtinType.add(expression(left), builtinType.const(1)));
     } else {
-      switch (left.type) {
+      switch (left.type.value) {
         case 'u32':
         case 'u64':
           {
-            const t = module['i' + left.type.slice(-2)];
+            const t = module['i' + left.type.value.slice(-2)];
             return setValue(left, t.add(expression(left), t.const(1)));
           }
         default:
@@ -1106,15 +1070,15 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function dec(left) {
-    const builtinType = module[left.type];
+    const builtinType = module[left.type.value];
     if (builtinType) {
       return setValue(left, builtinType.sub(expression(left), builtinType.const(1)));
     } else {
-      switch (left.type) {
+      switch (left.type.value) {
         case 'u32':
         case 'u64':
           {
-            const t = module['i' + left.type.slice(-2)];
+            const t = module['i' + left.type.value.slice(-2)];
             return setValue(left, t.sub(expression(left), t.const(1)));
           }
         default:
@@ -1136,20 +1100,20 @@ export default async function generateCode(ast, binaryen_) {
     }
 
     //console.log('** name() **');
-    const nativeType = binaryen[e.type];
+    const nativeType = binaryen[e.type.value];
     if (nativeType) {
       switch (e.stored) {
         case compilerConstants.STORED_LOCAL:
-          return module.getLocal(e.varIndex, binaryen[e.type]);
+          return module.getLocal(e.varIndex, binaryen[e.type.value]);
         case compilerConstants.STORED_GLOBAL:
-          return module.getGlobal(e.value, binaryen[e.type]);
+          return module.getGlobal(e.value, binaryen[e.type.value]);
       }
     } else {
-      switch (e.type) {
+      switch (e.type.value) {
         case 'u32':
         case 'u64':
           {
-            const type = 'i' + e.type.slice(-2);
+            const type = 'i' + e.type.value.slice(-2);
             switch (e.stored) {
               case compilerConstants.STORED_LOCAL:
                 return module.getLocal(e.varIndex, binaryen[type]);
@@ -1182,7 +1146,7 @@ export default async function generateCode(ast, binaryen_) {
     if (left.value == '.') {
       // ユーザー定義型のメンバー
       const l = leftDotOp(left);
-      if (module[l.type]) {
+      if (module[l.type.value]) {
         const op = setValue(l, expression(right));
         if (top) {
           if (results.length > 0) {
@@ -1212,18 +1176,18 @@ export default async function generateCode(ast, binaryen_) {
       });
     } else if(left.value == '*'){
       // ポインタ
-      let type = module[right.type];
+      let type = module[right.type.value];
       if (!type) {
-        type = module['i' + right.type.slice(-2)];
+        type = module[right.type.value.replace('u','i')];
         if (!type) {
           error('不正な代入', e);
         }
       }
       results.push(type.store(0,4,expression(left.first),expression(right)));
     } else if(left.value == '['){
-      let type = module[right.type];
+      let type = module[right.type.value];
       if (!type) {
-        type = module['i' + right.type.slice(-2)];
+        type = module[right.type.value.replace('u','i')];
         if (!type) {
           error('不正な代入', e);
         }
@@ -1231,12 +1195,12 @@ export default async function generateCode(ast, binaryen_) {
       results.push(type.store(0,4,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
 
     } else {
-      if (left.type != right.type) {
+      if (left.type.value != right.type.value) {
         error('不正な代入：左辺と右辺の型が違います', e);
       }
-      let type = module[left.type];
+      let type = module[left.type.value];
       if (!type) {
-        type = module['i' + left.type.slice(-2)];
+        type = module[left.type.replace('u','i')];
         if (!type) {
           error('不正な代入', e);
         }

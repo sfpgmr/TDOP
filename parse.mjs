@@ -75,11 +75,12 @@ export default function make_parse() {
   let token;
   let tokens;
   let token_nr;
-  const labels = new Map();
   let scope;
   let scopeTop;
   let funcScope = new FunctionScope();
   let currentType = null;
+  let DefaultType;
+
 
   function createScope() {
     const s = new Scope(scope);
@@ -205,9 +206,10 @@ export default function make_parse() {
       if (!o) {
         error('Unknown operator.', t);
       }
-    } else if (a == 'string' ||  a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
+    } else if (a == 'i8' || a == 'u8' || a == 'u16' || a == 'i16' || a == 'string' ||  a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
       o = symbol_table.get('(literal)');
-      type = a;
+      type = scope.find(a,true);
+      //type = a;
       a = 'literal';
       if (a.substr(0, 1) == 'i') {
         sign = true;
@@ -234,6 +236,7 @@ export default function make_parse() {
       token.type = type;
       currentType = type;
     }
+    ((typeof token.type) == 'string') && (token.type = scope.find(token.type,true));
     t.kind && (token.kind = t.kind);
     o.userType && (token.userType = o.userType);
     ref && (token.nodeType = 'reference');
@@ -265,7 +268,7 @@ export default function make_parse() {
   function setDefaultType(){
     undeterminedTypeIds.forEach(id=>{
       if(!id.type){
-        id.type = currentType || 'i32';
+        id.type = currentType || DefaultType;
       }
     });
     undeterminedTypeIds.length = 0;
@@ -632,7 +635,6 @@ export default function make_parse() {
     this.third = expression(0);
     this.nodeType = 'ternary';
     checkType(this,left);
-    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -641,7 +643,6 @@ export default function make_parse() {
     this.rvalue = this.first.rvalue = rvalue;
     advance();
     checkType(this,left);
-    //!this.type && (this.type = left.type);
     this.second = token.name;
     this.second.rvalue = true;
   });
@@ -703,7 +704,6 @@ export default function make_parse() {
     this.nodeType = 'binary';
     advance();
     checkType(this,left);
-    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -756,7 +756,6 @@ export default function make_parse() {
     }
     advance(')');
     checkType(this,left);
-    //!this.type && (this.type = left.type);
     return this;
   });
 
@@ -787,7 +786,6 @@ export default function make_parse() {
     this.nodeType = 'binary';
     advance();
     checkType(this,left);
-    //!this.type && (this.type = left.type);
     return this;
   });
   
@@ -914,7 +912,6 @@ export default function make_parse() {
     }
     this.nodeType = 'statement';
     checkType(this,this.first);
-    //!this.type && (this.type = this.first.type);
     return this;
   });
 
@@ -972,7 +969,6 @@ export default function make_parse() {
         const t = token;
         advance('=');
         this.rvalue = false;
-        //(!token.type) && (token.type = t.type);
         this.initialExpression = expression(0);
         checkType(this,this.initialExpression);
         this.nodeType = 'define';
@@ -1232,7 +1228,7 @@ export default function make_parse() {
   stmt('type', function () {
     //this.first = token;
     this.value = token.value;
-    this.type = token.value;
+    this.type = token;
     this.id = token.value;
 
     advance();
@@ -1300,10 +1296,25 @@ export default function make_parse() {
     //global = scope;
     scopeTop = createScope();
     // ビルトイン 型
-    [{name:'u32',size:4},{name:'u64',size:8},{name:'i32',size:4},{name:'i64',size:8}, {name:'f32',size:4}, {name:'f64',size:8},{name:'void',size:0},{name:'string'}]
-      .forEach(t => {
-        scope.define({ id: 'type', value: t.name, type: t.name, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:t.size });
+    const builtinTypes = new Map(
+    [
+      ['i8', {size:1}],
+      ['i16',{size:2}],
+      ['u8',{size:1}],
+      ['u16',{size:2}],
+      ['u32',{size:4}],
+      ['u64',{size:8}],
+      ['i32',{size:4}],
+      ['i64',{size:8}], 
+      ['f32',{size:4}],
+      ['f64',{size:8}],
+      ['void',{size:0}],
+      ['string',{}]
+    ]);
+    builtinTypes.forEach((v,k) => {
+        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size });
       });
+    DefaultType = scope.find('i32',true);
     advance();
     const s = statements();
     advance('(end)');
@@ -1312,6 +1323,7 @@ export default function make_parse() {
     return {
       id: '(program)',
       scope: scopeTop,
+      builtInTypes:builtinTypes,
       statements: s
     };
   };
