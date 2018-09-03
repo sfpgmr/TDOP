@@ -85,8 +85,9 @@ export default async function generateCode(ast, binaryen_) {
     {type:'u64',alternativeType:'i64',unsigned:true},
   ].forEach(v=>{
     const t = ast.scope.find(v.type,true);
-    t.alternativeTypeInfo = ast.scope.find(v.alternativeType,true);
+    t.alternativeType = ast.scope.find(v.alternativeType,true);
     t.unsigned = v.unsigned;
+    t.bitsize = bitsize;
   });
 
   //  const exp = new binaryen.Expression();
@@ -190,6 +191,13 @@ export default async function generateCode(ast, binaryen_) {
     return module.call(func.value, params.map(e => expression(e)), binaryen[stmt.type.value]);
   }
 
+  function getBinaryenType(type){
+    return binaryen[type.value] || binaryen[type.alternativeType.value];
+  }
+
+  function getModuleType(type){
+    return module[type.value] || module[type.alternativeType.value];
+  }
   // 関数定義
   function functionStatement(funcNode) {
     //console.log('** defftypine_() **');
@@ -206,19 +214,15 @@ export default async function generateCode(ast, binaryen_) {
     const funcName = funcNode.value;
 
     // 戻り値の型
-    let funcReturnType = binaryen[funcNode.type.value];
+    if(funcNode.export && funcNode.type.bitsize == 64 && funcNode.type.integer){
+      error('export関数は、64bit整数の戻り値をサポートしていません。',funcNode);
+    }
+
+    let funcReturnType = getBinaryenType(funcNode.type.value);
 
     if (!funcReturnType) {
-      switch (funcNode.type.value) {
-        case 'u32':
-        case 'u64':
-          const realType = 'i' + funcNode.type.value.slice(-2);
-          funcReturnType = binaryen[realType];
-          break;
-        default:
-          // TODO: 戻り値がユーザー定義型だった場合どうする？
-          error('Bad Return Type', funcNode);
-      }
+      // TODO: 戻り値がユーザー定義型だった場合どうする？
+      error('不正な戻り値です。', funcNode);
     }
 
 
@@ -228,18 +232,10 @@ export default async function generateCode(ast, binaryen_) {
       funcParams.forEach(p => {
         paramInits.push(define_(p, null));
 
-        let paramType = binaryen[p.type.value];
+        let paramType = getBinaryenType(p.type);
         if (!paramType) {
-          switch (p.type.value) {
-            case 'u32':
-            case 'u64':
-              const realType = p.type.value.replace('u','i');
-              paramType = binaryen[realType];
-              break;
-            default:
-              // TODO: 戻り値がユーザー定義型だった場合どうする？
-              error('Bad Parameter Type', p);
-          }
+          // TODO: 戻り値がユーザー定義型だった場合どうする？
+          error('不正なパラメータです。', p);
         }
         paramTypes.push(paramType);
       });
@@ -264,14 +260,10 @@ export default async function generateCode(ast, binaryen_) {
       if (!d.userType) {
         // WASM ネイティブ型
         // ローカル
-        let varType = binaryen[d.type.value];
-        let varTypeObj = module[d.type.value];
-        if (!varType) {
-          const t = d.type.value.replace('u','i');
-          varType = binaryen[t];
-          varTypeObj = module[t];
-        }
-        (!varType) && error('Bad Type', d);
+        let varType = getBinaryenType(d.type);
+        let varTypeObj = getModuleType(d.type);
+        (!varType) && error('不正な型です。', d);
+
         switch (d.stored) {
           case compilerConstants.STORED_LOCAL:
             {
@@ -385,6 +377,12 @@ export default async function generateCode(ast, binaryen_) {
     const ftype = module.addFunctionType('m',binaryen.none);
     let stmt;
     switch(e.type.value){
+      case 'i8':
+      case 'u8':
+        break;
+      case 'i16':
+      case 'u16':
+        break;
       case 'i32':
       case 'u32':
         stmt = module.i32.store(0,4,module.i32.const(0),expression(e));
@@ -990,13 +988,13 @@ export default async function generateCode(ast, binaryen_) {
     const type = castType || e.type;
     switch (type.value) {
       case 'i8':
-        return module[type.alternativeTypeInfo.value].load8_s(0,0,expression(e.first));
+        return module[type.alternativeType.value].load8_s(0,0,expression(e.first));
       case 'u8':
-        return module[type.alternativeTypeInfo.value].load8_u(0,0,expression(e.first));
+        return module[type.alternativeType.value].load8_u(0,0,expression(e.first));
       case 'i16':
-        return module[type.alternativeTypeInfo.value].load16_s(0,0,expression(e.first));
+        return module[type.alternativeType.value].load16_s(0,0,expression(e.first));
       case 'u16':
-        return module[type.alternativeTypeInfo.value].load16_u(0,0,expression(e.first));
+        return module[type.alternativeType.value].load16_u(0,0,expression(e.first));
       case 'i64':
       case 'u64':
         return module.i64.load(0,8,expression(e.first));
@@ -1052,38 +1050,20 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function inc(left) {
-    const builtinType = module[left.type.value];
+    const builtinType = module[left.type.value] || module[left.type.alternativeType.value];
     if (builtinType) {
       return setValue(left, builtinType.add(expression(left), builtinType.const(1)));
     } else {
-      switch (left.type.value) {
-        case 'u32':
-        case 'u64':
-          {
-            const t = module['i' + left.type.value.slice(-2)];
-            return setValue(left, t.add(expression(left), t.const(1)));
-          }
-        default:
           error('Bad Type', left);
-      }
     }
   }
 
   function dec(left) {
-    const builtinType = module[left.type.value];
+    const builtinType = module[left.type.value] || module[left.type.alternativeType.value];
     if (builtinType) {
       return setValue(left, builtinType.sub(expression(left), builtinType.const(1)));
     } else {
-      switch (left.type.value) {
-        case 'u32':
-        case 'u64':
-          {
-            const t = module['i' + left.type.value.slice(-2)];
-            return setValue(left, t.sub(expression(left), t.const(1)));
-          }
-        default:
-          error('Bad Type', left);
-      }
+      error('Bad Type', left);
     }
   }
 
@@ -1100,7 +1080,7 @@ export default async function generateCode(ast, binaryen_) {
     }
 
     //console.log('** name() **');
-    const nativeType = binaryen[e.type.value];
+    const nativeType = binaryen[e.type.value] || binaryen[e.type.alternativeType.value];
     if (nativeType) {
       switch (e.stored) {
         case compilerConstants.STORED_LOCAL:

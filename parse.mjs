@@ -1298,21 +1298,21 @@ export default function make_parse() {
     // ビルトイン 型
     const builtinTypes = new Map(
     [
-      ['i8', {size:1}],
-      ['i16',{size:2}],
-      ['u8',{size:1}],
-      ['u16',{size:2}],
-      ['u32',{size:4}],
-      ['u64',{size:8}],
-      ['i32',{size:4}],
-      ['i64',{size:8}], 
-      ['f32',{size:4}],
-      ['f64',{size:8}],
+      ['i8', {size:1,bitSize:8,integer:true}],
+      ['i16',{size:2,bitSize:16,integer:true}],
+      ['u8',{size:1,bitSize:8,integer:true}],
+      ['u16',{size:2,bitSize:16,integer:true}],
+      ['u32',{size:4,bitSize:32,integer:true}],
+      ['u64',{size:8,bitSize:64,integer:true}],
+      ['i32',{size:4,bitSize:32,integer:true}],
+      ['i64',{size:8,bitSize:64,integer:true}], 
+      ['f32',{size:4,bitSize:32,integer:false}],
+      ['f64',{size:8,bitSize:64,integer:false}],
       ['void',{size:0}],
       ['string',{}]
     ]);
     builtinTypes.forEach((v,k) => {
-        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size });
+        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size,bitsize:v.bitsize,integer:v.integer });
       });
     DefaultType = scope.find('i32',true);
     advance();
