@@ -196,7 +196,7 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function getModuleType(type){
-    return module[type.value] || module[type.alternativeType.value];
+    return module[type.value] || (type ? module[type.alternativeType.value]:null);
   }
   // 関数定義
   function functionStatement(funcNode) {
@@ -483,9 +483,9 @@ export default async function generateCode(ast, binaryen_) {
 
   const castOps = {
     'i8':castOp_i8,
-    'u8':castOp_i8,
+    'u8':castOp_u8,
     'i16':castOp_i8,
-    'u16':castOp_i8,
+    'u16':castOp_u8,
     'i32': {
       'i8':'nop',
       'u8':'nop',
@@ -1225,14 +1225,24 @@ export default async function generateCode(ast, binaryen_) {
       });
     } else if(left.value == '*'){
       // ポインタ
-      let type = module[right.type.value];
+      let type = getModuleType(right.type);
       if (!type) {
-        type = module[right.type.value.replace('u','i')];
-        if (!type) {
           error('不正な代入', e);
-        }
       }
-      results.push(type.store(0,4,expression(left.first),expression(right)));
+      let storeOp;
+      switch(right.type.value){
+        case 'i8':
+        case 'u8':
+          storeOp = type.store8;
+          break;
+        case 'i16':
+        case 'u16':
+          storeOp = type.store16;
+          break;
+        default:
+          storeOp = type.store;
+      }
+      results.push(storeOp(0,4,expression(left.first),expression(right)));
     } else if(left.value == '['){
       let type = module[right.type.value];
       if (!type) {
