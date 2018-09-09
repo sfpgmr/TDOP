@@ -191,13 +191,17 @@ export default async function generateCode(ast, binaryen_) {
     return module.call(func.value, params.map(e => expression(e)), binaryen[stmt.type.value]);
   }
 
+  // binaryen type情報の取得
   function getBinaryenType(type){
     return binaryen[type.value] || (type ? binaryen[type.alternativeType.value]:null);
   }
 
+  // module type の取得
   function getModuleType(type){
     return module[type.value] || (type ? module[type.alternativeType.value]:null);
   }
+
+  f
   // 関数定義
   function functionStatement(funcNode) {
     //console.log('** defftypine_() **');
@@ -1122,6 +1126,7 @@ export default async function generateCode(ast, binaryen_) {
       case 'i16':
       case 'u16':
       case 'i32':
+      
       case 'u32':
         return module.i32.xor(expression(left), module.i32.const(0xffffffff));
       case 'i64':
@@ -1187,6 +1192,19 @@ export default async function generateCode(ast, binaryen_) {
     return e.second;
   }
 
+  function getStoreOp(moduleType,targetType){
+    switch(targetType.value){
+      case 'i8':
+      case 'u8':
+        return moduleType.store8;
+      case 'i16':
+      case 'u16':
+        return moduleType.store16;
+      default:
+        return moduleType.store;
+    }    
+  }
+
   // 代入 // 
   function assignment(e, results = [], top = true) {
     //console.log('** assignment() **');
@@ -1229,40 +1247,22 @@ export default async function generateCode(ast, binaryen_) {
       if (!type) {
           error('不正な代入', e);
       }
-      let storeOp;
-      switch(right.type.value){
-        case 'i8':
-        case 'u8':
-          storeOp = type.store8;
-          break;
-        case 'i16':
-        case 'u16':
-          storeOp = type.store16;
-          break;
-        default:
-          storeOp = type.store;
-      }
+      let storeOp = getStoreOp(type,right.type);
       results.push(storeOp(0,4,expression(left.first),expression(right)));
     } else if(left.value == '['){
-      let type = module[right.type.value];
+      let type = getModuleType(right.type);
       if (!type) {
-        type = module[right.type.value.replace('u','i')];
-        if (!type) {
           error('不正な代入', e);
-        }
       }
-      results.push(type.store(0,4,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
-
+      let storeOp = getStoreOp(type,right.type);
+      results.push(storeOp(0,4,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
     } else {
       if (left.type.value != right.type.value) {
         error('不正な代入：左辺と右辺の型が違います', e);
       }
-      let type = module[left.type.value];
+      let type = getModuleType(left.type);
       if (!type) {
-        type = module[left.type.replace('u','i')];
-        if (!type) {
           error('不正な代入', e);
-        }
       }
       results.push(setValue(left, expression(right)));
     }
@@ -1271,8 +1271,6 @@ export default async function generateCode(ast, binaryen_) {
       return results.length == 1 ? results[0] : module.block(null, results);
     }
   }
-
-
 
   function block(s) {
     //console.log('** block() **');
