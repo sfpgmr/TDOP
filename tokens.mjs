@@ -130,7 +130,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         let type = 'i32';
         let kind = 'hex';
         let unsigend = false;
-        let b64 = false;
+        let bitSize = 32;
         let hexCount = 0;
         let float = false;
         // 16進数
@@ -164,9 +164,19 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         //     hexfp = true;
         //   } while((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
         // }
-
-        if(c == 'l'){
-          b64 = true;
+        if(c == 's'){
+          bitSize = 8;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'w'){
+          bitSize = 16;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'l'){
+          bitSize = 64;
           //str += c;
           ++i;
           ++posx;
@@ -182,6 +192,9 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         }
 
         if(c == 'f'){
+          if(bitSize < 32){
+            error("32bit未満の浮動小数点はサポートしていません。",make('number', str));
+          }
           float = true;
           //str += c;
           ++i;
@@ -228,14 +241,14 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         if(hexCount > (b64?18:10)){
           error(`hexが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'hex'}));
         }        
-        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + (b64 ? '64':'32');
+        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + bitSize;
         result.push(make(type,str,{kind:kind}));
 
       } else if(c == '0' && (nc == 'b' || nc == 'B')) {
         let type = 'i32';
         let unsigend = false;
         let float = false;
-        let b64 = false;
+        let bitSize = 32;
         let bitCount = 0;
         // 2進数リテラル
         
@@ -263,10 +276,19 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
 
         //   error('Invalid binary literal format.',make('binary',str+c));
 
-
-
-        if(c == 'l'){
-          b64 = true;
+        if(c == 's'){
+          bitSize = 8;
+          //str += c;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'w'){
+          bitSize = 16;
+          ++i;
+          ++posx;
+          c = source[i];
+        } else if(c == 'l'){
+          bitSize = 64;
           //str += c;
           ++i;
           ++posx;
@@ -279,9 +301,10 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           ++i;
           ++posx;
           c = source[i];
-        }
-
-        if(c == 'f'){
+        } else if(c == 'f'){
+          if(bitSize < 32){
+            error("32bit未満の浮動小数点はサポートしていません。",make('number', str));
+          }
           float = true;
           //str += c;
           ++i;
@@ -289,11 +312,11 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
           c = source[i];
         }
         // フォーマットが正しいか確認する
-        if(bitCount > (b64?66:34)){
-          error(`bitパターンが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'binary'}));
+        if(bitCount > (bitSize + 2)){
+          error(`bitパターンが${bitSize}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'binary'}));
         }
 
-        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + (b64 ? '64':'32');
+        type = (float ? 'f' : (unsigend ? 'u' : 'i')) + bitSize;
 
         result.push(make(type,str,{kind:'binary'}));
       }  else {
