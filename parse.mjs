@@ -1298,21 +1298,21 @@ export default function make_parse() {
     // ビルトイン 型
     const builtinTypes = new Map(
     [
-      ['i8', {size:1,bitSize:8,integer:true}],
-      ['i16',{size:2,bitSize:16,integer:true}],
-      ['u8',{size:1,bitSize:8,integer:true}],
-      ['u16',{size:2,bitSize:16,integer:true}],
-      ['u32',{size:4,bitSize:32,integer:true}],
-      ['u64',{size:8,bitSize:64,integer:true}],
-      ['i32',{size:4,bitSize:32,integer:true}],
-      ['i64',{size:8,bitSize:64,integer:true}], 
-      ['f32',{size:4,bitSize:32,integer:false}],
-      ['f64',{size:8,bitSize:64,integer:false}],
+      ['i8', {size:1,bitSize:8,max:127,min:-128,integer:true}],
+      ['i16',{size:2,bitSize:16,max:32767,min:-32768,integer:true}],
+      ['u8',{size:1,bitSize:8,max:255,min:0,integer:true}],
+      ['u16',{size:2,bitSize:16,max:65535,min:0,integer:true}],
+      ['u32',{size:4,bitSize:32,max:0xffffffff,min:0,integer:true}],
+      ['u64',{size:8,bitSize:64,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true}],
+      ['i32',{size:4,bitSize:32,max:0x7fffffff,min:-0x8000000,integer:true}],
+      ['i64',{size:8,bitSize:64,max:{low:0xffffffff,high:0x7fffffff},min:{low:0,high:0x80000000},integer:true}], 
+      ['f32',{size:4,bitSize:32,max:3.402823466e+38,min:1.175494351e-38,integer:false}],
+      ['f64',{size:8,bitSize:64,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false}],
       ['void',{size:0}],
       ['string',{}]
     ]);
     builtinTypes.forEach((v,k) => {
-        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size,bitsize:v.bitsize,integer:v.integer });
+        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size,bitSize:v.bitSize,integer:v.integer,max:v.max,min:v.min });
       });
     DefaultType = scope.find('i32',true);
     advance();

@@ -32,8 +32,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-sizeof.mjs",
-      "program": "${workspaceFolder}/tests/test-sizeof.mjs",
+      "name": "test-short-word-integer.mjs",
+      "program": "${workspaceFolder}/tests/test-short-word-integer.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

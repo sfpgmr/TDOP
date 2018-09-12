@@ -87,7 +87,7 @@ export default async function generateCode(ast, binaryen_) {
     const t = ast.scope.find(v.type,true);
     t.alternativeType = ast.scope.find(v.alternativeType,true);
     t.unsigned = v.unsigned;
-    t.bitsize = bitsize;
+//    t.bitSize = bitSize;
   });
 
   //  const exp = new binaryen.Expression();
@@ -201,7 +201,6 @@ export default async function generateCode(ast, binaryen_) {
     return module[type.value] || (type ? module[type.alternativeType.value]:null);
   }
 
-  f
   // 関数定義
   function functionStatement(funcNode) {
     //console.log('** defftypine_() **');
@@ -218,11 +217,11 @@ export default async function generateCode(ast, binaryen_) {
     const funcName = funcNode.value;
 
     // 戻り値の型
-    if(funcNode.export && funcNode.type.bitsize == 64 && funcNode.type.integer){
+    if(funcNode.export && funcNode.type.bitSize == 64 && funcNode.type.integer){
       error('export関数は、64bit整数の戻り値をサポートしていません。',funcNode);
     }
 
-    let funcReturnType = getBinaryenType(funcNode.type.value);
+    let funcReturnType = getBinaryenType(funcNode.type);
 
     if (!funcReturnType) {
       // TODO: 戻り値がユーザー定義型だった場合どうする？
@@ -566,16 +565,16 @@ export default async function generateCode(ast, binaryen_) {
 
   const reinterpretCastOps = {
     'i8':{
-      'f32':module.module.i32.reinterpret
+      'f32':module.i32.reinterpret
     },
     'u8':{
-      'f32':module.module.i32.reinterpret
+      'f32':module.i32.reinterpret
     },
     'i16':{
-      'f32':module.module.i32.reinterpret
+      'f32':module.i32.reinterpret
     },
     'u16':{
-      'f32':module.module.i32.reinterpret
+      'f32':module.i32.reinterpret
     },
     'i32':{
       'f32':module.i32.reinterpret
