@@ -238,8 +238,8 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
         // c = source[i];
         
         // フォーマットが正しいか確認する
-        if(hexCount > (b64?18:10)){
-          error(`hexが${b64?'64':'32'}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'hex'}));
+        if(hexCount > ((bitSize == 64)?18:10)){
+          error(`hexが${bitSize}の範囲を越えてます。。長すぎです。。`,make(type,str,{kind:'hex'}));
         }        
         type = (float ? 'f' : (unsigend ? 'u' : 'i')) + bitSize;
         result.push(make(type,str,{kind:kind}));

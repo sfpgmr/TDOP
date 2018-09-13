@@ -193,12 +193,12 @@ export default async function generateCode(ast, binaryen_) {
 
   // binaryen type情報の取得
   function getBinaryenType(type){
-    return binaryen[type.value] || (type ? binaryen[type.alternativeType.value]:null);
+    return binaryen[type.value] || ((type.alternativeType) ? binaryen[type.alternativeType.value]:null);
   }
 
   // module type の取得
   function getModuleType(type){
-    return module[type.value] || (type ? module[type.alternativeType.value]:null);
+    return module[type.value] || ((type.alternativeType) ? module[type.alternativeType.value]:null);
   }
 
   // 関数定義
@@ -421,10 +421,10 @@ export default async function generateCode(ast, binaryen_) {
         instruction = (()=> { const v = mem.getUint8(0); return ()=>module.i32.const(v);})();
         break;
       case 'i16':
-        instruction = (()=> { const v = mem.getInt16(0); return ()=>module.i32.const(v);})();
+        instruction = (()=> { const v = mem.getInt16(0,true); return ()=>module.i32.const(v);})();
         break;
       case 'u16':
-        instruction = (()=> { const v = mem.getUint16(0); return ()=>module.i32.const(v);})();
+        instruction = (()=> { const v = mem.getUint16(0,true); return ()=>module.i32.const(v);})();
         break;
       case 'i32':
         instruction = (()=> { const v = mem.getInt32(0,true); return ()=>module.i32.const(v);})();
@@ -922,13 +922,13 @@ export default async function generateCode(ast, binaryen_) {
     const type = e.type.value;
     switch (type) {
       case 'i8':
-        return module.i32.load8_s(0,4,module.i32.add(expression(e.first),expression(e.second)));
+        return module.i32.load8_s(0,0,module.i32.add(expression(e.first),expression(e.second)));
       case 'u8':
-        return module.i32.load8_u(0,4,module.i32.add(expression(e.first),expression(e.second)));
+        return module.i32.load8_u(0,0,module.i32.add(expression(e.first),expression(e.second)));
       case 'i16':
-        return module.i32.load16_s(0,4,module.i32.add(expression(e.first),expression(e.second)));
+        return module.i32.load16_s(0,0,module.i32.add(expression(e.first),expression(e.second)));
       case 'u16':
-        return module.i32.load16_u(0,4,module.i32.add(expression(e.first),expression(e.second)));
+        return module.i32.load16_u(0,0,module.i32.add(expression(e.first),expression(e.second)));
       case 'i32':
       case 'u32':
         return module.i32.load(0,4,module.i32.add(expression(e.first),expression(e.second)));
@@ -1081,6 +1081,9 @@ export default async function generateCode(ast, binaryen_) {
         return module[type.alternativeType.value].load16_s(0,0,expression(e.first));
       case 'u16':
         return module[type.alternativeType.value].load16_u(0,0,expression(e.first));
+      case 'i32':
+      case 'u32':
+        return module.i32.load(0,4,expression(e.first));
       case 'i64':
       case 'u64':
         return module.i64.load(0,8,expression(e.first));
@@ -1247,14 +1250,14 @@ export default async function generateCode(ast, binaryen_) {
           error('不正な代入', e);
       }
       let storeOp = getStoreOp(type,right.type);
-      results.push(storeOp(0,4,expression(left.first),expression(right)));
+      results.push(storeOp(0,0,expression(left.first),expression(right)));
     } else if(left.value == '['){
       let type = getModuleType(right.type);
       if (!type) {
           error('不正な代入', e);
       }
       let storeOp = getStoreOp(type,right.type);
-      results.push(storeOp(0,4,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
+      results.push(storeOp(0,0,module.i32.add(expression(left.first),expression(left.second)),expression(right)));
     } else {
       if (left.type.value != right.type.value) {
         error('不正な代入：左辺と右辺の型が違います', e);

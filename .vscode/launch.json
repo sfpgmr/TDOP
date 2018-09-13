@@ -38,6 +38,16 @@
         "--experimental-modules"
       ],
       "useWSL": true
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "test-const",
+      "program": "${workspaceFolder}/tests/test-const.mjs",
+      "runtimeArgs": [
+        "--experimental-modules"
+      ],
+      "useWSL": true
     }
   ]
 }
