@@ -239,6 +239,7 @@ export default function make_parse() {
     ((typeof token.type) == 'string') && (token.type = scope.find(token.type,true));
     t.kind && (token.kind = t.kind);
     o.userType && (token.userType = o.userType);
+    // 変数参照はnodeTypeを'reference'とする
     ref && (token.nodeType = 'reference');
     //(token.ref && token.ref.userType) && (token.userType = token.ref.userType);
 
@@ -766,28 +767,32 @@ export default function make_parse() {
   suffix('++').lbp = 70;
   suffix('--').lbp = 70;
 
+  // 参照
+  // suffix('&',80,function(left,rvalue = false){
+  //   console.log('reference');
+  //   return this;
+  // });
+
   prefix('!');
   prefix('-');
   //prefix('typeof');
 
   // ポインタが示す実体を参照する
   prefix('*').lbp = 70;
-  // 変数のアドレスを取得する
-  prefix('&');
   // ポインタメンバの参照
-  infix('->', 80, function (left, rvalue = true) {
-    this.first = left;
-    this.rvalue = this.first.rvalue = rvalue;
-    if (token.nodeType !== 'name') {
-      error('Expected a property name.', token);
-    }
-    token.nodeType = 'literal';
-    this.second = token;
-    this.nodeType = 'binary';
-    advance();
-    checkType(this,left);
-    return this;
-  });
+  // infix('->', 80, function (left, rvalue = true) {
+  //   this.first = left;
+  //   this.rvalue = this.first.rvalue = rvalue;
+  //   if (token.nodeType !== 'name') {
+  //     error('Expected a property name.', token);
+  //   }
+  //   token.nodeType = 'literal';
+  //   this.second = token;
+  //   this.nodeType = 'binary';
+  //   advance();
+  //   checkType(this,left);
+  //   return this;
+  // });
   
   prefix('~',80);
 
@@ -982,25 +987,26 @@ export default function make_parse() {
 
     let a = [];
     let n;
+    let alias = false;
     advance();
     n = token;
 
-    // ポインタ型かどうか
-    if (n.id == '*') {
+    // alias
+    if (n.id == '&') {
       advance();
       n = token;
-      n.pointer = true;
+      alias = true;
     }
 
     let funcptr = false;
     // 関数ポインタ定義かどうか
-    if (n.id == '(') {
-      advance();
-      advance('*');
-      n = token;
-      n.pointer = true;
-      funcptr = true;
-    }
+    // if (n.id == '(') {
+    //   advance();
+    //   advance('*');
+    //   n = token;
+    //   n.pointer = true;
+    //   funcptr = true;
+    // }
 
     // ローカルスコープですでに定義されているか
 
@@ -1138,32 +1144,47 @@ export default function make_parse() {
 
     while (true) {
       // 変数名
+
       n.nud = itself;
 
-
-      // 代入演算子
+      // 初期値の代入演算子があるか（エイリアスの場合は必須）
       if (token.id === '=') {
         // 初期値あり
-        //t = token;
         advance('=');
-        //t.first = n;
-        // 右辺値ではない
-        //t.rvalue = t.first.rvalue = false;
+
+        
+        // 代入される変数は右辺値ではない
         n.rvalue = false;
-        //debugger;
-        //t.second = expression(0);
+        // 右辺値の型情報がない場合は左辺値の型情報を代入する
         (!token.type) && (token.type = n.type);
-        n.initialExpression = expression(0);
-        checkType(n.initialExpression,n);
-        // if(n.initialExpression.nodeType == 'literal' && n.initialExpression.type == 'int'){
-        //   n.initialExpression.type = n.type;
-        // } 
-        // TODO:型情報は式から得るようにしなければならない
-        //t.second.type = this.type;
-        //t.nodeType = 'binary';
+        
+        // 初期値の処理を行う。
+        {
+          // 初期化式の評価
+          const initExpression = expression(0);
+          if(alias){
+            // エイリアス->参照する変数をaliasプロパティに代入する
+            if(initExpression.nodeType != 'reference'){
+              error('変数エイリアスの初期化式に指定できるのは変数のみです。',e);
+            } else {
+              n.alias = initExpression;
+              n.type = n.alias.type;
+            }
+          } else {
+            // 変数定義->式評価を行う
+            n.initialExpression = initExpression;
+            // 型情報
+            checkType(n.initialExpression,n);
+          }
+        }
         a.push(n);
       } else {
-        a.push(n);
+        if(!alias){
+          a.push(n);
+        } else {
+          // エイリアスは初期値が必要
+          error('エイリアスは初期値が必要です',n);
+        }
       }
 
       // カンマ演算子
@@ -1193,26 +1214,26 @@ export default function make_parse() {
     advance(';');
     a.forEach(d => {
       const ret = d;
-      //const ret = d;//Object.assign(Object.create(d), d);
-      if (!typedef && !funcScope.global && !ret.userType) {
-        // ビルトイン型
-        ret.varIndex = funcScope.index();
-        ret.stored = constants.STORED_LOCAL;
-      } else {
-        ret.stored = constants.STORED_GLOBAL;
-      }
+      
+      if(!alias){// エイリアスには不要な情報
+        //const ret = d;//Object.assign(Object.create(d), d);
+        if (!typedef && !funcScope.global && !ret.userType) {
+          // ビルトイン型
+            ret.varIndex = funcScope.index();
+          ret.stored = constants.STORED_LOCAL;
+        } else {
+            ret.stored = constants.STORED_GLOBAL;
+        }
 
-      if (ret.userType) {
-        // ユーザー定義型
-        if(!typedef){
-          ret.members = assignMembers(ret);
-        } 
+        if (ret.userType) {
+          // ユーザー定義型
+          if(!typedef){
+            ret.members = assignMembers(ret);
+          } 
+        }
       }
-      //ret.parent = this;
-      //ret.id = 'define';
       ret.nodeType = 'define';
       ret.type = this.type;
-      //return ret;
     });
     //this.defines = a;
 

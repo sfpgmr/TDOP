@@ -1157,7 +1157,8 @@ export default async function generateCode(ast, binaryen_) {
     }
   }
 
-  function name(e) {
+  function name(exp) {
+    let e = exp;
 
     if(constant && (!e.const)){
       error('定数式では使用できません',e);
@@ -1167,6 +1168,12 @@ export default async function generateCode(ast, binaryen_) {
       let constant = constants.get(e.value);
       if(constant) return constant();
       error('この定数は定義されていません。',e);
+    }
+
+    // 変数エイリアスの場合
+    if(e.alias){
+      // 変数はe.aliasが指す変数のことなのでeに代入する
+      e = e.alias;
     }
 
     //console.log('** name() **');

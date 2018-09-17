@@ -42,8 +42,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-const",
-      "program": "${workspaceFolder}/tests/test-const.mjs",
+      "name": "test-alias",
+      "program": "${workspaceFolder}/tests/test-alias.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],
