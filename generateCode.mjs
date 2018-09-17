@@ -1172,8 +1172,9 @@ export default async function generateCode(ast, binaryen_) {
 
     // 変数エイリアスの場合
     if(e.alias){
-      // 変数はe.aliasが指す変数のことなのでeに代入する
-      e = e.alias;
+      // 変数はe.aliasが指す変数のこと
+      // e.alias自体がaliasの可能性もあるため、name()を再起呼び出しする
+      return name(e.alias);
     }
 
     //console.log('** name() **');
