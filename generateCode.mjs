@@ -261,27 +261,29 @@ export default async function generateCode(ast, binaryen_) {
       return null;
     } else {
       if (!d.userType) {
-        // WASM ネイティブ型
-        // ローカル
-        let varType = getBinaryenType(d.type);
-        let varTypeObj = getModuleType(d.type);
-        (!varType) && error('不正な型です。', d);
+        if(!d.alias){// エイリアスではない。
+          // WASM ネイティブ型
+          // ローカル
+          let varType = getBinaryenType(d.type);
+          let varTypeObj = getModuleType(d.type);
+          (!varType) && error('不正な型です。', d);
 
-        switch (d.stored) {
-          case compilerConstants.STORED_LOCAL:
-            {
-              vars && vars.push(varType);
-              if (d.initialExpression) {
-                return module.setLocal(d.varIndex, expression(d.initialExpression));
+          switch (d.stored) {
+            case compilerConstants.STORED_LOCAL:
+              {
+                vars && vars.push(varType);
+                if (d.initialExpression) {
+                  return module.setLocal(d.varIndex, expression(d.initialExpression));
+                }
+                return null;
               }
-              return null;
-            }
-          case compilerConstants.STORED_GLOBAL:
-            if (d.initialExpression) {
-              return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
-            } else {
-              return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
-            }
+            case compilerConstants.STORED_GLOBAL:
+              if (d.initialExpression) {
+                return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
+              } else {
+                return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
+              }
+          }
         }
       } else {
         // ユーザー定義型
@@ -944,10 +946,19 @@ export default async function generateCode(ast, binaryen_) {
     }
   }
 
-  function setValue(n, v, e) {
+  function getRealVar(n){
+    if(n.alias){
+      return getRealVar(n.alias);
+    }
+    return n;
+  }
+
+  function setValue(n_, v, e) {
+    const rvalue = n_.rvalue;
+    const n = getRealVar(n_);
     //console.log('** setValue() **');
     !e && (e = n);
-    if (e.rvalue) {
+    if (rvalue) {
       // 式が右辺値である。
       switch (n.stored) {
         case compilerConstants.STORED_LOCAL:

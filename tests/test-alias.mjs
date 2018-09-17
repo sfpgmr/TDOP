@@ -11,8 +11,9 @@ import types from './test-types.mjs';
       export i32 main(){
         ${type.type} a = 1${type.literalSuffix};        
         ${type.type}& b = a; 
-        ++a;
-        if(a == 2${type.literalSuffix} && b == 2${type.literalSuffix}){
+        ${type.type}& c = b; 
+        ++c;
+        if(a == 2${type.literalSuffix} && b == 2${type.literalSuffix} && c == 2${type.literalSuffix}){
           return 1;
         } else {
           return 0;

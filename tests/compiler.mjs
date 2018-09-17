@@ -39,7 +39,7 @@ export async function compile(name,src,basePath='./tests/out'){
   }
 
   const tokens = tokenize(src);
-  await fs.promises.writeFile(`${basePath}/${name}-token.json`, JSON.stringify(tokens,null,1), 'utf8');
+  //await fs.promises.writeFile(`${basePath}/${name}-token.json`, JSON.stringify(tokens,null,1), 'utf8');
   const ast = parse(tokens);
   const json = JSON.stringify(ast,
     (key,value)=>{

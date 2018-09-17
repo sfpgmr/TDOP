@@ -13,6 +13,7 @@ import './test-array.mjs';
 import './test-const.mjs';
 import './test-sizeof.mjs';
 import './test-short-word-integer.mjs';
+import './test-alias.mjs';
 
 
 //test_expression_add();
