@@ -275,6 +275,10 @@ export default function make_parse() {
     undeterminedTypeIds.length = 0;
     currentType = null;
   }
+
+  function getRealType(t){
+    return !t.alias ? t : getRealType(t.alias);
+  }
   
   // 式
   function expression(rbp, rvalue = true) {
@@ -1024,7 +1028,7 @@ export default function make_parse() {
     if(this.userType){
       // ユーザー定義型の場合は型情報の参照を追加
       n.userType = this.userType;
-      n.typeRef = this;
+      n.typeRef = getRealType(this);
     }
     // export するかどうか
     n.export = this.export;
@@ -1204,7 +1208,7 @@ export default function make_parse() {
       if(this.userType){
         // ユーザー定義型の場合は型情報の参照を追加
         n.userType = this.userType;
-        n.typeRef = this;
+        n.typeRef = getRealType(this);
       }
       n.rvalue = false;
       (!typedef) && scope.define(n);
@@ -1225,7 +1229,7 @@ export default function make_parse() {
             ret.stored = constants.STORED_GLOBAL;
         }
 
-        if (ret.userType) {
+        if (ret.userType && ret.typeRef.userType) {
           // ユーザー定義型
           if(!typedef){
             ret.members = assignMembers(ret);
@@ -1248,11 +1252,19 @@ export default function make_parse() {
   // ** type 定義 ** //
   stmt('type', function () {
     //this.first = token;
+
+    let alias = false;
+    if(token.id == '&'){
+      alias = true;
+      advance();
+    }
+
     this.value = token.value;
     this.type = token;
     this.id = token.value;
 
     advance();
+
     switch (token.id) {
     case '{':
     {
@@ -1302,9 +1314,16 @@ export default function make_parse() {
       return this;
     }
     // 型エイリアス
-
     case '=':
-      break;
+      advance('=');
+      this.alias = token;
+      this.typedef = true;
+      this.userType = true;
+      this.dvd = defineVarAndFunction;
+      advance();
+      advance(';');
+      scope.define(this);
+      return this;
     }
   });
 
