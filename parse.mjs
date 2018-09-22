@@ -9,6 +9,7 @@
 
 
 import * as constants from './compilerConstants.mjs';
+import { unwatchFile } from 'fs';
 
 function error(message, t = this) {
   t.name = 'Parser : SyntaxError';
@@ -694,7 +695,7 @@ export default function make_parse() {
       if(target.second){
         return findMembers(target.second);
       }
-      error('not find members');
+      error('not find members',left);
     }
     const members = findMembers(left);
 
@@ -1023,8 +1024,10 @@ export default function make_parse() {
     if (scope.def.get(n.varName)) {
       error('Already Defined', n);
     }
+    
     // 変数の型を保存
-    n.type = this.type;
+    n.type = this;
+
     if(this.userType){
       // ユーザー定義型の場合は型情報の参照を追加
       n.userType = this.userType;
@@ -1204,7 +1207,8 @@ export default function make_parse() {
       } else {
         n = token;
       }
-      n.type = this.type;
+
+      n.type = this;
       if(this.userType){
         // ユーザー定義型の場合は型情報の参照を追加
         n.userType = this.userType;
@@ -1219,17 +1223,18 @@ export default function make_parse() {
     a.forEach(d => {
       const ret = d;
       
-      if(!alias){// エイリアスには不要な情報
+      if(!alias){// 変数エイリアスには不要な情報
         //const ret = d;//Object.assign(Object.create(d), d);
-        if (!typedef && !funcScope.global && !ret.userType) {
+        if (!typedef && !funcScope.global && (!ret.userType || (ret.typeRef && !ret.typeRef.userType))){
           // ビルトイン型
-            ret.varIndex = funcScope.index();
+          ret.varIndex = funcScope.index();
           ret.stored = constants.STORED_LOCAL;
         } else {
             ret.stored = constants.STORED_GLOBAL;
         }
-
-        if (ret.userType && ret.typeRef.userType) {
+        
+        // 型エイリアスの場合、typeRef
+        if (ret.typeRef && ret.typeRef.userType) {
           // ユーザー定義型
           if(!typedef){
             ret.members = assignMembers(ret);
@@ -1237,7 +1242,7 @@ export default function make_parse() {
         }
       }
       ret.nodeType = 'define';
-      ret.type = this.type;
+      ret.type = this;
     });
     //this.defines = a;
 
@@ -1323,6 +1328,7 @@ export default function make_parse() {
       advance();
       advance(';');
       scope.define(this);
+      this.nodeType = 'type-alias';
       return this;
     }
   });

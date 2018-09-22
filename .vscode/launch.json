@@ -42,8 +42,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "test-alias",
-      "program": "${workspaceFolder}/tests/test-alias.mjs",
+      "name": "test-user-type",
+      "program": "${workspaceFolder}/tests/test-user-type.mjs",
       "runtimeArgs": [
         "--experimental-modules"
       ],

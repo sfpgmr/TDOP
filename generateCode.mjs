@@ -172,6 +172,8 @@ export default async function generateCode(ast, binaryen_) {
         return suffix(s);
       case 'class':
         return classDefinition(s);
+      case 'type-alias':
+        break;
       default:
         error('unrecognized nodetype', s);
         break;
@@ -201,6 +203,22 @@ export default async function generateCode(ast, binaryen_) {
     return module[type.value] || ((type.alternativeType) ? module[type.alternativeType.value]:null);
   }
 
+  function getModuleTypeFromObj(obj){
+    return getModuleType(getRealType(obj));
+  }
+
+  function getBinaryenTypeFromObj(obj){
+    return getBinaryenType(getRealType(obj));
+  }
+
+  function getRealType(obj){
+    let type = obj.type;
+    if(obj.type.alias && !obj.typeRef.userType){
+      type = obj.typeRef;
+    }
+    return type;
+  }
+
   // 関数定義
   function functionStatement(funcNode) {
     //console.log('** defftypine_() **');
@@ -221,7 +239,7 @@ export default async function generateCode(ast, binaryen_) {
       error('export関数は、64bit整数の戻り値をサポートしていません。',funcNode);
     }
 
-    let funcReturnType = getBinaryenType(funcNode.type);
+    let funcReturnType = getBinaryenTypeFromObj(funcNode);
 
     if (!funcReturnType) {
       // TODO: 戻り値がユーザー定義型だった場合どうする？
@@ -235,7 +253,7 @@ export default async function generateCode(ast, binaryen_) {
       funcParams.forEach(p => {
         paramInits.push(define_(p, null));
 
-        let paramType = getBinaryenType(p.type);
+        let paramType = getBinaryenTypeFromObj(p);
         if (!paramType) {
           // TODO: 戻り値がユーザー定義型だった場合どうする？
           error('不正なパラメータです。', p);
@@ -260,12 +278,12 @@ export default async function generateCode(ast, binaryen_) {
       constants.set(d.value,expressionConstant(d.initialExpression));
       return null;
     } else {
-      if (!d.userType) {
+      if (!d.userType || (d.typeRef && !d.typeRef.userType)) {
         if(!d.alias){// エイリアスではない。
           // WASM ネイティブ型
           // ローカル
-          let varType = getBinaryenType(d.type);
-          let varTypeObj = getModuleType(d.type);
+          let varType = getBinaryenTypeFromObj(d);
+          let varTypeObj = getModuleTypeFromObj(d);
           (!varType) && error('不正な型です。', d);
 
           switch (d.stored) {
@@ -286,7 +304,7 @@ export default async function generateCode(ast, binaryen_) {
           }
         }
       } else {
-        // ユーザー定義型
+        // ユーザー定義型かつ型エイリアスの元の型がユーザー定義型である
         const results = [];
         d.members && d.members.forEach(m => {
           const r = define(m);
@@ -982,9 +1000,10 @@ export default async function generateCode(ast, binaryen_) {
 
 
   function binOp_(name, e, left, right, sign) {
-    const t = getModuleType(left.type);
+    const t = getModuleTypeFromObj(left);
     if (t) {
-      switch (left.type.value) {
+      const type = getRealType(left);
+      switch (type.value) {
         case 'i8':
         case 'u8':
         case 'i16':
@@ -1020,8 +1039,8 @@ export default async function generateCode(ast, binaryen_) {
     } else {
       const l = expression(left);
       const r = expression(right);
-      let op = getModuleType(left.type)[name];
-      (!op) && (op = getModuleType(left.type)[sign ? name + '_s' : name + '_u']);
+      let op = getModuleTypeFromObj(left)[name];
+      (!op) && (op = getModuleTypeFromObj(left)[sign ? name + '_s' : name + '_u']);
 
       if ((typeof l != 'number') || (typeof r != 'number')) {
         error('Bad Expression', left);
@@ -1082,7 +1101,7 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function pointer(e,castType) {
-    const type = castType || e.type;
+    const type = castType || getRealType(e);
     switch (type.value) {
       case 'i8':
         return module[type.alternativeType.value].load8_s(0,0,expression(e.first));
@@ -1111,7 +1130,9 @@ export default async function generateCode(ast, binaryen_) {
     if (left.nodeType == 'literal') {
       return literal(left, true);
     }
-    switch (left.type.value) {
+    
+    const type = getRealType(left);
+    switch (type.value) {
       case 'i8':
       case 'u8':
       case 'i16':
@@ -1133,7 +1154,8 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function bitNot(left) {
-    switch (left.type.value) {
+    const type = getRealType(left);
+    switch (type.value) {
       case 'i8':
       case 'u8':
       case 'i16':
@@ -1151,16 +1173,17 @@ export default async function generateCode(ast, binaryen_) {
   }
 
   function inc(left) {
-    const builtinType = getModuleType(left.type);
+    const builtinType = getModuleTypeFromObj(left);
     if (builtinType) {
       return setValue(left, builtinType.add(expression(left), builtinType.const(1)));
-    } else {
-          error('Bad Type', left);
+    } else
+    {
+      error('Bad Type', left);
     }
   }
 
   function dec(left) {
-    const builtinType = getModuleType(left.type);
+    const builtinType = getModuleTypeFromObj(left);
     if (builtinType) {
       return setValue(left, builtinType.sub(expression(left), builtinType.const(1)));
     } else {
@@ -1189,13 +1212,13 @@ export default async function generateCode(ast, binaryen_) {
     }
 
     //console.log('** name() **');
-    const builtinType = getModuleType(e.type);
+    const builtinType = getModuleTypeFromObj(e);
     if (builtinType) {
       switch (e.stored) {
         case compilerConstants.STORED_LOCAL:
-          return module.getLocal(e.varIndex, getBinaryenType(e.type));
+          return module.getLocal(e.varIndex, getBinaryenTypeFromObj(e));
         case compilerConstants.STORED_GLOBAL:
-          return module.getGlobal(e.value, getBinaryenType(e.type));
+          return module.getGlobal(e.value, getBinaryenTypeFromObj(e));
       }
     } else {
       return e.scope.find(e.value);
@@ -1234,7 +1257,7 @@ export default async function generateCode(ast, binaryen_) {
     if (left.value == '.') {
       // ユーザー定義型のメンバー
       const l = leftDotOp(left);
-      if (getModuleType(l.type)) {
+      if (getModuleTypeFromObj(l)) {
         const op = setValue(l, expression(right));
         if (top) {
           if (results.length > 0) {
@@ -1264,14 +1287,14 @@ export default async function generateCode(ast, binaryen_) {
       });
     } else if(left.value == '*'){
       // ポインタ
-      let type = getModuleType(right.type);
+      let type = getModuleTypeFromObj(right);
       if (!type) {
           error('不正な代入', e);
       }
       let storeOp = getStoreOp(type,right.type);
       results.push(storeOp(0,0,expression(left.first),expression(right)));
     } else if(left.value == '['){
-      let type = getModuleType(right.type);
+      let type = getModuleTypeFromObj(right);
       if (!type) {
           error('不正な代入', e);
       }
@@ -1281,7 +1304,7 @@ export default async function generateCode(ast, binaryen_) {
       if (left.type.value != right.type.value) {
         error('不正な代入：左辺と右辺の型が違います', e);
       }
-      let type = getModuleType(left.type);
+      let type = getModuleTypeFromObj(left);
       if (!type) {
           error('不正な代入', e);
       }

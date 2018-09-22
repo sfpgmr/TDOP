@@ -1,25 +1,7 @@
 'use strict';
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
-import './test-expressions-arithmetic.mjs';
-import './test-expressions-condition.mjs';
-import './test-expressions-logical.mjs';
-import './test-expressions-bitwise.mjs';
-import './test-expressions-loop.mjs';
-import './test-literal.mjs';
-import './test-pointer.mjs';
-import './test-cast.mjs';
-import './test-array.mjs';
-import './test-const.mjs';
-import './test-sizeof.mjs';
-import './test-short-word-integer.mjs';
-import './test-alias.mjs';
-import './test-function.mjs';
-import './test-if-loop.mjs';
-import './test-user-type.mjs';
 
-
-//test_expression_add();
 
 test('test-type01',async t=>{
   const testSrc = 
@@ -119,57 +101,4 @@ test('test-type03-nest2',async t=>{
     console.log(inst.exports.main());
 });
 
-test('test-fucntion-call',async t=>{
-  const testSrc = 
-  `
-  i32 𩸽(i32 a,i32 b){
-    return a * b;
-  };
-  
-  export i32 main(){
-  i32 b = 2;
- 
-  return 𩸽(b,b);// 4
-  };
-    `;
-
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
-    t.equal(inst.exports.main(),4);
-    console.log(inst.exports.main());
-});
-
-test('test-for',async t=>{
-  const testSrc = 
-  `
-  export i32 main(){
-    i32 b = 0;
-    for(i32 c = 0;c < 4;c+=1) {
-      b = b + 1;
-    }
-    return b;// 4
-  };
-      `;
-
-      const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
-      t.equal(inst.exports.main(),4);
-    console.log(inst.exports.main());
-});
-
-test('test-if',async t=>{
-  const testSrc = 
-  `
-  export i32 main(i32 a){
-    if(a == 1){
-      return 1;
-    } else {
-      return 0;
-    }
-  };
-      `;
-
-    const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
-    t.equal(inst.exports.main(2),0);
-    t.equal(inst.exports.main(1),1);
-    console.log(inst.exports.main());
-});
 
