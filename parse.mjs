@@ -9,7 +9,6 @@
 
 
 import * as constants from './compilerConstants.mjs';
-import { unwatchFile } from 'fs';
 
 function error(message, t = this) {
   t.name = 'Parser : SyntaxError';
