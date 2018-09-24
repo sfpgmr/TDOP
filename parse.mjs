@@ -206,9 +206,9 @@ export default function make_parse() {
       if (!o) {
         error('Unknown operator.', t);
       }
-    } else if (a == 'i8' || a == 'u8' || a == 'u16' || a == 'i16' || a == 'string' ||  a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
+    } else if (a == 'i8' || a == 'u8' || a == 'u16' || a == 'i16' || a == 'string' || a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
       o = symbol_table.get('(literal)');
-      type = scope.find(a,true);
+      type = scope.find(a, true);
       //type = a;
       a = 'literal';
       if (a.substr(0, 1) == 'i') {
@@ -221,7 +221,7 @@ export default function make_parse() {
       error('Unexpected token.', t);
     }
 
-    token = Object.assign(Object.create(o),o);
+    token = Object.assign(Object.create(o), o);
     //token = Object.create(o);
     // TODO:このへんのいい加減コードも整理せんといかんですなあ。。
     token.line = t.line;
@@ -232,11 +232,11 @@ export default function make_parse() {
     o.members && (token.members = o.members);
     o.varIndex && (token.varIndex = o.varIndex);
     //token.type = a;
-    if(type) {
+    if (type) {
       token.type = type;
       currentType = type;
     }
-    ((typeof token.type) == 'string') && (token.type = scope.find(token.type,true));
+    ((typeof token.type) == 'string') && (token.type = scope.find(token.type, true));
     t.kind && (token.kind = t.kind);
     o.userType && (token.userType = o.userType);
     // 変数参照はnodeTypeを'reference'とする
@@ -246,29 +246,29 @@ export default function make_parse() {
     return token;
   }
 
-  function checkType(t,left){
+  function checkType(t, left) {
     let type = t.type;
-    if(!type){
+    if (!type) {
       let leftType = left.type;
-      if(leftType && t.value != '*'){
+      if (leftType && t.value != '*') {
         t.type = leftType;
-        undeterminedTypeIds.forEach(id=>{
-          if(!id.type){
+        undeterminedTypeIds.forEach(id => {
+          if (!id.type) {
             id.type = leftType;
           }
         });
         undeterminedTypeIds.length = 0;
       } else {
-//        if(t.value == '*'){
-          undeterminedTypeIds.push(t);
-//        }
+        //        if(t.value == '*'){
+        undeterminedTypeIds.push(t);
+        //        }
       }
-    } 
+    }
   }
 
-  function setDefaultType(){
-    undeterminedTypeIds.forEach(id=>{
-      if(!id.type){
+  function setDefaultType() {
+    undeterminedTypeIds.forEach(id => {
+      if (!id.type) {
         id.type = currentType || DefaultType;
       }
     });
@@ -276,10 +276,10 @@ export default function make_parse() {
     currentType = null;
   }
 
-  function getRealType(t){
+  function getRealType(t) {
     return !t.alias ? t : getRealType(t.alias);
   }
-  
+
   // 式
   function expression(rbp, rvalue = true) {
 
@@ -292,7 +292,7 @@ export default function make_parse() {
       t = token;
       advance();
       left = t.led(left, rvalue);
-      checkType(t,left);
+      checkType(t, left);
     }
     return left;
   }
@@ -445,7 +445,7 @@ export default function make_parse() {
       this.second = expression(this.lbp);
       this.second.rvalue = true;
 
-      checkType(this,left);
+      checkType(this, left);
       //!this.type && (this.type = left.type);
       // if(this.first.type != this.second.type){
       //   this.error('type unmatched.');
@@ -477,7 +477,7 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
-      checkType(this,left)
+      checkType(this, left)
       //!this.type && (this.type = left.type);
       this.nodeType = 'binary';
       return this;
@@ -512,7 +512,7 @@ export default function make_parse() {
       //   error('type unmatch',this);
       // }
 
-      checkType(this,left);
+      checkType(this, left);
       //!this.type && (this.type = left.type);
       this.assignment = true;
       this.nodeType = 'binary';
@@ -543,7 +543,7 @@ export default function make_parse() {
       scope.reserve(this);
       this.first = expression(70);
       this.rvalue = this.first.rvalue = rvalue;
-      checkType(this,this.first);
+      checkType(this, this.first);
       //!this.type && (this.type = this.first.type);
       this.nodeType = 'unary';
       return this;
@@ -565,7 +565,7 @@ export default function make_parse() {
   function suffix(id, led = function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
-    checkType(this,left);
+    checkType(this, left);
     //!this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
@@ -639,7 +639,7 @@ export default function make_parse() {
     advance(':');
     this.third = expression(0);
     this.nodeType = 'ternary';
-    checkType(this,left);
+    checkType(this, left);
     return this;
   });
 
@@ -647,7 +647,7 @@ export default function make_parse() {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
     advance();
-    checkType(this,left);
+    checkType(this, left);
     this.second = token.name;
     this.second.rvalue = true;
   });
@@ -668,14 +668,14 @@ export default function make_parse() {
   infix('*', 60);
   infix('/', 60);
 
-  infix('<<',45);//shl
-  infix('>>',45);//shr_s
-  infix('>>>',45);//shr_u
-  infix('<<&',45);// rotl
-  infix('>>&',45);// rotr
-  infix('&',43);// and
-  infix('|',43);// or
-  infix('^',43);// xor
+  infix('<<', 45);//shl
+  infix('>>', 45);//shr_s
+  infix('>>>', 45);//shr_u
+  infix('<<&', 45);// rotl
+  infix('>>&', 45);// rotr
+  infix('&', 43);// and
+  infix('|', 43);// or
+  infix('^', 43);// xor
 
 
   infix('.', 80, function (left, rvalue = true) {
@@ -687,28 +687,28 @@ export default function make_parse() {
     token.nodeType = 'literal';
     this.second = token;
     this.second.parent = left;
-    function findMembers(target){
-      if(target.members){
+    function findMembers(target) {
+      if (target.members) {
         return target.members;
       }
-      if(target.second){
+      if (target.second) {
         return findMembers(target.second);
       }
-      error('not find members',left);
+      error('not find members', left);
     }
     const members = findMembers(left);
 
-    members.some(m=>{
-      if(m.value == token.value){
+    members.some(m => {
+      if (m.value == token.value) {
         this.second = m;
         this.second.nodeType = 'reference';
         return true;
-      } 
+      }
       return false;
     });
     this.nodeType = 'binary';
     advance();
-    checkType(this,left);
+    checkType(this, left);
     return this;
   });
 
@@ -744,7 +744,7 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = a;
       this.second.rvalue = true;
-      if ((left.nodeType !== 'unary' || left.nodeType !== 'function') &&  left.nodeType !== 'reference' &&
+      if ((left.nodeType !== 'unary' || left.nodeType !== 'function') && left.nodeType !== 'reference' &&
         left.nodeType !== 'name' && left.id !== '(' &&
         left.id !== '&&' && left.id !== '||' && left.id !== '?') {
         error('Expected a variable name.', left);
@@ -760,7 +760,7 @@ export default function make_parse() {
       }
     }
     advance(')');
-    checkType(this,left);
+    checkType(this, left);
     return this;
   });
 
@@ -797,13 +797,13 @@ export default function make_parse() {
   //   checkType(this,left);
   //   return this;
   // });
-  
-  prefix('~',80);
+
+  prefix('~', 80);
 
   prefix('sizeof', function (rvalue = true) {
 
     advance('(');
-    this.first = expression(80,rvalue);
+    this.first = expression(80, rvalue);
     this.rvalue = rvalue;
     this.nodeType = 'sizeof';
     advance(')');
@@ -812,12 +812,12 @@ export default function make_parse() {
 
   prefix('(', function (rvalue = true) {
     let reinterpret = false;
-    if(token.id == '^'){
+    if (token.id == '^') {
       reinterpret = true;
       advance();
     }
     let e = token;
-    if(e.id == 'type'){
+    if (e.id == 'type') {
       // キャストである
       advance();
       // e.id = 'cast';
@@ -825,10 +825,10 @@ export default function make_parse() {
       e.reinterpret = reinterpret;
       e.rvalue = rvalue;
       advance(')');
-      e.first = expression(80,rvalue);
+      e.first = expression(80, rvalue);
       return e;
     } else {
-      e = expression(0,rvalue);
+      e = expression(0, rvalue);
     }
     this.rvalue = rvalue;
     advance(')');
@@ -920,7 +920,7 @@ export default function make_parse() {
       error('Unreachable statement.', token);
     }
     this.nodeType = 'statement';
-    checkType(this,this.first);
+    checkType(this, this.first);
     return this;
   });
 
@@ -960,7 +960,7 @@ export default function make_parse() {
     // 終了条件
     this.second = statement();
     // ループ終端時の動作
-    this.third = expression(0,false);
+    this.third = expression(0, false);
     advance(')');
     // for文の本体
     this.fourth = block();
@@ -972,20 +972,20 @@ export default function make_parse() {
   function defineVarAndFunction(typedef = false) {
 
     // 定数定義の場合
-    if(this.const){
+    if (this.const) {
       advance();
-      if(token.id == '='){
+      if (token.id == '=') {
         const t = token;
         advance('=');
         this.rvalue = false;
         this.initialExpression = expression(0);
-        checkType(this,this.initialExpression);
+        checkType(this, this.initialExpression);
         this.nodeType = 'define';
         scope.define(this);
         advance(';');
         return this;
       } else {
-        error('文法エラー：初期値が必要です。',this);
+        error('文法エラー：初期値が必要です。', this);
       }
     }
 
@@ -993,6 +993,7 @@ export default function make_parse() {
     let n;
     let alias = false;
     let pointer = false;
+
     advance();
     n = token;
 
@@ -1003,10 +1004,11 @@ export default function make_parse() {
       alias = true;
     }
 
-    if(n.id == '*'){
+    if (n.id == '*') {
       pointer = true;
       advance();
       n = token;
+      n.pointer = true;
     }
 
     let funcptr = false;
@@ -1021,20 +1023,20 @@ export default function make_parse() {
 
     // ローカルスコープですでに定義されているか
 
-    if(typedef){// 型定義の場合はそのまま
+    if (typedef) {// 型定義の場合はそのまま
       n.varName = n.value;
     } else {
-      n.varName = n.parent ? (n.parent.varName ? n.parent.varName + '.' + n.value : n.parent.value + '.' + n.value ) : n.value;
+      n.varName = n.parent ? (n.parent.varName ? n.parent.varName + '.' + n.value : n.parent.value + '.' + n.value) : n.value;
     }
 
     if (scope.def.get(n.varName)) {
       error('Already Defined', n);
     }
-    
+
     // 変数の型を保存
     n.type = this;
 
-    if(this.userType){
+    if (this.userType) {
       // ユーザー定義型の場合は型情報の参照を追加
       n.userType = this.userType;
       n.typeRef = getRealType(this);
@@ -1056,12 +1058,12 @@ export default function make_parse() {
         const member = Object.assign({}, m);
         member.varName = parentVarName + '.' + member.value;
         scope.define(member);
-        if(!funcScope.global){
+        if (!funcScope.global) {
           member.stored = constants.STORED_LOCAL;
-          if(!member.userType){
+          if (!member.userType) {
             // ビルトイン型
             member.varIndex = funcScope.index();
-          } 
+          }
         } else {
           member.stored = constants.STORED_GLOBAL;
         }
@@ -1073,257 +1075,260 @@ export default function make_parse() {
       });
     }
 
-    // 関数定義かどうか
-    if (token.id === '(') {
-      // 関数定義
+  // 関数定義かどうか
+  if (token.id === '(') {
+    // 関数定義
+    advance();
+    // 関数内のスコープを開く
+    createScope();
+    funcScope.scopeIn();
+    // 関数の引数があるか
+    if (token.id !== ')') {
+
+      // 引数を取り出して配列に格納する
       advance();
-      // 関数内のスコープを開く
-      createScope();
-      funcScope.scopeIn();
-      // 関数の引数があるか
-      if (token.id !== ')') {
-        // 引数を取り出して配列に格納する
-        while (true) {
-          if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
-            error('Expected a parameter name.', token);
-          }
-          const type = token;
-          advance();
-          // 変数名
-          const t = token;
 
-          t.type = type.type;
-          if(this.userType){
-            t.userType = this.userType;
-            t.typeRef = this;
-          }
-          scope.define(t);
-          t.rvalue = false;
-          advance();
-          // 初期値代入
-          if (token.id === '=') {
-
-            //const temp = token;
-            advance('=');
-            t.rvalue = false;
-            (!token.type) && (token.type = t.type);
-            t.initialExpression = expression(0);
-            checkType(t.initialExpression,t);
-
-
-//            checkType(t,)
-            //n.first = t;
-            //debugger;
-            //n.second = expression(0);
-            //n.second.type = this.type;
-            //n.assignment = true;
-            //n.nodeType = 'binary';
-          }
-
-          if(t.userType){
-            t.members = assignMembers(t.typeRef);
-          } else {
-            t.varIndex = funcScope.index();
-            t.stored = constants.STORED_LOCAL;
-          }
-
-          a.push(t);
-
-          if (token.id !== ',') {
-            break;
-          }
-          advance(',');
+      while (true) {
+        let pointer = false;
+        if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
+          error('Expected a parameter name.', token);
         }
-      }
-      // 引数情報を格納
-      n.params = a;
-      advance(')');
-      if (!funcptr) {
-        // 関数ボディのパース
-        advance('{');
-        // ツリーの右に文を格納
-        n.statements = statements();
-      }
-      n.scope = scope;
-      scope.pop();
-      funcScope.scopeOut();
-      if (!funcptr) {
-        advance('}');
-      }
-      advance(';');
-      n.id = 'type';
-      n.nodeType = 'function';
-      return n;
-    }
 
-    while (true) {
-      // 変数名
-
-      n.nud = itself;
-
-      // 初期値の代入演算子があるか（エイリアスの場合は必須）
-      if (token.id === '=') {
-        // 初期値あり
-        advance('=');
-
-        // 代入される変数は右辺値ではない
-        n.rvalue = false;
-        // 右辺値の型情報がない場合は左辺値の型情報を代入する
-        (!token.type) && (token.type = n.type);
-        
-        // 初期値の処理を行う。
-        {
-          // 初期化式の評価
-          const initExpression = expression(0);
-          if(alias){
-            // エイリアス->参照する変数をaliasプロパティに代入する
-            if(initExpression.nodeType != 'reference'){
-              error('変数エイリアスの初期化式に指定できるのは変数のみです。',e);
-            } else {
-              n.alias = initExpression;
-              n.type = n.alias.type;
-            }
-          } else {
-            // 変数定義->式評価を行う
-            n.initialExpression = initExpression;
-            // 型情報
-            checkType(n.initialExpression,n);
-          }
-        }
-        a.push(n);
-      } else {
-        if(!alias){
-          a.push(n);
-        } else {
-          // エイリアスは初期値が必要
-          error('エイリアスは初期値が必要です',n);
-        }
-      }
-
-      // カンマ演算子
-      if (token.id !== ',') {
-        break;
-      }
-      advance(',');
-      // ポインタ型かどうか
-      if (token.id == '*') {
+        const type = token;
         advance();
-        n = token;
-        n.pointer = true;
-      } else {
-        n = token;
-      }
 
-      n.type = this;
-      if(this.userType){
-        // ユーザー定義型の場合は型情報の参照を追加
-        n.userType = this.userType;
-        n.typeRef = getRealType(this);
-      }
-      n.rvalue = false;
-      (!typedef) && scope.define(n);
-      advance();
-    }
-
-    advance(';');
-    a.forEach(d => {
-      const ret = d;
-      
-      if(!alias){// 変数エイリアスには不要な情報
-        //const ret = d;//Object.assign(Object.create(d), d);
-        if (!typedef && !funcScope.global && (!ret.userType || (ret.typeRef && !ret.typeRef.userType))){
-          // ビルトイン型
-          ret.varIndex = funcScope.index();
-          ret.stored = constants.STORED_LOCAL;
-        } else {
-            ret.stored = constants.STORED_GLOBAL;
+        if(token.id == '&'){
+          error('関数の引数にエイリアスは指定できません。',token);
         }
         
-        // 型エイリアスの場合、typeRef
-        if (ret.typeRef && ret.typeRef.userType) {
-          // ユーザー定義型
-          if(!typedef){
-            ret.members = assignMembers(ret);
-          } 
+        if(token.id == '*'){
+          pointer = true;
         }
-      }
-      ret.nodeType = 'define';
-      ret.type = this;
-    });
-    //this.defines = a;
 
-    return a;
-    // return (a.length === 0)
-    //   ? null
-    //   : (a.length === 1)
-    //     ? a[0]
-    //     : a;
+        // 変数名
+        const t = token;
+        t.type = type;
+        t.pointer = true;
+
+        if (type.userType) {
+          t.userType = true;
+          t.typeRef = type;
+        }
+        scope.define(t);
+        t.rvalue = false;
+        advance();
+
+        // 変数の初期値
+        if (token.id === '=') {
+          // 初期値あり
+          advance('=');
+          t.rvalue = false;
+          (!token.type) && (token.type = t.type);
+          t.initialExpression = expression(0);
+          checkType(t.initialExpression, t);
+        }
+
+        // ユーザー定義型かどうか
+        if (t.userType) {
+          t.members = assignMembers(t.typeRef);
+        } else {
+          t.varIndex = funcScope.index();
+          t.stored = constants.STORED_LOCAL;
+        }
+
+        a.push(t);
+
+        if (token.id !== ',') {
+          break;
+        }
+        advance(',');
+      }
+    }
+    // 引数情報を格納
+    n.params = a;
+    advance(')');
+    if (!funcptr) {
+      // 関数ボディのパース
+      advance('{');
+      // ツリーの右に文を格納
+      n.statements = statements();
+    }
+    n.scope = scope;
+    scope.pop();
+    funcScope.scopeOut();
+    if (!funcptr) {
+      advance('}');
+    }
+    advance(';');
+    n.id = 'type';
+    n.nodeType = 'function';
+    return n;
   }
 
-  // ** type 定義 ** //
-  stmt('type', function () {
-    //this.first = token;
+  while (true) {
 
-    let alias = false;
-    if(token.id == '&'){
-      alias = true;
-      advance();
-    }
+    // 変数名
+    n.nud = itself;
 
-    this.value = token.value;
-    this.type = token;
-    this.id = token.value;
+    // 初期値の代入演算子があるか（エイリアスの場合は必須）
+    if (token.id === '=') {
+      // 初期値あり
+      advance('=');
 
-    advance();
+      // 代入される変数は右辺値ではない
+      n.rvalue = false;
+      // 右辺値の型情報がない場合は左辺値の型情報を代入する
+      (!token.type) && (token.type = n.type);
 
-    switch (token.id) {
-    case '{':
-    {
-      // クラス定義
-      this.nodeType = 'class';
-      this.userType = true;
-      this.typedef = true;
-      advance();
-      const defs = [];
-      let access = constants.ACCESS_PUBLIC;// publicから始まる。
-      //createScope();
+      // 初期値の処理を行う。
+      {
+        // 初期化式の評価
+        const initExpression = expression(0);
 
-      while (token.id != "}") {
-        switch (token.value) {
-        case 'public':
-          access = constants.ACCESS_PUBLIC;
-          advance();
-          advance(':');
-          break;
-        case 'private':
-          access = constants.ACCESS_PRIVATE;
-          advance();
-          advance(':');
-          break;
-        case 'protected':
-          access = constants.ACCESS_PROTECTED;
-          advance();
-          advance(':');
-          break;
-        default:
-          {
-            const def = defineVarAndFunction.bind(token,true)();
-            def.forEach(d => d.access = access);
-            defs.push(...def);
+        if (alias) {
+          // エイリアス->参照する変数をaliasプロパティに代入する
+          if (initExpression.nodeType != 'reference') {
+            error('変数エイリアスの初期化式に指定できるのは変数のみです。', e);
+          } else {
+            n.alias = initExpression;
+            n.type = n.alias.type;
           }
-          break;
+        } else {
+          // 変数定義->式評価を行う
+          n.initialExpression = initExpression;
+          // 型情報
+          checkType(n.initialExpression, n);
         }
       }
-      advance('}');
-      advance(';');
-      //scope.pop();
-      this.members = defs;
-      this.dvd = defineVarAndFunction;
-      //const t = this.first.value;
-      // 型をスコープに登録
-      scope.define(this);
-      return this;
+      a.push(n);
+    } else {
+      if (!alias) {
+        a.push(n);
+      } else {
+        // エイリアスは初期値が必要
+        error('エイリアスは初期値が必要です', n);
+      }
     }
+
+    // カンマ演算子
+    if (token.id !== ',') {
+      break;
+    }
+
+    advance(',');
+    n = token;
+    n.type = this;
+    n.pointer = pointer;
+
+    if (this.userType) {
+      // ユーザー定義型の場合は型情報の参照を追加
+      n.userType = this.userType;
+      n.typeRef = getRealType(this);
+    }
+    n.rvalue = false;
+    (!typedef) && scope.define(n);
+    advance();
+  }
+
+  advance(';');
+  a.forEach(d => {
+    const ret = d;
+
+    if (!alias) {// 変数エイリアスには不要な情報
+      //const ret = d;//Object.assign(Object.create(d), d);
+      if (!typedef && !funcScope.global && (!ret.userType || (ret.typeRef && !ret.typeRef.userType))) {
+        // ビルトイン型
+        ret.varIndex = funcScope.index();
+        ret.stored = constants.STORED_LOCAL;
+      } else {
+        ret.stored = constants.STORED_GLOBAL;
+      }
+
+      // 型エイリアスの場合、typeRef
+      if (ret.typeRef && ret.typeRef.userType) {
+        // ユーザー定義型
+        if (!typedef) {
+          ret.members = assignMembers(ret);
+        }
+      }
+    }
+    ret.nodeType = 'define';
+    ret.type = this;
+  });
+  //this.defines = a;
+
+  return a;
+  // return (a.length === 0)
+  //   ? null
+  //   : (a.length === 1)
+  //     ? a[0]
+  //     : a;
+}
+
+// ** type 定義 ** //
+stmt('type', function () {
+  //this.first = token;
+
+  let alias = false;
+  if (token.id == '&') {
+    alias = true;
+    advance();
+  }
+
+  this.value = token.value;
+  this.type = token;
+  this.id = token.value;
+
+  advance();
+
+  switch (token.id) {
+    case '{':
+      {
+        // クラス定義
+        this.nodeType = 'class';
+        this.userType = true;
+        this.typedef = true;
+        advance();
+        const defs = [];
+        let access = constants.ACCESS_PUBLIC;// publicから始まる。
+        //createScope();
+
+        while (token.id != "}") {
+          switch (token.value) {
+            case 'public':
+              access = constants.ACCESS_PUBLIC;
+              advance();
+              advance(':');
+              break;
+            case 'private':
+              access = constants.ACCESS_PRIVATE;
+              advance();
+              advance(':');
+              break;
+            case 'protected':
+              access = constants.ACCESS_PROTECTED;
+              advance();
+              advance(':');
+              break;
+            default:
+              {
+                const def = defineVarAndFunction.bind(token, true)();
+                def.forEach(d => d.access = access);
+                defs.push(...def);
+              }
+              break;
+          }
+        }
+        advance('}');
+        //scope.pop();
+        this.members = defs;
+        this.dvd = defineVarAndFunction;
+        //const t = this.first.value;
+        // 型をスコープに登録
+        scope.define(this);
+        advance(';');
+        return this;
+      }
     // 型エイリアス
     case '=':
       advance('=');
@@ -1332,51 +1337,51 @@ export default function make_parse() {
       this.userType = true;
       this.dvd = defineVarAndFunction;
       advance();
-      advance(';');
       scope.define(this);
       this.nodeType = 'type-alias';
+      advance(';');
       return this;
-    }
-  });
+  }
+});
 
-  return function (t) {
-    tokens = t;
-    //        tokens = source.tokens('=<>!+-*&|/%^', '=<>&|');
-    token_nr = 0;
-    //scope = null;
-    //new Scope();
-    //global = scope;
-    scopeTop = createScope();
-    // ビルトイン 型
-    const builtinTypes = new Map(
+return function (t) {
+  tokens = t;
+  //        tokens = source.tokens('=<>!+-*&|/%^', '=<>&|');
+  token_nr = 0;
+  //scope = null;
+  //new Scope();
+  //global = scope;
+  scopeTop = createScope();
+  // ビルトイン 型
+  const builtinTypes = new Map(
     [
-      ['i8', {size:1,bitSize:8,max:127,min:-128,integer:true}],
-      ['i16',{size:2,bitSize:16,max:32767,min:-32768,integer:true}],
-      ['u8',{size:1,bitSize:8,max:255,min:0,integer:true}],
-      ['u16',{size:2,bitSize:16,max:65535,min:0,integer:true}],
-      ['u32',{size:4,bitSize:32,max:0xffffffff,min:0,integer:true}],
-      ['u64',{size:8,bitSize:64,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true}],
-      ['i32',{size:4,bitSize:32,max:0x7fffffff,min:-0x8000000,integer:true}],
-      ['i64',{size:8,bitSize:64,max:{low:0xffffffff,high:0x7fffffff},min:{low:0,high:0x80000000},integer:true}], 
-      ['f32',{size:4,bitSize:32,max:3.402823466e+38,min:1.175494351e-38,integer:false}],
-      ['f64',{size:8,bitSize:64,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false}],
-      ['void',{size:0}],
-      ['string',{}]
+      ['i8', { size: 1, bitSize: 8, max: 127, min: -128, integer: true }],
+      ['i16', { size: 2, bitSize: 16, max: 32767, min: -32768, integer: true }],
+      ['u8', { size: 1, bitSize: 8, max: 255, min: 0, integer: true }],
+      ['u16', { size: 2, bitSize: 16, max: 65535, min: 0, integer: true }],
+      ['u32', { size: 4, bitSize: 32, max: 0xffffffff, min: 0, integer: true }],
+      ['u64', { size: 8, bitSize: 64, max: { low: 0xffffffff, high: 0xffffffff }, min: { low: 0, high: 0 }, integer: true }],
+      ['i32', { size: 4, bitSize: 32, max: 0x7fffffff, min: -0x8000000, integer: true }],
+      ['i64', { size: 8, bitSize: 64, max: { low: 0xffffffff, high: 0x7fffffff }, min: { low: 0, high: 0x80000000 }, integer: true }],
+      ['f32', { size: 4, bitSize: 32, max: 3.402823466e+38, min: 1.175494351e-38, integer: false }],
+      ['f64', { size: 8, bitSize: 64, max: Number.MAX_VALUE, min: Number.MIN_VALUE, integer: false }],
+      ['void', { size: 0 }],
+      ['string', {}]
     ]);
-    builtinTypes.forEach((v,k) => {
-        scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false,size:v.size,bitSize:v.bitSize,integer:v.integer,max:v.max,min:v.min });
-      });
-    DefaultType = scope.find('i32',true);
-    advance();
-    const s = statements();
-    advance('(end)');
-    scope.pop();
-    console.log('** parse end **');
-    return {
-      id: '(program)',
-      scope: scopeTop,
-      builtInTypes:builtinTypes,
-      statements: s
-    };
+  builtinTypes.forEach((v, k) => {
+    scope.define({ id: 'type', value: k, type: k, nodeType: 'builtin', typedef: true, dvd: defineVarAndFunction, userType: false, size: v.size, bitSize: v.bitSize, integer: v.integer, max: v.max, min: v.min });
+  });
+  DefaultType = scope.find('i32', true);
+  advance();
+  const s = statements();
+  advance('(end)');
+  scope.pop();
+  console.log('** parse end **');
+  return {
+    id: '(program)',
+    scope: scopeTop,
+    builtInTypes: builtinTypes,
+    statements: s
   };
+};
 }

@@ -304,13 +304,36 @@ export default async function generateCode(ast, binaryen_) {
           }
         }
       } else {
-        // ユーザー定義型かつ型エイリアスの元の型がユーザー定義型である
-        const results = [];
-        d.members && d.members.forEach(m => {
-          const r = define(m);
-          (r instanceof Array) ? results.push(...r) : (r && results.push(r));
-        });
-        return results;
+        if(d.pointer){
+          // ポインタの場合
+          let varType = binaryen[compilerConstants.POINTER_TYPE];
+          let varTypeObj = module[compilerConstants.POINTER_TYPE];
+          switch (d.stored) {
+            case compilerConstants.STORED_LOCAL:
+              {
+                vars && vars.push(varType);
+                if (d.initialExpression) {
+                  return module.setLocal(d.varIndex, expression(d.initialExpression));
+                }
+                return null;
+              }
+            case compilerConstants.STORED_GLOBAL:
+              if (d.initialExpression) {
+                return module.addGlobal(d.value, varType, true, expression(d.initialExpression));
+              } else {
+                return module.addGlobal(d.value, varType, true, varTypeObj.const(0));
+              }
+          }          
+
+        } else {
+          // ユーザー定義型かつ型エイリアスの元の型がユーザー定義型である
+          const results = [];
+          d.members && d.members.forEach(m => {
+            const r = define(m);
+            (r instanceof Array) ? results.push(...r) : (r && results.push(r));
+          });
+          return results;
+        }
       }
     }
   }
@@ -1288,11 +1311,21 @@ export default async function generateCode(ast, binaryen_) {
     } else if(left.value == '*'){
       // ポインタ
       let type = getModuleTypeFromObj(right);
-      if (!type) {
-          error('不正な代入', e);
+      if(type){
+        // ネイティブ型
+        let storeOp = getStoreOp(type,right.type);
+        results.push(storeOp(0,0,expression(left.first),expression(right)));
+      } else {
+        // ユーザー定義型
+        if(left.first.pointer){
+          let realType = getRealType(left.first);
+          
+
+
+        } else {
+          error('ポインタ型ではありません。', left.first);
+        }
       }
-      let storeOp = getStoreOp(type,right.type);
-      results.push(storeOp(0,0,expression(left.first),expression(right)));
     } else if(left.value == '['){
       let type = getModuleTypeFromObj(right);
       if (!type) {
