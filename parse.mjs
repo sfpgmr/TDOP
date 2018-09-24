@@ -992,6 +992,7 @@ export default function make_parse() {
     let a = [];
     let n;
     let alias = false;
+    let pointer = false;
     advance();
     n = token;
 
@@ -1000,6 +1001,12 @@ export default function make_parse() {
       advance();
       n = token;
       alias = true;
+    }
+
+    if(n.id == '*'){
+      pointer = true;
+      advance();
+      n = token;
     }
 
     let funcptr = false;
@@ -1032,6 +1039,7 @@ export default function make_parse() {
       n.userType = this.userType;
       n.typeRef = getRealType(this);
     }
+
     // export するかどうか
     n.export = this.export;
     // scope に変数名を登録する
@@ -1158,7 +1166,6 @@ export default function make_parse() {
         // 初期値あり
         advance('=');
 
-        
         // 代入される変数は右辺値ではない
         n.rvalue = false;
         // 右辺値の型情報がない場合は左辺値の型情報を代入する

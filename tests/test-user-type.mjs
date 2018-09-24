@@ -1,6 +1,7 @@
 'use strict';
 import test from 'tape-async';
 import * as compiler from './compiler.mjs';
+import types from './test-types.mjs';
 
 
 test('test-type01',async t=>{
@@ -101,4 +102,70 @@ test('test-type03-nest2',async t=>{
     console.log(inst.exports.main());
 });
 
+test('test-type04-alias',async t=>{
+  const testSrc = 
+  `
+ 
+  type Foo {
+  public:
+    i32 a = 1;
+    i32 b = 2;
+  };
+  
+  export i32 main(){
+    Foo foo;
+    Foo& foo1 = foo;
+    foo1.a = 2;
+    foo1.b = 2;
+    return foo.a * foo.b;
+  };`;
+
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
+  t.equal(inst.exports.main(),4);
+    console.log(inst.exports.main());
+});
+
+
+test('test-type05-pointer',async t=>{
+  const testSrc = 
+  `
+ 
+  type Foo {
+  public:
+    i32 a = 1;
+    i32 b = 2;
+  };
+  
+  export i32 main(){
+    Foo* foo = 0x8000;
+    foo.a = 2;
+    foo.b = 2;
+    Foo foo1;
+    *foo = foo1;
+    return foo.a * foo.b;
+  };`;
+
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
+  t.equal(inst.exports.main(),3);
+    console.log(inst.exports.main());
+});
+
+test('test-type06-sizeof',async t=>{
+  const testSrc = 
+  `
+ 
+  type Foo {
+  public:
+    i32 a = 1;
+    i32 b = 2;
+  };
+  
+  export i32 main(){
+    return sizeof(Foo);
+  };`;
+
+  const inst = await compiler.compileAndInstanciate(t.name,testSrc,`./tests/out/${t.name}`);
+  t.equal(inst.exports.main(),8);
+    console.log(inst.exports.main());
+});
 
