@@ -215,6 +215,7 @@ export default async function generateCode(ast, binaryen_) {
     let type = obj.type;
     if(obj.type.alias && !obj.typeRef.userType){
       type = obj.typeRef;
+      if(type.alias) return getRealType(type);
     }
     return type;
   }
@@ -1319,7 +1320,9 @@ export default async function generateCode(ast, binaryen_) {
         // ユーザー定義型
         if(left.first.pointer){
           let realType = getRealType(left.first);
+          // オブジェクトの代入
           
+
 
 
         } else {

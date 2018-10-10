@@ -298,6 +298,7 @@ export default function make_parse() {
   }
 
 
+  // ステートメント
   function statement() {
     const n = token;
     n.rvalue = false;
@@ -1039,7 +1040,7 @@ export default function make_parse() {
     if (this.userType) {
       // ユーザー定義型の場合は型情報の参照を追加
       n.userType = this.userType;
-      n.typeRef = getRealType(this);
+      //n.typeRef = getRealType(this);
     }
 
     // export するかどうか
@@ -1053,8 +1054,8 @@ export default function make_parse() {
 
     function assignMembers(node) {
       const parentVarName = node.varName;
-      const typeRef = node.typeRef;
-      return typeRef.members.map(m => {
+      //const typeRef = node.typeRef;
+      return node.type.members.map(m => {
         const member = Object.assign({}, m);
         member.varName = parentVarName + '.' + member.value;
         scope.define(member);
@@ -1077,8 +1078,24 @@ export default function make_parse() {
 
   // 関数定義かどうか
   if (token.id === '(') {
-    // 関数定義
+    // 関数定義かユーザー定義型か
     advance();
+
+    if(token.id == ')'){
+      tokens[token_nr + 1];
+    }
+    if(token.nodeType != 'builtin' && token.nodeType != 'user-type' && token.nodeType != 'type-alias'){
+      // ユーザー定義型のコンストラクタである
+      let initialExpressions = []
+      while(token.id != ')'){
+        initialExpressions.push[expression(0)];
+        advance(',');
+      }
+      n.initialExpression = initialExpressions;
+      advance();
+      advance(';');
+      return n;
+    }
     // 関数内のスコープを開く
     createScope();
     funcScope.scopeIn();
@@ -1092,7 +1109,7 @@ export default function make_parse() {
         let pointer = false;
         if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
           error('Expected a parameter name.', token);
-        }
+        } 
 
         const type = token;
         advance();
@@ -1103,16 +1120,18 @@ export default function make_parse() {
         
         if(token.id == '*'){
           pointer = true;
+        } else {
+          pointer = false;
         }
 
         // 変数名
         const t = token;
         t.type = type;
-        t.pointer = true;
+        t.pointer = pointer;
 
         if (type.userType) {
           t.userType = true;
-          t.typeRef = type;
+          //t.typeRef = type;
         }
         scope.define(t);
         t.rvalue = false;
@@ -1130,7 +1149,7 @@ export default function make_parse() {
 
         // ユーザー定義型かどうか
         if (t.userType) {
-          t.members = assignMembers(t.typeRef);
+          t.members = assignMembers(t);
         } else {
           t.varIndex = funcScope.index();
           t.stored = constants.STORED_LOCAL;
@@ -1223,7 +1242,7 @@ export default function make_parse() {
     if (this.userType) {
       // ユーザー定義型の場合は型情報の参照を追加
       n.userType = this.userType;
-      n.typeRef = getRealType(this);
+      //n.typeRef = getRealType(this);
     }
     n.rvalue = false;
     (!typedef) && scope.define(n);
@@ -1284,44 +1303,32 @@ stmt('type', function () {
   switch (token.id) {
     case '{':
       {
-        // クラス定義
-        this.nodeType = 'class';
+        // ユーザー定義
+        this.nodeType = 'userType';
         this.userType = true;
         this.typedef = true;
         advance();
         const defs = [];
         let access = constants.ACCESS_PUBLIC;// publicから始まる。
         //createScope();
-
+ 
+        let size = 0;
         while (token.id != "}") {
-          switch (token.value) {
-            case 'public':
-              access = constants.ACCESS_PUBLIC;
-              advance();
-              advance(':');
-              break;
-            case 'private':
-              access = constants.ACCESS_PRIVATE;
-              advance();
-              advance(':');
-              break;
-            case 'protected':
-              access = constants.ACCESS_PROTECTED;
-              advance();
-              advance(':');
-              break;
-            default:
-              {
-                const def = defineVarAndFunction.bind(token, true)();
-                def.forEach(d => d.access = access);
-                defs.push(...def);
-              }
-              break;
-          }
+          const def = defineVarAndFunction.bind(token, true)();
+          def.forEach(d => d.access = access);
+          defs.push(...def);
         }
         advance('}');
         //scope.pop();
+        
+        // バイトサイズを求める
+        defs.forEach(d=>{
+          size += d.type.size;
+        });
+        this.size = size;
+
         this.members = defs;
+        
         this.dvd = defineVarAndFunction;
         //const t = this.first.value;
         // 型をスコープに登録
