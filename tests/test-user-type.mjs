@@ -6,16 +6,16 @@ import types from './test-types.mjs';
 
 test('test-type-01', async t => {
   const testSrc =
-    `
+`
 type Foo {
   i32 a = 1,b = 1;
 };
 
 export i32 main(){
   Foo foo(1,1);//コンストラクタ呼び出し
-  Foo* foo1 = new(0) Foo = {1,1};//代入形式
-  foo = {1,1};
-  return foo.a * foo1.b;
+  //Foo* foo1 = new(0) Foo;//代入形式
+  //foo = {1,1};
+  return foo.a * foo.b;
 };
 `;
 

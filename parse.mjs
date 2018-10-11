@@ -765,6 +765,11 @@ export default function make_parse() {
     return this;
   });
 
+  // new 
+  prefix('new',80,function(left,rvalue = true){
+    console.log('new');
+
+  });
 
 
   prefix('++');
@@ -1081,21 +1086,37 @@ export default function make_parse() {
     // 関数定義かユーザー定義型か
     advance();
 
+    let isFunc = false;
     if(token.id == ')'){
-      tokens[token_nr + 1];
+      let next = tokens[token_nr];
+      if(next.value == '{'){
+        // 関数定義
+        isFunc = true;
+      }
     }
-    if(token.nodeType != 'builtin' && token.nodeType != 'user-type' && token.nodeType != 'type-alias'){
+
+    if(!isFunc && (token.nodeType != 'builtin' && token.nodeType != 'user-type' && token.nodeType != 'type-alias')){
       // ユーザー定義型のコンストラクタである
-      let initialExpressions = []
+      let initialExpressions = [];
       while(token.id != ')'){
-        initialExpressions.push[expression(0)];
-        advance(',');
+        initialExpressions.push(expression(0));
+        if(token.id == ')'){
+          break;
+        } else {
+          advance(',');
+        }
       }
       n.initialExpression = initialExpressions;
+      n.nodeType = 'define';
+      n.userType = true;
       advance();
       advance(';');
+      //scope.define(n);
       return n;
     }
+
+    // ** 関数定義である ** //
+
     // 関数内のスコープを開く
     createScope();
     funcScope.scopeIn();
