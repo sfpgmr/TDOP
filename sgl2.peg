@@ -57,16 +57,17 @@ StorageClassSpecifier
 
 TypeSpecifier
    <- VOID
-    / CHAR
-    / SHORT
-    / INT
-    / LONG
-    / FLOAT
-    / DOUBLE
-    / SIGNED
-    / UNSIGNED
+    / I8
+    / U8
+    / I16
+    / U16
+    / I32
+    / U32
+    / I64
+    / U64
+    / F32
+    / F64
     / BOOL
-    / COMPLEX
     / StructOrUnionSpecifier
     / EnumSpecifier
 
@@ -332,11 +333,14 @@ DO        <- 'do'        !IdChar Spacing
 ELSE      <- 'else'      !IdChar Spacing
 ENUM      <- 'enum'      !IdChar Spacing
 EXTERN    <- 'extern'    !IdChar Spacing
-FLOAT     <- 'float'     !IdChar Spacing
-FOR       <- 'for'       !IdChar Spacing
+F32       <- 'f32'       !IdChar Spacing
+F64       <- 'f64'       !IdChar Spacing
 GOTO      <- 'goto'      !IdChar Spacing
+I8        <- 'i8'        !IdChar Spacing
+I16       <- 'i16'       !IdChar Spacing
+I32       <- 'i32'        !IdChar Spacing
+I64       <- 'i64'        !IdChar Spacing
 IF        <- 'if'        !IdChar Spacing
-INT       <- 'int'       !IdChar Spacing
 INLINE    <- 'inline'    !IdChar Spacing
 LONG      <- 'long'      !IdChar Spacing
 REGISTER  <- 'register'  !IdChar Spacing
