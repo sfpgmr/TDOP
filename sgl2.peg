@@ -321,48 +321,38 @@ Pragma      <- '#'  (!'\n' .)*       # Treat pragma as comment
 #  A.1.2  Keywords
 #-------------------------------------------------------------------------
 
-AUTO      <- 'auto'      !IdChar Spacing
 BREAK     <- 'break'     !IdChar Spacing
 CASE      <- 'case'      !IdChar Spacing
-CHAR      <- 'char'      !IdChar Spacing
 CONST     <- 'const'     !IdChar Spacing
 CONTINUE  <- 'continue'  !IdChar Spacing
+COROUTINE <- 'coroutine' !IdChar Spacing
 DEFAULT   <- 'default'   !IdChar Spacing
-DOUBLE    <- 'double'    !IdChar Spacing
 DO        <- 'do'        !IdChar Spacing
 ELSE      <- 'else'      !IdChar Spacing
 ENUM      <- 'enum'      !IdChar Spacing
-EXTERN    <- 'extern'    !IdChar Spacing
+EXPORT    <- 'export'    !IdChar Spacing
 F32       <- 'f32'       !IdChar Spacing
 F64       <- 'f64'       !IdChar Spacing
 GOTO      <- 'goto'      !IdChar Spacing
 I8        <- 'i8'        !IdChar Spacing
 I16       <- 'i16'       !IdChar Spacing
-I32       <- 'i32'        !IdChar Spacing
-I64       <- 'i64'        !IdChar Spacing
+I32       <- 'i32'       !IdChar Spacing
+I64       <- 'i64'       !IdChar Spacing
+IMPORT    <- 'import'    !IdChar Spacing
 IF        <- 'if'        !IdChar Spacing
 INLINE    <- 'inline'    !IdChar Spacing
-LONG      <- 'long'      !IdChar Spacing
-REGISTER  <- 'register'  !IdChar Spacing
-RESTRICT  <- 'restrict'  !IdChar Spacing
 RETURN    <- 'return'    !IdChar Spacing
-SHORT     <- 'short'     !IdChar Spacing
-SIGNED    <- 'signed'    !IdChar Spacing
 SIZEOF    <- 'sizeof'    !IdChar Spacing
 STATIC    <- 'static'    !IdChar Spacing
-STRUCT    <- 'struct'    !IdChar Spacing
+STRING    <- 'string'    !IdChar Spacing
 SWITCH    <- 'switch'    !IdChar Spacing
-TYPEDEF   <- 'typedef'   !IdChar Spacing
-UNION     <- 'union'     !IdChar Spacing
-UNSIGNED  <- 'unsigned'  !IdChar Spacing
+U8        <- 'u8'        !IdChar Spacing
+U16       <- 'u16'       !IdChar Spacing
+U32       <- 'u32'       !IdChar Spacing
+U64       <- 'u64'       !IdChar Spacing
 VOID      <- 'void'      !IdChar Spacing
-VOLATILE  <- 'volatile'  !IdChar Spacing
 WHILE     <- 'while'     !IdChar Spacing
-BOOL      <- '_Bool'     !IdChar Spacing
-COMPLEX   <- '_Complex'  !IdChar Spacing
-STDCALL   <- '_stdcall'  !IdChar Spacing
-DECLSPEC  <- '__declspec' !IdChar Spacing
-ATTRIBUTE <- '__attribute__' !IdChar Spacing
+BOOL      <- 'bool'      !IdChar Spacing
 
 Keyword
    <- ( 'auto'
