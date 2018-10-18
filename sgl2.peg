@@ -12,13 +12,11 @@
 Declaration <- DeclarationSpecifiers InitDeclaratorList? SEMI #{}
 
 DeclarationSpecifiers
-   <- (( StorageClassSpecifier
-         / TypeQualifier
+   <- ((TypeQualifier
          / FunctionSpecifier
        )*
        TypeName
-       ( StorageClassSpecifier
-         / TypeQualifier
+       ( TypeQualifier
          / FunctionSpecifier
        )*
       )     #{DeclarationSpecifiers}
@@ -84,9 +82,6 @@ Enumerator <- EnumerationConstant (EQU ConstantExpression)?
 
 TypeQualifier
    <- CONST
-      / RESTRICT
-      / VOLATILE
-      / DECLSPEC LPAR Identifier RPAR
 
 FunctionSpecifier <- INLINE / STDCALL
 
@@ -320,6 +315,9 @@ IMPORT    <- 'import'    !IdChar Spacing
 IF        <- 'if'        !IdChar Spacing
 INLINE    <- 'inline'    !IdChar Spacing
 MATRIX    <- 'mat'       !IdChar Spacing
+PUBLIC    <- 'public'    !IdChar Spacing
+PRIVATE   <- 'private'   !IdChar Spacing
+PROTECTED <- 'protected' !IdChar Spacing
 RETURN    <- 'return'    !IdChar Spacing
 SIZEOF    <- 'sizeof'    !IdChar Spacing
 STATIC    <- 'static'    !IdChar Spacing
@@ -359,6 +357,9 @@ Keyword
         / 'import'
         / 'inline'
         / 'mat'
+        / 'public'
+        / 'protected'
+        / 'private'
         / 'return'
         / 'sizeof'
         / 'string'
@@ -505,12 +506,11 @@ HexEscape    <- '\\x' HexDigit+
 #-------------------------------------------------------------------------
 
 StringLiteral <-  (["] StringChar* ["] Spacing)+
-
 StringChar <- Escape / ![\"\n\\] .
 
 
 #-------------------------------------------------------------------------
-#  A.1.7  Punctuators
+#  Punctuators
 #-------------------------------------------------------------------------
 
 LBRK      <-  '['         Spacing
