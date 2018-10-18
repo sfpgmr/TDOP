@@ -22,8 +22,7 @@ DeclarationSpecifiers
          / FunctionSpecifier
        )*
       )     #{DeclarationSpecifiers}
-      / ( StorageClassSpecifier
-        / TypeSpecifier
+      / ( TypeSpecifier
         / TypeQualifier
         / FunctionSpecifier
       )+    #{DeclarationSpecifiers}
@@ -56,7 +55,7 @@ TypeSpecifier
       )
 
 
-TypeDeclaration <- ( SpecifierQualifierList StructDeclaratorList? )? SEMI
+TypeDeclaration <- ( SpecifierQualifierList TypeDeclaratorList? )? SEMI
 
 SpecifierQualifierList
    <- ( TypeQualifier*
@@ -67,9 +66,9 @@ SpecifierQualifierList
         / TypeQualifier
       )+
 
-StructDeclaratorList <- StructDeclarator (COMMA StructDeclarator)*
+TypeDeclaratorList <- TypeDeclarator (COMMA TypeDeclarator)*
 
-StructDeclarator
+TypeDeclarator
    <- Declarator? COLON ConstantExpression
       / Declarator
 
