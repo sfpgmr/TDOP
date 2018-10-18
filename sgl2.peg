@@ -32,13 +32,6 @@ InitDeclaratorList <- InitDeclarator (COMMA InitDeclarator)* #{}
 
 InitDeclarator <- Declarator (EQU Initializer)? #{}
 
-StorageClassSpecifier
-   <- TYPE
-      / EXTERN
-      / STATIC
-      / AUTO
-      / REGISTER
-      / ATTRIBUTE LPAR LPAR (!RPAR .)* RPAR RPAR
 
 TypeSpecifier
    <- VOID
@@ -53,18 +46,17 @@ TypeSpecifier
       / F32
       / F64
       / BOOL
-      / StructOrUnionSpecifier
+      / TypeSpecifier
       / EnumSpecifier
 
-StructOrUnionSpecifier
-   <- StructOrUnion
-      ( Identifier? LWING StructDeclaration* RWING
+TypeSpecifier
+   <- 'type'
+      ( Identifier? LWING TypeDeclaration* RWING
         / Identifier
       )
 
-StructOrUnion <- STRUCT / UNION
 
-StructDeclaration <- ( SpecifierQualifierList StructDeclaratorList? )? SEMI
+TypeDeclaration <- ( SpecifierQualifierList StructDeclaratorList? )? SEMI
 
 SpecifierQualifierList
    <- ( TypeQualifier*
@@ -437,16 +429,14 @@ OctalDigit   <-  [0-7]
 OctalPrefix  <-  '0o'
 OctalSuffix  <-  'o'
 
-HexIntegerConstant  <- HexPrefix (HexDetail)+ HexSuffix IntegerSuffix?
-HexFloatConstant    <- HexPrefix (HexDetail)+ HexSuffix FloatSuffix?
-HexDetail <- (HexDigit / 'u0020')
+HexIntegerConstant  <- HexPrefix HexDetail+ HexSuffix IntegerSuffix?
+HexDetail <- HexDigit / 'u0020'
 HexPrefix       <- '0x'
 HexSuffix       <- 'x'
 HexDigit        <- [a-f] / [A-F] / [0-9]
 
 
-BinaryIntegerConstant  <- BinaryPrefix BinaryDigit (BinaryDigit / [ ])+ BinarySuffix IntegerSuffix?
-BinaryFloatConstant  <- BinaryPrefix BinaryDigit (BinaryDigit / [ ])+ BinarySuffix FloatSuffix?
+BinaryIntegerConstant  <- BinaryPrefix BinaryDetail+ BinarySuffix IntegerSuffix?
 BinaryDetail <- BinaryDigit / [ ]
 BinaryDigit <- [0-1]
 
@@ -464,6 +454,8 @@ IntegerSuffix
 FloatConstant
    <- ( DecimalFloatConstant
         / HexFloatConstant
+        / BinaryFloatConstant 
+        / FloatConstant
       )
     FloatSuffix? Spacing
 
@@ -471,13 +463,16 @@ DecimalFloatConstant
    <- Fraction Exponent?
       / [0-9]+ Exponent
 
-HexFloatConstant
+BinaryFloatConstant  <- BinaryPrefix BinaryDetail+ BinarySuffix FloatSuffix?
+HexFloatConstant    <- HexPrefix HexDetail+ HexSuffix FloatSuffix?
+
+HexFloatConstant2
    <- HexPrefix HexFraction BinaryExponent?
       / HexPrefix HexDigit+ BinaryExponent
 
 Fraction
-   <- [0-9]* '.' [0-9]+
-      / [0-9]+ '.'
+   <- [0-9]+ '.' [0-9]+
+      
 
 HexFraction
    <- HexDigit* '.' HexDigit+
@@ -487,11 +482,11 @@ Exponent <- [eE][+\-]? [0-9]+
 
 BinaryExponent <- [pP][+\-]? [0-9]+
 
-FloatSuffix <- [flFL]
+FloatSuffix <- LongSuffix? 'f'  
 
 EnumerationConstant <- Identifier
 
-CharacterConstant <- 'L'? ['] Char* ['] Spacing
+CharConstant <-  ['] Char* [']
 
 Char <- Escape / !['\n\\] .
 
@@ -507,10 +502,10 @@ HexEscape    <- '\\x' HexDigit+
 
 
 #-------------------------------------------------------------------------
-#  A.1.6  String Literals
+#  String Literals
 #-------------------------------------------------------------------------
 
-StringLiteral <- 'L'? (["] StringChar* ["] Spacing)+
+StringLiteral <-  (["] StringChar* ["] Spacing)+
 
 StringChar <- Escape / ![\"\n\\] .
 
