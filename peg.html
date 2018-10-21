@@ -169,7 +169,7 @@ _ = [\\n\\t ]*;
                 try {
                     const result = parser.parse(sgl2Src.value);
                     parseInfo.innerText = 'パース完了';
-                    output.innerText = result;
+                    output.innerText = typeof result === 'object' ? JSON.stringify(result,null,2) : result;
                 } catch (e) {
                     string = e.stack ? e.stack : JSON.stringify(e,
                         (key, value) => {
