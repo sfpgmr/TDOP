@@ -42,41 +42,37 @@
 
 <body class="siimple-content siimple-content--medium">
     <div class="siimple-box siimple-box--blue">
-        <h1 class="siimple-box-title">オレオレ言語を作る</h1>
+        <h1 class="siimple-box-title">オレオレ言語（sgl2）の文法を作る</h1>
         <p class- "siimple-box-detail">レポジトリ：
             <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
     </div>
     <h3>
-        <label class="siimple-label">Input Source Code </label>
+        <label class="siimple-label">PEG.jsの書式で文法を書きます。</label>
     </h3>
-    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="20" title="ソースコードを編集します。"></textarea>
+    <textarea id="peg-src" class="siimple-box siimple-box--fluid" rows="20" title="peg.jsで文法を書きます。"></textarea>
     <div>
-        <input type="checkbox" name="optimize" id="optimize" />optimize
-        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">Compile</button>
-</div>
-    <pre id="info"></pre>
+        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">パーサを作成</button>
+　　</div>
+    <pre id="peg-info"></pre>
     <h2>
-        <label class="siimple-label">Output</label>
+        <label class="siimple-label">パースする言語コードをここに記述</label>
     </h2>
-    <pre id=OUTPUT3 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="20" title="sgl2の文法を書きます。">
+
+    </textarea>
+    <pre id="parse-info"></pre>
     <h2>
-        <label class="siimple-label">Output(AST)</label>
+    <label class="siimple-label">Output</label>
     </h2>
     <pre id=OUTPUT class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
-    <h2>
-        <label class="siimple-label">Output(wat)</label>
-    </h2>
-    <pre id=OUTPUT2 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <h2>
         <label class="siimple-label">Source Code URL</label>
     </h2>
     <pre id=OUTPUT4 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
     <script src="./binaryen-wasm.js" ></script>
-    <script type="module">
+    <script src="./peg.js" ></script>
 
-        import tokenize from './tokens.mjs';
-        import make_parse from './parse.mjs';
-        import generateCode from './generateCode.mjs';
+    <script type="module">
 
         function b64EncodeUnicode(str) {
             // first we use encodeURIComponent to get percent-encoded UTF-8,
@@ -95,50 +91,85 @@
             }).join(''));
         }
 
-
-        const src = `
-i32 𩸽(i32 a,i32 b){
-    return a * b;
-};
-
-export i32 main(){
-  i32 b = 0;
-
-  for(i32 c = 0;c < 4;++c) {
-    b = b + 1;
+        const defaultPegSrc = `
+        {
+  function makeInteger(o) {
+    return parseInt(o.join(""), 10);
   }
-  return 𩸽(b,b);// 4
-};
+}
+
+start
+  = addOrSub
+
+addOrSub
+  = left:mulOrDiv _ op:[+-] _ right:addOrSub { return op == '+' ? left + right : left - right; }
+  / mulOrDiv
+
+mulOrDiv
+  = left:primary _ op:[*/] _ right:mulOrDiv { return op == '*' ? left * right : left / right; }
+  / primary
+
+primary
+  = integer
+  / "(" additive:addOrSub ")" { return additive; }
+
+integer "integer"
+  = digits:[0-9]+ { return makeInteger(digits); }
+  
+_ = [\n\t ]*;
+`;
+        const defaultsgl2Src = 
+`
+2 / (2 * 2 + 3)
+/ 10
+* 10
 `;
 
         window.addEventListener('load', () => {
             const parse = make_parse();
-            const input = document.getElementById('INPUT');
+            const pegSrc = document.getElementById('peg-src');
+            const sgl2Src = document.getElementById('sgl2-src');
             const output = document.getElementById('OUTPUT');
-            const output2 = document.getElementById('OUTPUT2');
-            const output3 = document.getElementById('OUTPUT3');
-            const output4 = document.getElementById('OUTPUT4');
-            const info = document.getElementById('info');
-            const optimize = document.getElementById("optimize");
-            let srcData = location.search.substr(0,65536);
+            const parseInfo = document.getElementById('parse-info');
+            const pegInfo = document.getElementById('peg-info');
+
+            let srcData = location.search.substr(0,0xfffff);
+
             if(srcData){
                 try {
-                    srcData = srcData.substr(1);
-                    input.value = b64DecodeUnicode(srcData);
+                    srcData = srcData.substr(1).split('&');
+                    pegSrc.value = b64DecodeUnicode(srcData[0]);
+                    sgl2Src.value = b64DecodeUnicode(srcData[1]);
                 } catch (e){
-                    input.value = src;
+                    pegSrc.value = defaultPegSrc;
+                    sgl2Src.value = defaultsgl2Src;
                 }
             } else {
-                input.value = src;
+                pegSrc.value = defaultPegSrc;
+                sgl2Src.value = defaultsgl2Src;
             }
 
 
             async function go(source) {
-                output.innerHTML = output2.innerHTML = output3.innerHTML = info.innerHTML = '';
-                info.className = '';
+                output.innerHTML = parseInfo.innerHTML = pegInfo.innerHTML = '';
+                parseInfo.innerHTML = pegInfo.innerHTML = '';
                 let string, ast;
                 let error = false;
                 try {
+                    const parser = peg.generate(pegSrc.value);
+                    pegInfo.innerText = 'コンパイル完了';
+                } catch (e){
+                    string = e.stack;
+                    pegInfo.innerHTML = string.replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+                    ;
+                    pegInfo.className = 'siimple-alert siimple-alert--red';                    
+                }
+
+                try 
+                    const result = parser.parse(sgl2Src);
+                    parseInfo.innerText = result;
+                    pegInfo = 
                     ast = parse(tokenize(source));
                     string = JSON.stringify(ast,
                         (key, value) => {
@@ -194,7 +225,7 @@ export i32 main(){
             });
 
             document.getElementById('Compile').onclick = function (e) {
-                go(document.getElementById('INPUT').value);
+                go(document.getElementById('peg-src').value);
             };
 
         });
