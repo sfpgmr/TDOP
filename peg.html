@@ -69,7 +69,7 @@
         <label class="siimple-label">Source Code URL</label>
     </h2>
     <pre id="src-url" class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
-    <!--<script src="./binaryen-wasm.js" ></script>-->
+    <script src="./binaryen-wasm.js" ></script>
     <script src="./peg.js" ></script>
 
     <script type="module">
@@ -122,8 +122,18 @@ _ = [\\n\\t ]*;
 `2 / (2 * 2 + 3)
 / 10
 * 10`;
+        let binaryen;
+        window.addEventListener('load', async () => {
+            if (!binaryen) {
+                await new Promise((resolve, reject) => {
+                    binaryen = Binaryen({
+                        onRuntimeInitialized: m => {
+                            resolve();
+                        }
+                    });
+                });
+            }
 
-        window.addEventListener('load', () => {
             const pegSrc = document.getElementById('peg-src');
             const sgl2Src = document.getElementById('sgl2-src');
             const output = document.getElementById('OUTPUT');
@@ -149,6 +159,8 @@ _ = [\\n\\t ]*;
 
 
             async function go() {
+                const wasmModule = new binaryen.Module();
+                wasmModule.setMemory(1,1);
                 output.innerHTML = parseInfo.innerHTML = pegInfo.innerHTML = '';
                 parseInfo.innerHTML = pegInfo.innerHTML = '';
                 parseInfo.className = pegInfo.className = '';
@@ -167,7 +179,7 @@ _ = [\\n\\t ]*;
                 }
 
                 try {
-                    const result = parser.parse(sgl2Src.value);
+                    const result = parser.parse(sgl2Src.value,{module:wasmModule});
                     parseInfo.innerText = 'パース完了';
                     output.innerText = typeof result === 'object' ? JSON.stringify(result,null,2) : result;
                 } catch (e) {
@@ -180,7 +192,7 @@ _ = [\\n\\t ]*;
 
                     parseInfo.innerHTML = string.replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
-                    ;
+
                     parseInfo.className = 'siimple-alert siimple-alert--red';
 
                 }
