@@ -4,6 +4,11 @@
 //
 //---------------------------------------------------------------------------
 
+{
+      
+
+}
+
 
 //-------------------------------------------------------------------------
 //  Declaration
@@ -83,7 +88,7 @@ Enumerator = EnumerationConstant (EQU ConstantExpression)?
 TypeQualifier
    = CONST
 
-FunctionSpecifier = INLINE / STDCALL
+FunctionSpecifier = EXPORT
 
 Declarator = Pointer? DirectDeclarator //{}
 
