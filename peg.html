@@ -1,0 +1,206 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="keywords" content="JavaScript,wasm">
+    <meta name="description" content="オレオレ言語を作る">
+    <meta name="author" content="SFPGMR">
+    <title>オレオレ言語(sgl2)の文法を作る</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
+    <style>
+        .OUTPUT:hover {
+            cursor:pointer;
+        }
+
+        .OUTPUT-SHRINK {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+
+        pre {
+            white-space: pre-wrap ;
+            word-break: break-all;
+        }
+    </style>
+    <script type="text/javascript">
+        if (!window.location.hostname.match(/localhost/)) {
+            (function (i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+            })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+            ga('create', 'UA-15457703-9', 'auto');
+            ga('send', 'pageview');
+        }
+    </script>
+</head>
+
+<body class="siimple-content siimple-content--medium">
+    <div class="siimple-box siimple-box--blue">
+        <h1 class="siimple-box-title">オレオレ言語を作る</h1>
+        <p class- "siimple-box-detail">レポジトリ：
+            <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
+    </div>
+    <h3>
+        <label class="siimple-label">Input Source Code </label>
+    </h3>
+    <textarea id="INPUT" class="siimple-box siimple-box--fluid" rows="20" title="ソースコードを編集します。"></textarea>
+    <div>
+        <input type="checkbox" name="optimize" id="optimize" />optimize
+        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">Compile</button>
+</div>
+    <pre id="info"></pre>
+    <h2>
+        <label class="siimple-label">Output</label>
+    </h2>
+    <pre id=OUTPUT3 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <h2>
+        <label class="siimple-label">Output(AST)</label>
+    </h2>
+    <pre id=OUTPUT class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <h2>
+        <label class="siimple-label">Output(wat)</label>
+    </h2>
+    <pre id=OUTPUT2 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <h2>
+        <label class="siimple-label">Source Code URL</label>
+    </h2>
+    <pre id=OUTPUT4 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <script src="./binaryen-wasm.js" ></script>
+    <script type="module">
+
+        import tokenize from './tokens.mjs';
+        import make_parse from './parse.mjs';
+        import generateCode from './generateCode.mjs';
+
+        function b64EncodeUnicode(str) {
+            // first we use encodeURIComponent to get percent-encoded UTF-8,
+            // then we convert the percent encodings into raw bytes which
+            // can be fed into btoa.
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                function toSolidBytes(match, p1) {
+                    return String.fromCharCode('0x' + p1);
+                }));
+        }
+
+        function b64DecodeUnicode(str) {
+            // Going backwards: from bytestream, to percent-encoding, to original string.
+            return decodeURIComponent(atob(str).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+
+
+        const src = `
+i32 𩸽(i32 a,i32 b){
+    return a * b;
+};
+
+export i32 main(){
+  i32 b = 0;
+
+  for(i32 c = 0;c < 4;++c) {
+    b = b + 1;
+  }
+  return 𩸽(b,b);// 4
+};
+`;
+
+        window.addEventListener('load', () => {
+            const parse = make_parse();
+            const input = document.getElementById('INPUT');
+            const output = document.getElementById('OUTPUT');
+            const output2 = document.getElementById('OUTPUT2');
+            const output3 = document.getElementById('OUTPUT3');
+            const output4 = document.getElementById('OUTPUT4');
+            const info = document.getElementById('info');
+            const optimize = document.getElementById("optimize");
+            let srcData = location.search.substr(0,65536);
+            if(srcData){
+                try {
+                    srcData = srcData.substr(1);
+                    input.value = b64DecodeUnicode(srcData);
+                } catch (e){
+                    input.value = src;
+                }
+            } else {
+                input.value = src;
+            }
+
+
+            async function go(source) {
+                output.innerHTML = output2.innerHTML = output3.innerHTML = info.innerHTML = '';
+                info.className = '';
+                let string, ast;
+                let error = false;
+                try {
+                    ast = parse(tokenize(source));
+                    string = JSON.stringify(ast,
+                        (key, value) => {
+                            if (key == 'parent') return undefined;
+                            return value;
+                        }
+                        , 2);
+                    output.innerHTML = string
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+                    const module = await generateCode(ast,Binaryen);
+                    optimize.checked && module.optimize();
+                    const wat = module.emitText();
+                    output2.innerHTML = wat
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+
+                    const compiled = module.emitBinary();
+
+                    const mod = await WebAssembly.compile(compiled);
+                    const instance = await WebAssembly.instantiate(mod);
+                    const result = instance.exports.main().toString(10);
+                    output3.innerHTML = result
+                        .replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+
+                } catch (e) {
+                    string = e.stack ? e.stack : JSON.stringify(e,
+                        (key, value) => {
+                            if (key == 'parent') return undefined;
+                            return value;
+                        }
+                        , 2);
+
+                    info.innerHTML = string.replace(/&/g, '&amp;')
+                        .replace(/[<]/g, '&lt;');
+                    ;
+                    info.className = 'siimple-alert siimple-alert--red';
+
+                }
+
+                output4.innerText = window.location.href.replace(/\?.*$/,'') + '?' + b64EncodeUnicode(input.value);
+
+            }
+
+            go(input.value);
+
+            document.querySelectorAll('.OUTPUT').forEach(e=>{
+                e.addEventListener('click',()=>{
+                    e.classList.contains('OUTPUT-SHRINK') ? e.classList.remove('OUTPUT-SHRINK') : e.classList.add('OUTPUT-SHRINK');
+                });
+                e.title = 'clickで全体表示<->縮小表示';
+            });
+
+            document.getElementById('Compile').onclick = function (e) {
+                go(document.getElementById('INPUT').value);
+            };
+
+        });
+
+
+    </script>
+</body>
+
+</html>
