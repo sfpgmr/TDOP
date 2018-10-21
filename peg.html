@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="keywords" content="JavaScript,wasm">
-    <meta name="description" content="オレオレ言語を作る">
+    <meta name="description" content="オレオレ言語(sgl2)の文法を作る">
     <meta name="author" content="SFPGMR">
     <title>オレオレ言語(sgl2)の文法を作る</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
@@ -41,7 +41,7 @@
 </head>
 
 <body class="siimple-content siimple-content--medium">
-    <div class="siimple-box siimple-box--blue">
+    <div class="siimple-box siimple-box--orange">
         <h1 class="siimple-box-title">オレオレ言語（sgl2）の文法を作る</h1>
         <p class- "siimple-box-detail">レポジトリ：
             <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
@@ -51,7 +51,7 @@
     </h3>
     <textarea id="peg-src" class="siimple-box siimple-box--fluid" rows="20" title="peg.jsで文法を書きます。"></textarea>
     <div>
-        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--blue">パーサを作成</button>
+        <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--orange">パーサ作成＆パース</button>
 　　</div>
     <pre id="peg-info"></pre>
     <h2>
@@ -68,8 +68,8 @@
     <h2>
         <label class="siimple-label">Source Code URL</label>
     </h2>
-    <pre id=OUTPUT4 class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
-    <script src="./binaryen-wasm.js" ></script>
+    <pre id="src-url" class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+    <!--<script src="./binaryen-wasm.js" ></script>-->
     <script src="./peg.js" ></script>
 
     <script type="module">
@@ -92,7 +92,7 @@
         }
 
         const defaultPegSrc = `
-        {
+{
   function makeInteger(o) {
     return parseInt(o.join(""), 10);
   }
@@ -116,22 +116,20 @@ primary
 integer "integer"
   = digits:[0-9]+ { return makeInteger(digits); }
   
-_ = [\n\t ]*;
+_ = [\\n\\t ]*;
 `;
         const defaultsgl2Src = 
-`
-2 / (2 * 2 + 3)
+`2 / (2 * 2 + 3)
 / 10
-* 10
-`;
+* 10`;
 
         window.addEventListener('load', () => {
-            const parse = make_parse();
             const pegSrc = document.getElementById('peg-src');
             const sgl2Src = document.getElementById('sgl2-src');
             const output = document.getElementById('OUTPUT');
             const parseInfo = document.getElementById('parse-info');
             const pegInfo = document.getElementById('peg-info');
+            const srcUrl =  document.getElementById('src-url');
 
             let srcData = location.search.substr(0,0xfffff);
 
@@ -150,13 +148,15 @@ _ = [\n\t ]*;
             }
 
 
-            async function go(source) {
+            async function go() {
                 output.innerHTML = parseInfo.innerHTML = pegInfo.innerHTML = '';
                 parseInfo.innerHTML = pegInfo.innerHTML = '';
+                parseInfo.className = pegInfo.className = '';
                 let string, ast;
                 let error = false;
+                let parser;
                 try {
-                    const parser = peg.generate(pegSrc.value);
+                    parser = peg.generate(pegSrc.value);
                     pegInfo.innerText = 'コンパイル完了';
                 } catch (e){
                     string = e.stack;
@@ -166,36 +166,10 @@ _ = [\n\t ]*;
                     pegInfo.className = 'siimple-alert siimple-alert--red';                    
                 }
 
-                try 
-                    const result = parser.parse(sgl2Src);
-                    parseInfo.innerText = result;
-                    pegInfo = 
-                    ast = parse(tokenize(source));
-                    string = JSON.stringify(ast,
-                        (key, value) => {
-                            if (key == 'parent') return undefined;
-                            return value;
-                        }
-                        , 2);
-                    output.innerHTML = string
-                        .replace(/&/g, '&amp;')
-                        .replace(/[<]/g, '&lt;');
-                    const module = await generateCode(ast,Binaryen);
-                    optimize.checked && module.optimize();
-                    const wat = module.emitText();
-                    output2.innerHTML = wat
-                        .replace(/&/g, '&amp;')
-                        .replace(/[<]/g, '&lt;');
-
-                    const compiled = module.emitBinary();
-
-                    const mod = await WebAssembly.compile(compiled);
-                    const instance = await WebAssembly.instantiate(mod);
-                    const result = instance.exports.main().toString(10);
-                    output3.innerHTML = result
-                        .replace(/&/g, '&amp;')
-                        .replace(/[<]/g, '&lt;');
-
+                try {
+                    const result = parser.parse(sgl2Src.value);
+                    parseInfo.innerText = 'パース完了';
+                    output.innerText = result;
                 } catch (e) {
                     string = e.stack ? e.stack : JSON.stringify(e,
                         (key, value) => {
@@ -204,18 +178,18 @@ _ = [\n\t ]*;
                         }
                         , 2);
 
-                    info.innerHTML = string.replace(/&/g, '&amp;')
+                    parseInfo.innerHTML = string.replace(/&/g, '&amp;')
                         .replace(/[<]/g, '&lt;');
                     ;
-                    info.className = 'siimple-alert siimple-alert--red';
+                    parseInfo.className = 'siimple-alert siimple-alert--red';
 
                 }
 
-                output4.innerText = window.location.href.replace(/\?.*$/,'') + '?' + b64EncodeUnicode(input.value);
+                srcUrl.innerText = window.location.href.replace(/\?.*$/,'') + '?' + b64EncodeUnicode(pegSrc.value) + '&' +  b64EncodeUnicode(sgl2Src.value) ;
 
             }
 
-            go(input.value);
+            go();
 
             document.querySelectorAll('.OUTPUT').forEach(e=>{
                 e.addEventListener('click',()=>{
