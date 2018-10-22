@@ -7,21 +7,16 @@
 {
   const wasmModule = options.module;
   const emulationTypes = new map([]); 
-
 }
 
-
-//-------------------------------------------------------------------------
-//  Declaration
-//-------------------------------------------------------------------------
 
 Statement = Block / StatementList / Declaration / Expression
 Block = BlockBegin / StatmentList / BlockEnd 
 StatementList = Statement+ 
 Declaration = VariableDeclaration / FunctionDeclation / TypeDeclaration / ConstDeclation
 VariableDeclaration = TypeSpecifier Pointer? _ ( Identfier _ '=' Expression _ )+ ';'
-FunctionDeclation = Export? _+ Type _+ Pointer? _+ Identfier _+ '('  VariableDeclaration* ')'
-_+ '{' _+  Statements '}' _+ ';'
+FunctionDeclation = Export? __ Type __ Pointer? __ Identfier __ '(' __ VariableDeclaration* __ ')'
+__ '{' __  Statements '}' __ ';'
 
 Type = BuiltinType / CustomType
 
