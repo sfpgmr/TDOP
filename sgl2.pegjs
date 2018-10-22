@@ -234,10 +234,20 @@ SignedInteger
   = [+-]? DecimalDigit+
 
 HexIntegerLiteral
-  = "0x"i digits:$HexDigit+ {
-      return { type: "Literal", value: parseInt(digits, 16) };
-     }
+  = "0x"i hex:$([ ] / HexDigit)+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+{ 
+return JSON.stringify({ 
+  value: parseInt(hex.replace(/\s/ig,''),16),
+  unsigned:!!unsigned,
+  byteSize:byteSize
+},null,2);
+}
 
+HexDigit
+  = [0-9a-f]i
+
+ByteSizeSuffix = [swl]
+UnsignedSuffix = 'u'
 HexDigit
   = [0-9a-f]i
 
