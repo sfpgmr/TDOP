@@ -246,6 +246,8 @@ return JSON.stringify({
 HexDigit
   = [0-9a-f]i
 
+BinaryIntegerLiteral = '0b' value:$([ ] / BinaryDigit)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {}
+BinaryDigit = [01]
 ByteSizeSuffix = [swl]
 UnsignedSuffix = 'u'
 HexDigit
