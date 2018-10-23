@@ -156,7 +156,7 @@ _ = [\\n\\t ]*;
                     pegSrc.value = b64DecodeUnicode(srcData[0]);
                     sgl2Src.value = b64DecodeUnicode(srcData[1]);
                 } catch (e){
-                    pegSrc.value = defaultPegSrc;
+                    pegSrc.value = await fetch('./sgl2.pegjs').toString() ||  defaultPegSrc;
                     sgl2Src.value = defaultsgl2Src;
                 }
             } else if(localStorage){
