@@ -234,10 +234,10 @@ SignedInteger
   = [+-]? DecimalDigit+
 
 HexIntegerLiteral
-  = "0x"i hex:$([ ] / HexDigit)+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+  = [+-]? "0x"i hex:$(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 return JSON.stringify({ 
-  value: parseInt(hex.replace(/\s/ig,''),16),
+  value: parseInt(hex.replace(/\s|\r|\n/ig,''),16),
   unsigned:!!unsigned,
   byteSize:byteSize
 },null,2);
@@ -248,10 +248,9 @@ HexDigit
 
 BinaryIntegerLiteral = '0b' value:$([ ] / BinaryDigit)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {}
 BinaryDigit = [01]
+
 ByteSizeSuffix = [swl]
 UnsignedSuffix = 'u'
-HexDigit
-  = [0-9a-f]i
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
@@ -414,12 +413,14 @@ Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 // Tokens
 
+BoolToken       = "bool"       
 BreakToken      = "break"      !IdentifierPart
 CaseToken       = "case"       !IdentifierPart
 CatchToken      = "catch"      !IdentifierPart
 ClassToken      = "class"      !IdentifierPart
 ConstToken      = "const"      !IdentifierPart
 ContinueToken   = "continue"   !IdentifierPart
+CoroutineToken  = "coroutine"  !IdentifierPart
 DebuggerToken   = "debugger"   !IdentifierPart
 DefaultToken    = "default"    !IdentifierPart
 DeleteToken     = "delete"     !IdentifierPart
@@ -429,10 +430,16 @@ EnumToken       = "enum"       !IdentifierPart
 ExportToken     = "export"     !IdentifierPart
 ExtendsToken    = "extends"    !IdentifierPart
 FalseToken      = "false"      !IdentifierPart
+F32Token        = "f32"        
+F64Token        = "f64"        
 FinallyToken    = "finally"    !IdentifierPart
 ForToken        = "for"        !IdentifierPart
 FunctionToken   = "function"   !IdentifierPart
 GetToken        = "get"        !IdentifierPart
+I8Token         = "i8"         
+I16Token        = "i16"        
+I32Token        = "i32"        
+I64Token        = "i64"        
 IfToken         = "if"         !IdentifierPart
 ImportToken     = "import"     !IdentifierPart
 InstanceofToken = "instanceof" !IdentifierPart
@@ -441,15 +448,21 @@ NewToken        = "new"        !IdentifierPart
 NullToken       = "null"       !IdentifierPart
 ReturnToken     = "return"     !IdentifierPart
 SetToken        = "set"        !IdentifierPart
+StringToken     = "string"     !IdentifierPart
 SuperToken      = "super"      !IdentifierPart
 SwitchToken     = "switch"     !IdentifierPart
+U8Token         = "u8"         
+U16Token        = "u16"        
+U32Token        = "u32"        
+U64Token        = "u64"        
 ThisToken       = "this"       !IdentifierPart
 ThrowToken      = "throw"      !IdentifierPart
 TrueToken       = "true"       !IdentifierPart
 TryToken        = "try"        !IdentifierPart
+TypeToken       = "type"       !IdentifierPart
 TypeofToken     = "typeof"     !IdentifierPart
 VarToken        = "var"        !IdentifierPart
-VoidToken       = "void"       !IdentifierPart
+VoidToken       = "void"       
 WhileToken      = "while"      !IdentifierPart
 WithToken       = "with"       !IdentifierPart
 
@@ -460,6 +473,7 @@ __
 
 _
   = (WhiteSpace / MultiLineCommentNoLineTerminator)*
+
 
 // Automatic Semicolon Insertion
 
@@ -972,13 +986,22 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableStatement
-  = VarToken __ declarations:VariableDeclarationList EOS {
+  = VarType __ declarations:VariableDeclarationList EOS {
       return {
         type: "VariableDeclaration",
         declarations: declarations,
         kind: "var"
       };
     }
+
+
+VarType = BuiltinType / CustomType
+BuiltinType = NativeType / EmulationType
+NativeType = I32Token / I64Token / F32Token / F64Token
+EmulationType = VoidToken / BoolToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
+CustomType = ''
+
+  
 
 VariableDeclarationList
   = head:VariableDeclaration tail:(__ "," __ VariableDeclaration)* {

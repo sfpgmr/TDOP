@@ -24,6 +24,11 @@
             white-space: pre-wrap ;
             word-break: break-all;
         }
+        
+        #peg-info {
+          margin-top:10px;
+          padding-top:10px;
+        }
     </style>
     <script type="text/javascript">
         if (!window.location.hostname.match(/localhost/)) {
@@ -53,14 +58,16 @@
     <div>
         <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--orange">パーサ作成＆パース</button>
 　　</div>
-    <pre id="peg-info"></pre>
+    <div>
+      <pre id="peg-info"></pre>
+    </div>
     <h2>
         <label class="siimple-label">パースする言語コードをここに記述</label>
     </h2>
-    <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="20" title="sgl2の文法を書きます。">
-
-    </textarea>
-    <pre id="parse-info"></pre>
+    <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="10" title="sgl2の文法を書きます。"></textarea>
+    <div>
+      <pre id="parse-info"></pre>
+    </div>
     <h2>
     <label class="siimple-label">Output</label>
     </h2>
@@ -152,9 +159,11 @@ _ = [\\n\\t ]*;
                     pegSrc.value = defaultPegSrc;
                     sgl2Src.value = defaultsgl2Src;
                 }
-            } else {
-                pegSrc.value = defaultPegSrc;
-                sgl2Src.value = defaultsgl2Src;
+            } else if(localStorage){
+                let ps = localStorage.getItem("pegSrc") || defaultPegSrc;
+                let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
+                pegSrc.value = ps;
+                sgl2Src.value = sg;
             }
 
 
@@ -168,8 +177,10 @@ _ = [\\n\\t ]*;
                 let error = false;
                 let parser;
                 try {
+                    localStorage && localStorage.setItem('pegSrc',pegSrc.value);
                     parser = peg.generate(pegSrc.value);
                     pegInfo.innerText = 'コンパイル完了';
+                    pegInfo.className = 'siimple-alert siimple-alert--green';                    
                 } catch (e){
                     string = e.stack;
                     pegInfo.innerHTML = string.replace(/&/g, '&amp;')
@@ -179,9 +190,10 @@ _ = [\\n\\t ]*;
                 }
 
                 try {
+                  localStorage && localStorage.setItem('sgl2Src',sgl2Src.value);
                     const result = parser.parse(sgl2Src.value,{module:wasmModule});
                     parseInfo.innerText = 'パース完了';
-                    output.innerText = typeof result === 'object' ? JSON.stringify(result,null,2) : result;
+                    parseInfo.className = 'siimple-alert siimple-alert--green';                output.innerText = typeof result === 'object' ? JSON.stringify(result,null,2) : result;
                 } catch (e) {
                     string = e.stack ? e.stack : JSON.stringify(e,
                         (key, value) => {
