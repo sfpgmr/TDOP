@@ -280,7 +280,7 @@ _ = [\\n\\t ]*;
         let error = false;
 
         try {
-          const result = parser.parse(sgl2Src.value, { binaryen:bynaryen,module: wasmModule });
+          const result = parser.parse(sgl2Src.value, { binaryen:binaryen,module: wasmModule });
           parseInfo.innerText = 'パース完了';
           parseInfo.className = 'siimple-alert siimple-alert--green';
           output.innerText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
