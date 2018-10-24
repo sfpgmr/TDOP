@@ -43,6 +43,7 @@
             ga('send', 'pageview');
         }
     </script>
+<script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.js"></script>
 </head>
 
 <body class="siimple-content siimple-content--medium">
@@ -51,12 +52,15 @@
         <p class- "siimple-box-detail">レポジトリ：
             <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
     </div>
+    <div id="info" class="siimple-alert siimple-alert--green">初期化中...お待ちください...</div>
     <h3>
         <label class="siimple-label">PEG.jsの書式で文法を書きます。</label>
     </h3>
     <textarea id="peg-src" class="siimple-box siimple-box--fluid" rows="20" title="peg.jsで文法を書きます。"></textarea>
     <div>
         <button id="Compile" value="parse" type="button" class="siimple-btn siimple-btn--orange">パーサ作成＆パース</button>
+        <button id="Save" value="ClearStorage" type="button" class="siimple-btn siimple-btn--orange">ローカルストレージへ保存</button>
+        <button id="Clear" value="ClearStorage" type="button" class="siimple-btn siimple-btn--orange">ローカルストレージのクリア</button>
 　　</div>
     <div>
       <pre id="peg-info"></pre>
@@ -131,6 +135,7 @@ _ = [\\n\\t ]*;
 * 10`;
         let binaryen;
         window.addEventListener('load', async () => {
+
             if (!binaryen) {
                 await new Promise((resolve, reject) => {
                     binaryen = Binaryen({
@@ -147,24 +152,40 @@ _ = [\\n\\t ]*;
             const parseInfo = document.getElementById('parse-info');
             const pegInfo = document.getElementById('peg-info');
             const srcUrl =  document.getElementById('src-url');
+            const info = document.getElementById('info');
 
             let srcData = location.search.substr(0,0xfffff);
 
             if(srcData){
                 try {
                     srcData = srcData.substr(1).split('&');
-                    pegSrc.value = b64DecodeUnicode(srcData[0]);
-                    sgl2Src.value = b64DecodeUnicode(srcData[1]);
+                    pegSrc.value = LZUTF8.decompress(srcData[0], {inputEncoding:'Base64'});
+                    sgl2Src.value =  LZUTF8.decompress(srcData[1], {inputEncoding:'Base64'});
                 } catch (e){
                     pegSrc.value = defaultPegSrc;
                     sgl2Src.value = defaultsgl2Src;
                 }
         //    } else if(localStorage){
             } else {
-                let ps = await fetch('./sgl2.pegjs') ;
-                ps = await ps.text();
-                //let ps = localStorage.getItem("pegSrc") || defaultPegSrc;
-                let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
+
+                let ps = localStorage.getItem("pegSrc");
+                if(ps){
+                  ps = LZUTF8.decompress(ps, {inputEncoding:'ByteArray'});
+                } else {
+                  try {
+                    ps = await fetch('./sgl2.pegjs');
+                    ps = await ps.text();
+                  } catch (e){
+                    ps = defaultPegSrc;
+                  }
+                }
+                
+                let sg =  localStorage.getItem("sgl2Src");
+                if(sg){
+                  sg = LZUTF8.decompress(sg, {inputEncoding:'ByteArray'});
+                } else {
+                  sg = defaultsgl2Src;
+                }
                 //let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
                 pegSrc.value = ps;
                 sgl2Src.value = sg;
@@ -181,7 +202,6 @@ _ = [\\n\\t ]*;
                 let error = false;
                 let parser;
                 try {
-                    localStorage && localStorage.setItem('pegSrc',pegSrc.value);
                     parser = peg.generate(pegSrc.value);
                     pegInfo.innerText = 'コンパイル完了';
                     pegInfo.className = 'siimple-alert siimple-alert--green';                    
@@ -194,7 +214,6 @@ _ = [\\n\\t ]*;
                 }
 
                 try {
-                  localStorage && localStorage.setItem('sgl2Src',sgl2Src.value);
                     const result = parser.parse(sgl2Src.value,{module:wasmModule});
                     parseInfo.innerText = 'パース完了';
                     parseInfo.className = 'siimple-alert siimple-alert--green';                output.innerText = typeof result === 'object' ? JSON.stringify(result,null,2) : result;
@@ -213,7 +232,7 @@ _ = [\\n\\t ]*;
 
                 }
 
-                srcUrl.innerText = window.location.href.replace(/\?.*$/,'') + '?' + b64EncodeUnicode(pegSrc.value) + '&' +  b64EncodeUnicode(sgl2Src.value) ;
+                srcUrl.innerText = window.location.href.replace(/\?.*$/,'') + '?' + LZUTF8.compress(pegSrc.value, {outputEncoding:'Base64'}) + '&' +  LZUTF8.compress(sgl2Src.value, {outputEncoding:'Base64'});
 
             }
 
@@ -229,6 +248,21 @@ _ = [\\n\\t ]*;
             document.getElementById('Compile').onclick = function (e) {
                 go(document.getElementById('peg-src').value);
             };
+
+            document.getElementById('Clear').onclick = function (e) {
+              localStorage && localStorage.clear();
+            };
+
+            document.getElementById('Save').addEventListener('click',()=>{
+              if(localStorage){
+                localStorage.setItem('pegSrc',LZUTF8.compress(pegSrc.value, {outputEncoding:'ByteArray'}));
+                localStorage && localStorage.setItem('sgl2Src',LZUTF8.compress(sgl2Src.value, {outputEncoding:'ByteArray'}));
+              }
+            });
+
+            info.innerText = '';
+            info.className = '';
+            
 
         });
 
