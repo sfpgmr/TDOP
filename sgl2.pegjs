@@ -4,6 +4,10 @@
 //
 
 {
+  
+  const binaryen = options.binaryen;
+  const module = options.module;
+
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
     MemberExpression: "object",
@@ -210,7 +214,7 @@ DecimalLiteral
   / "." DecimalDigit+ ExponentPart? {
       return { type: "Literal", value: parseFloat(text()) };
     }
-  / DecimalIntegerLiteral ExponentPart? {
+  / DecimalIntegerLiteral (ByteSizeSuffix? UnsignedSuffix?) / ExponentPart? {
       return { type: "Literal", value: parseFloat(text()) };
     }
 
@@ -236,11 +240,12 @@ SignedInteger
 HexIntegerLiteral
   = [+-]? "0x"i hex:$(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
-return JSON.stringify({ 
+return { 
   value: parseInt(hex.replace(/\s|\r|\n/ig,''),16),
   unsigned:!!unsigned,
   byteSize:byteSize
-},null,2);
+};
+
 }
 
 HexDigit
@@ -986,9 +991,10 @@ StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
 VariableStatement
-  = VarType __ declarations:VariableDeclarationList EOS {
+  = varType:VarType __ declarations:VariableDeclarationList EOS {
       return {
         type: "VariableDeclaration",
+        varType:varType,
         declarations: declarations,
         kind: "var"
       };

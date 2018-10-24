@@ -75,7 +75,7 @@
     <pre id="peg-info"></pre>
   </div>
   <h2>
-    <label class="siimple-label">パースする言語コードをここに記述</label>
+    <label class="siimple-label">パースする言語ソースをここに記述</label>
   </h2>
   <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="10" title="sgl2の文法を書きます。"></textarea>
   <div>
@@ -280,7 +280,7 @@ _ = [\\n\\t ]*;
         let error = false;
 
         try {
-          const result = parser.parse(sgl2Src.value, { module: wasmModule });
+          const result = parser.parse(sgl2Src.value, { binaryen:bynaryen,module: wasmModule });
           parseInfo.innerText = 'パース完了';
           parseInfo.className = 'siimple-alert siimple-alert--green';
           output.innerText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
