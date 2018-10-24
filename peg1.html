@@ -162,7 +162,7 @@ _ = [\\n\\t ]*;
         //    } else if(localStorage){
             } else {
                 let ps = await fetch('./sgl2.pegjs') ;
-                ps = String.fromCharCode.apply("", new Uint16Array(ps));
+                ps = await ps.text();
                 //let ps = localStorage.getItem("pegSrc") || defaultPegSrc;
                 let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
                 //let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
