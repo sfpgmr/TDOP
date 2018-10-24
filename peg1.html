@@ -165,27 +165,33 @@ _ = [\\n\\t ]*;
                     pegSrc.value = defaultPegSrc;
                     sgl2Src.value = defaultsgl2Src;
                 }
-        //    } else if(localStorage){
-            } else {
+
+                } else if(localStorage) {
 
                 let ps = localStorage.getItem("pegSrc");
-                if(ps){
-                  ps = LZUTF8.decompress(ps, {inputEncoding:'ByteArray'});
-                } else {
-                  try {
-                    ps = await fetch('./sgl2.pegjs');
-                    ps = await ps.text();
-                  } catch (e){
-                    ps = defaultPegSrc;
+                try {
+                  if(ps){
+                    ps = LZUTF8.decompress(ps, {inputEncoding:'ByteArray'});
+                  } else {
+                      ps = await fetch('./sgl2.pegjs');
+                      ps = await ps.text();
                   }
+                } catch (e){
+                    ps = defaultPegSrc;
                 }
+              
                 
                 let sg =  localStorage.getItem("sgl2Src");
-                if(sg){
-                  sg = LZUTF8.decompress(sg, {inputEncoding:'ByteArray'});
-                } else {
+                try {
+                  if(sg){
+                    sg = LZUTF8.decompress(sg, {inputEncoding:'ByteArray'});
+                  } else {
+                    sg = defaultsgl2Src;
+                  }
+                } catch (e){
                   sg = defaultsgl2Src;
                 }
+
                 //let sg = localStorage.getItem("sgl2Src") || defaultsgl2Src;
                 pegSrc.value = ps;
                 sgl2Src.value = sg;
