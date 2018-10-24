@@ -177,7 +177,12 @@ _ = [\\n\\t ]*;
                       ps = await ps.text();
                   }
                 } catch (e){
-                    ps = defaultPegSrc;
+                    try {
+                      ps = await fetch('./sgl2.pegjs');
+                      ps = await ps.text();
+                    } catch (e) {
+                      ps = defaultPegSrc;
+                    }
                 }
               
                 
