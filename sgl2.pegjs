@@ -6,7 +6,7 @@
 {
   
   const binaryen = options.binaryen;
-  const module = options.module;
+  const wasmModule = options.module;
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
