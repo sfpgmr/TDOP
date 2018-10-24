@@ -214,7 +214,7 @@ DecimalLiteral
   / "." DecimalDigit+ ExponentPart? {
       return { type: "Literal", value: parseFloat(text()) };
     }
-  / DecimalIntegerLiteral (ByteSizeSuffix? UnsignedSuffix?) / ExponentPart? {
+  / DecimalIntegerLiteral ((ByteSizeSuffix? UnsignedSuffix?) / ExponentPart?) {
       return { type: "Literal", value: parseFloat(text()) };
     }
 
