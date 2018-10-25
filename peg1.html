@@ -66,10 +66,10 @@
   <textarea id="peg-src" class="siimple-box siimple-box--fluid" rows="20" title="peg.jsで文法を書きます。"></textarea>
   <div>
     <button id="Compile" value="compile" type="button" class="siimple-btn siimple-btn--orange">パーサ作成</button>
-    <button id="Parse" value="parse" type="button" class="siimple-btn siimple-btn--orange">パース</button>
-    <button id="Load" value="Load" type="button" class="siimple-btn siimple-btn--orange">読み込み(from LocalStorage)</button>
-    <button id="Save" value="Save" type="button" class="siimple-btn siimple-btn--orange">保存(from localStorage)</button>
-    <button id="Clear" value="Clear" type="button" class="siimple-btn siimple-btn--orange">クリア（localStorage）</button>
+    localStorageへ
+    <button id="LoadGrammer" value="Load" type="button" class="siimple-btn siimple-btn--orange">読込</button>
+    <button id="SaveGrammer" value="Save" type="button" class="siimple-btn siimple-btn--orange">保存</button>
+    <button id="ClearGrammer" value="Clear" type="button" class="siimple-btn siimple-btn--orange">localStorageのクリア</button>
     　　</div>
   <div>
     <pre id="peg-info"></pre>
@@ -77,6 +77,13 @@
   <h2>
     <label class="siimple-label">パースする言語ソースをここに記述</label>
   </h2>
+  <div>
+    <button id="Parse" value="parse" type="button" class="siimple-btn siimple-btn--orange">パース</button>
+    localStorageへ
+    <button id="LoadSource" value="Load" type="button" class="siimple-btn siimple-btn--orange">読込</button>
+    <button id="SaveSource" value="Save" type="button" class="siimple-btn siimple-btn--orange">保存</button>
+    <button id="ClearSource" value="Clear" type="button" class="siimple-btn siimple-btn--orange">localStorageのクリア</button>
+  </div>
   <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="10" title="sgl2の文法を書きます。"></textarea>
   <div>
     <pre id="parse-info"></pre>
@@ -180,7 +187,7 @@ _ = [\\n\\t ]*;
         let ps = localStorage.getItem("pegSrc");
         try {
           if (ps) {
-            ps = LZUTF8.decompress(ps, { inputEncoding: 'ByteArray' });
+            ps = LZUTF8.decompress(ps, { inputEncoding: 'Base64' });
           } else {
             ps = await fetch('./sgl2.pegjs');
             ps = await ps.text();
@@ -198,7 +205,7 @@ _ = [\\n\\t ]*;
         let sg = localStorage.getItem("sgl2Src");
         try {
           if (sg) {
-            sg = LZUTF8.decompress(sg, { inputEncoding: 'ByteArray' });
+            sg = LZUTF8.decompress(sg, { inputEncoding: 'Base64' });
           } else {
             sg = defaultsgl2Src;
           }
@@ -220,24 +227,40 @@ _ = [\\n\\t ]*;
 
       document.getElementById('Compile').addEventListener('click', compile);
       document.getElementById('Parse').addEventListener('click', parse);
-      document.getElementById('Load').addEventListener('load', () => {
+  
+      document.getElementById('LoadGrammer').addEventListener('load', () => {
         if (localStorage) {
-          pegSrc.value = LZUTF8.decompress(localStorage.getItem('pegSrc'), { inputEncoding: 'ByteArray' });
-          sgl2Src.value = LZUTF8.decompress(localStorage.getItem('sgl2Src'), { inputEncoding: 'ByteArray' });
+          pegSrc.value = LZUTF8.decompress(localStorage.getItem('pegSrc'), { inputEncoding: 'Base64' });
         }
       });
 
-      document.getElementById('Clear').onclick = function (e) {
-        localStorage && localStorage.clear();
+
+      document.getElementById('SaveGrammer').addEventListener('click', () => {
+        if (localStorage) {
+          localStorage.setItem('pegSrc', LZUTF8.compress(pegSrc.value, { outputEncoding: 'Base64' }));
+        }
+      });
+
+      document.getElementById('ClearGrammer').onclick = function (e) {
+        localStorage && localStorage.removeItem('pegSrc');
+      }
+
+      document.getElementById('LoadSource').addEventListener('load', () => {
+        if (localStorage) {
+          sgl2Src.value = LZUTF8.decompress(localStorage.getItem('sgl2Src'), { inputEncoding: 'Base64' });
+        }
+      });
+
+
+      document.getElementById('SaveSource').addEventListener('click', () => {
+        if (localStorage) {
+          localStorage && localStorage.setItem('sgl2Src', LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' }));
+        }
+      });
+
+      document.getElementById('ClearSource').onclick = function (e) {
+        localStorage && localStorage.removeItem('sgl2Src');
       };
-
-      document.getElementById('Save').addEventListener('click', () => {
-        if (localStorage) {
-          localStorage.setItem('pegSrc', LZUTF8.compress(pegSrc.value, { outputEncoding: 'ByteArray' }));
-          localStorage && localStorage.setItem('sgl2Src', LZUTF8.compress(sgl2Src.value, { outputEncoding: 'ByteArray' }));
-        }
-      });
-
       let parser;
 
       async function compile() {
