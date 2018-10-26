@@ -5,7 +5,7 @@ import util from 'util';
 const exec = util.promisify(exec_);
 
 
-(async (pegSrcPath = './sgl2.peg') => {
+(async (pegSrcPath = './sgl2.pegjs') => {
 
   const pegSrc = await fs.promises.readFile(pegSrcPath, 'utf-8');
   //const pegSrc = "start = ('a' / 'b')+";
