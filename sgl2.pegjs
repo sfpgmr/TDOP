@@ -70,48 +70,40 @@ class Scope {
     this.parent = s;
   }
 
-  define(n) {
-    const def = n.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
-    const name = n.id.name;
+  define(node) {
+    const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+    const name = node.id.name;
     const t = def.get(name);
     if (t) {
       error('変数はすでに定義されています。');
     }
-    def.set(varName, n);
-    n.reserved = false;
-    n.nud = itself;
-    n.led = null;
-    n.std = null;
-    n.lbp = 0;
-    n.scope = scope;
-    return n;
+    def.set(name, node);
   }
 
-  find(n, typedef = false) {
+  find(nodeName,typedef = false,currentScope = false) {
     if (!typedef) {
       let e = this;
-      let o;
+      let node;
       while (true) {
-        o = e.def.get(n);
-        if (o && typeof o !== 'function') {
-          return e.def.get(n);
+        node = e.def.get(nodeName);
+        if (node) {
+          return node;
         }
+	if(currentScope) return null;
         e = e.parent;
         if (!e) {
-          o = symbol_table.get(n);
-          return (o && typeof o !== 'function')
-            ? o
-            : null/*symbol_table.get('(name)')*/;
+          return null;
         }
       }
     } else {
       let e = this;
-      let o;
+      let node;
       while (e) {
-        o = e.typedef.get(n);
-        if (o && typeof o !== 'function') {
-          return o;
+        node = e.typedef.get(nodeName);
+        if (node) {
+          return node;
         }
+	if(currentScope) return null;
         e = e.parent;
       }
       return null;
@@ -119,24 +111,6 @@ class Scope {
   }
   pop() {
     scope = this.parent;
-  }
-  // 予約語
-  reserve(n) {
-    const def = n.typedef ? this.typedef : this.def;
-    if (n.nodeType !== 'name' || n.reserved) {
-      return;
-    }
-    const t = def.get(n.value);
-    if (t) {
-      if (t.reserved) {
-        return;
-      }
-      if (t.nodeType === 'name') {
-        error('Already defined.', n);
-      }
-    }
-    def.set(n.value, n);
-    n.reserved = true;
   }
 }
 
@@ -423,12 +397,20 @@ if(unsigned && sign == '-'){
   error('符号なしリテラルにマイナス値は指定できません。');
 }
 
-console.log(b);
+let value;
+
+if(bitSize == 64){
+  let l = parseInt(b.slice(-32),2);
+  let h = parseInt(b.slice(0,b.length - 32),2);
+  value = {low:l,high:h};
+} else {
+  value = parseInt(b,2);
+}
 
 return { 
-  value: parseInt(b,2),
+  value:value,
   type:typeName,
-	unsigned:!!unsigned,
+  unsigned:!!unsigned,
   byteSize:type.byteSize
 };
 
