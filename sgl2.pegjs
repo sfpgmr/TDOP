@@ -361,12 +361,16 @@ ExponentIndicator
 SignedInteger
   = [+-]? DecimalDigit+
 
+// 16進数整数リテラル
+
 HexIntegerLiteral
-  = [+-]? "0x"i hex:$(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+  = [+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 
 const type = suffixType.get(byteSize || 'd');//
 const typeName = type[unsigned || 'i']; 
+
+let h = hex.filter()
 
 return { 
   value: parseInt(hex.replace(/\s|\r|\n/ig,''),16),
