@@ -243,21 +243,42 @@ function peg$parse(input, options) {
       peg$c76 = peg$literalExpectation("0b", false),
       peg$c77 = "b",
       peg$c78 = peg$literalExpectation("b", false),
-      peg$c79 = function(binary, byteSize, unsigned) {
+      peg$c79 = function(sign, binary, byteSize, unsigned) {
 
+      sign = sign  || '+';
       const type = suffixType.get(byteSize || 'd');//
       const typeName = type[unsigned || 'i']; 
       let b = binary.filter(d=>{
         return (d == '0' || d == '1') 
       }).join('');
 
-      console.log(b);
+      if(b.length > type.bitSize){
+        error('型の最大ビット数を超えています。');
+      }
+
+      if(unsigned && sign == '-'){
+        error('符号なしリテラルにマイナス値は指定できません。');
+      }
+
+      let value,wasmCode;
+
+      if(bitSize == 64){
+        let l = parseInt(b.slice(-32),2);
+        let h = parseInt(b.slice(0,-32),2);
+        value = {low:l,high:h};
+        wasmCode = wasmModule[type.innerType].const(l,h);
+      } else {
+        value = parseInt(b,2);
+        wasmCode = wasmModule[type.innerType].const(value);
+      }
 
       return { 
-        value: parseInt(b,2),
+        value:value,
         type:typeName,
-      	unsigned:!!unsigned,
-        byteSize:type.byteSize
+        unsigned:!!unsigned,
+        byteSize:type.byteSize,
+        bitSize:type.bitSize,
+        wasm:wasmCode
       };
 
 
@@ -2422,67 +2443,82 @@ function peg$parse(input, options) {
   }
 
   function peg$parseBinaryIntegerLiteral() {
-    var s0, s1, s2, s3, s4, s5;
+    var s0, s1, s2, s3, s4, s5, s6;
 
     s0 = peg$currPos;
-    if (input.substr(peg$currPos, 2) === peg$c75) {
-      s1 = peg$c75;
-      peg$currPos += 2;
+    if (peg$c66.test(input.charAt(peg$currPos))) {
+      s1 = input.charAt(peg$currPos);
+      peg$currPos++;
     } else {
       s1 = peg$FAILED;
-      if (peg$silentFails === 0) { peg$fail(peg$c76); }
+      if (peg$silentFails === 0) { peg$fail(peg$c67); }
+    }
+    if (s1 === peg$FAILED) {
+      s1 = null;
     }
     if (s1 !== peg$FAILED) {
-      s2 = [];
-      s3 = peg$parseBinaryDigit();
-      if (s3 === peg$FAILED) {
-        s3 = peg$parseWhiteSpace();
-        if (s3 === peg$FAILED) {
-          s3 = peg$parseLineTerminatorSequence();
-          if (s3 === peg$FAILED) {
-            s3 = peg$parseComment();
-          }
-        }
+      if (input.substr(peg$currPos, 2) === peg$c75) {
+        s2 = peg$c75;
+        peg$currPos += 2;
+      } else {
+        s2 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$c76); }
       }
-      if (s3 !== peg$FAILED) {
-        while (s3 !== peg$FAILED) {
-          s2.push(s3);
-          s3 = peg$parseBinaryDigit();
-          if (s3 === peg$FAILED) {
-            s3 = peg$parseWhiteSpace();
-            if (s3 === peg$FAILED) {
-              s3 = peg$parseLineTerminatorSequence();
-              if (s3 === peg$FAILED) {
-                s3 = peg$parseComment();
-              }
+      if (s2 !== peg$FAILED) {
+        s3 = [];
+        s4 = peg$parseBinaryDigit();
+        if (s4 === peg$FAILED) {
+          s4 = peg$parseWhiteSpace();
+          if (s4 === peg$FAILED) {
+            s4 = peg$parseLineTerminatorSequence();
+            if (s4 === peg$FAILED) {
+              s4 = peg$parseComment();
             }
           }
         }
-      } else {
-        s2 = peg$FAILED;
-      }
-      if (s2 !== peg$FAILED) {
-        if (input.charCodeAt(peg$currPos) === 98) {
-          s3 = peg$c77;
-          peg$currPos++;
+        if (s4 !== peg$FAILED) {
+          while (s4 !== peg$FAILED) {
+            s3.push(s4);
+            s4 = peg$parseBinaryDigit();
+            if (s4 === peg$FAILED) {
+              s4 = peg$parseWhiteSpace();
+              if (s4 === peg$FAILED) {
+                s4 = peg$parseLineTerminatorSequence();
+                if (s4 === peg$FAILED) {
+                  s4 = peg$parseComment();
+                }
+              }
+            }
+          }
         } else {
           s3 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c78); }
         }
         if (s3 !== peg$FAILED) {
-          s4 = peg$parseByteSizeSuffix();
-          if (s4 === peg$FAILED) {
-            s4 = null;
+          if (input.charCodeAt(peg$currPos) === 98) {
+            s4 = peg$c77;
+            peg$currPos++;
+          } else {
+            s4 = peg$FAILED;
+            if (peg$silentFails === 0) { peg$fail(peg$c78); }
           }
           if (s4 !== peg$FAILED) {
-            s5 = peg$parseUnsignedSuffix();
+            s5 = peg$parseByteSizeSuffix();
             if (s5 === peg$FAILED) {
               s5 = null;
             }
             if (s5 !== peg$FAILED) {
-              peg$savedPos = s0;
-              s1 = peg$c79(s2, s4, s5);
-              s0 = s1;
+              s6 = peg$parseUnsignedSuffix();
+              if (s6 === peg$FAILED) {
+                s6 = null;
+              }
+              if (s6 !== peg$FAILED) {
+                peg$savedPos = s0;
+                s1 = peg$c79(s1, s3, s5, s6);
+                s0 = s1;
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
             } else {
               peg$currPos = s0;
               s0 = peg$FAILED;
@@ -13421,13 +13457,125 @@ function peg$parse(input, options) {
 
 
     
+
+
+  // 関数スコープ
+  class FunctionScope {
+    constructor() {
+      this.funcVars = [];
+      this.length = 0;
+    }
+    scopeIn() {
+      this.funcVars.push(0);
+      this.length = this.funcVars.length;
+      this.stackTop = this.length - 1;
+      this.current = 0;
+    }
+
+    scopeOut() {
+      if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
+
+      this.funcVars.pop();
+      this.length = this.funcVars.length;
+      if (this.length >= 1) {
+        this.stackTop = this.length - 1;
+        this.current = this.funcVars[this.stackTop];
+      } else {
+        this.stackTop = undefined;
+        this.current = undefined;
+      }
+    }
+
+    index(inc = true) {
+      if (inc) {
+        const ret = this.current;
+        this.incIndex();
+        return ret;
+      } else {
+        return this.current;
+      }
+    }
+
+    incIndex() {
+      ++this.current;
+      this.funcVars[this.stackTop] = this.current;
+    }
+
+    get global() {
+      return this.current === undefined;
+    }
+  }
+
+  let scope;
+
+  function createScope() {
+      const s = new Scope(scope);
+      scope = s;
+      return s;
+  }
+
+  // スコープ管理
+  class Scope {
+    constructor(s) {
+      this.def = new Map();
+      this.typedef = new Map();
+      this.parent = s;
+    }
+
+    define(node) {
+      const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+      const name = node.id.name;
+      const t = def.get(name);
+      if (t) {
+        error('変数はすでに定義されています。');
+      }
+      def.set(name, node);
+    }
+
+    find(nodeName,typedef = false,currentScope = false) {
+      if (!typedef) {
+        let e = this;
+        let node;
+        while (true) {
+          node = e.def.get(nodeName);
+          if (node) {
+            return node;
+          }
+  	if(currentScope) return null;
+          e = e.parent;
+          if (!e) {
+            return null;
+          }
+        }
+      } else {
+        let e = this;
+        let node;
+        while (e) {
+          node = e.typedef.get(nodeName);
+          if (node) {
+            return node;
+          }
+  	if(currentScope) return null;
+          e = e.parent;
+        }
+        return null;
+      }
+    }
+    pop() {
+      scope = this.parent;
+    }
+  }
+
+    let funcScope = new FunctionScope();
+    let scopeTop = createScope(); 
+
     const binaryen = options.binaryen;
     const wasmModule = options.module;
     const suffixType = new Map([
-  	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8'}],
-  	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16'}],
-  	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',f:'f32'}],
-  	['l',{bitSize:64,byteSize:8,i:'i64',u:'u64',f:'f64'}]
+  	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8',innerType:'i32'}],
+  	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16',innerType:'i32'}],
+  	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',innerType:'i32',f:'f32'}],
+  	['l',{bitSize:64,byteSize:8,i:'i64',u:'u64',innerType:'i64',f:'f64'}]
     ]);
 
     var TYPES_TO_PROPERTY_NAMES = {

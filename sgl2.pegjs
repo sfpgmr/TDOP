@@ -120,10 +120,10 @@ class Scope {
   const binaryen = options.binaryen;
   const wasmModule = options.module;
   const suffixType = new Map([
-	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8'}],
-	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16'}],
-	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',f:'f32'}],
-	['l',{bitSize:64,byteSize:8,i:'i64',u:'u64',f:'f64'}]
+	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8',innerType:'i32'}],
+	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16',innerType:'i32'}],
+	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',innerType:'i32',f:'f32'}],
+	['l',{bitSize:64,byteSize:8,i:'i64',u:'u64',innerType:'i64',f:'f64'}]
   ]);
 
   var TYPES_TO_PROPERTY_NAMES = {
@@ -397,21 +397,25 @@ if(unsigned && sign == '-'){
   error('符号なしリテラルにマイナス値は指定できません。');
 }
 
-let value;
+let value,wasmCode;
 
-if(bitSize == 64){
+if(type.bitSize == 64){
   let l = parseInt(b.slice(-32),2);
-  let h = parseInt(b.slice(0,b.length - 32),2);
+  let h = parseInt(b.slice(0,-32),2);
   value = {low:l,high:h};
+  wasmCode = wasmModule[type.innerType].const(l,h);
 } else {
   value = parseInt(b,2);
+  wasmCode = wasmModule[type.innerType].const(value);
 }
 
 return { 
   value:value,
   type:typeName,
   unsigned:!!unsigned,
-  byteSize:type.byteSize
+  byteSize:type.byteSize,
+  bitSize:type.bitSize,
+  wasm:wasmCode
 };
 
 
