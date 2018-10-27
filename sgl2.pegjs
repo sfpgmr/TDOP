@@ -71,13 +71,11 @@ class Scope {
   }
 
   define(n) {
-    const def = n.typedef ? this.typedef : this.def;
-    const varName = n.varName ? n.varName : n.value;
-    const t = def.get(varName);
+    const def = n.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+    const name = n.id.name;
+    const t = def.get(name);
     if (t) {
-      error((t.reserved)
-        ? 'Already reserved.'
-        : 'Already defined.', n);
+      error('変数はすでに低')
     }
     def.set(varName, n);
     n.reserved = false;
