@@ -75,7 +75,7 @@ class Scope {
     const name = n.id.name;
     const t = def.get(name);
     if (t) {
-      error('変数はすでに低')
+      error('変数はすでに定義されています。');
     }
     def.set(varName, n);
     n.reserved = false;
