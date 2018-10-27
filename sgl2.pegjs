@@ -5,6 +5,146 @@
 
 {
   
+
+
+// 関数スコープ
+class FunctionScope {
+  constructor() {
+    this.funcVars = [];
+    this.length = 0;
+  }
+  scopeIn() {
+    this.funcVars.push(0);
+    this.length = this.funcVars.length;
+    this.stackTop = this.length - 1;
+    this.current = 0;
+  }
+
+  scopeOut() {
+    if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
+
+    this.funcVars.pop();
+    this.length = this.funcVars.length;
+    if (this.length >= 1) {
+      this.stackTop = this.length - 1;
+      this.current = this.funcVars[this.stackTop];
+    } else {
+      this.stackTop = undefined;
+      this.current = undefined;
+    }
+  }
+
+  index(inc = true) {
+    if (inc) {
+      const ret = this.current;
+      this.incIndex();
+      return ret;
+    } else {
+      return this.current;
+    }
+  }
+
+  incIndex() {
+    ++this.current;
+    this.funcVars[this.stackTop] = this.current;
+  }
+
+  get global() {
+    return this.current === undefined;
+  }
+}
+
+let scope;
+
+function createScope() {
+    const s = new Scope(scope);
+    scope = s;
+    return s;
+}
+
+// スコープ管理
+class Scope {
+  constructor(s) {
+    this.def = new Map();
+    this.typedef = new Map();
+    this.parent = s;
+  }
+
+  define(n) {
+    const def = n.typedef ? this.typedef : this.def;
+    const varName = n.varName ? n.varName : n.value;
+    const t = def.get(varName);
+    if (t) {
+      error((t.reserved)
+        ? 'Already reserved.'
+        : 'Already defined.', n);
+    }
+    def.set(varName, n);
+    n.reserved = false;
+    n.nud = itself;
+    n.led = null;
+    n.std = null;
+    n.lbp = 0;
+    n.scope = scope;
+    return n;
+  }
+
+  find(n, typedef = false) {
+    if (!typedef) {
+      let e = this;
+      let o;
+      while (true) {
+        o = e.def.get(n);
+        if (o && typeof o !== 'function') {
+          return e.def.get(n);
+        }
+        e = e.parent;
+        if (!e) {
+          o = symbol_table.get(n);
+          return (o && typeof o !== 'function')
+            ? o
+            : null/*symbol_table.get('(name)')*/;
+        }
+      }
+    } else {
+      let e = this;
+      let o;
+      while (e) {
+        o = e.typedef.get(n);
+        if (o && typeof o !== 'function') {
+          return o;
+        }
+        e = e.parent;
+      }
+      return null;
+    }
+  }
+  pop() {
+    scope = this.parent;
+  }
+  // 予約語
+  reserve(n) {
+    const def = n.typedef ? this.typedef : this.def;
+    if (n.nodeType !== 'name' || n.reserved) {
+      return;
+    }
+    const t = def.get(n.value);
+    if (t) {
+      if (t.reserved) {
+        return;
+      }
+      if (t.nodeType === 'name') {
+        error('Already defined.', n);
+      }
+    }
+    def.set(n.value, n);
+    n.reserved = true;
+  }
+}
+
+  let funcScope = new FunctionScope();
+  let scopeTop = createScope(); 
+
   const binaryen = options.binaryen;
   const wasmModule = options.module;
   const suffixType = new Map([
@@ -268,13 +408,22 @@ return {
 HexDigit
   = [0-9a-f]i
 
-BinaryIntegerLiteral = '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
+BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
 
+sign = sign  || '+';
 const type = suffixType.get(byteSize || 'd');//
 const typeName = type[unsigned || 'i']; 
 let b = binary.filter(d=>{
   return (d == '0' || d == '1') 
 }).join('');
+
+if(b.length > type.bitSize){
+  error('型の最大ビット数を超えています。');
+}
+
+if(unsigned && sign == '-'){
+  error('符号なしリテラルにマイナス値は指定できません。');
+}
 
 console.log(b);
 
