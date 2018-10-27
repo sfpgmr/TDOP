@@ -380,6 +380,9 @@ return {
 HexDigit
   = [0-9a-f]i
 
+
+// 2進整数リテラル
+
 BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
 
 sign = sign  || '+';
@@ -400,8 +403,8 @@ if(unsigned && sign == '-'){
 let value,wasmCode;
 
 if(type.bitSize == 64){
-  let l = parseInt(b.slice(-32),2);
-  let h = parseInt(b.slice(0,-32),2);
+  let l = parseInt(b.slice(-32),2) | 0;
+  let h = parseInt(b.slice(0,-32),2) | 0;
   value = {low:l,high:h};
   wasmCode = wasmModule[type.innerType].const(l,h);
 } else {
@@ -1158,12 +1161,14 @@ Block
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
+// 変数宣言ステートメントの処理 //
+
 VariableStatement
   = type:Type __ declarations:VariableDeclarationList EOS {
       return {
         nodeType: "VariableDeclaration",
         type:type,
-        declarations: declarations,
+        declarations: declarations.map(d=>(d.type = type,d)),
         kind: "var"
       };
     }
