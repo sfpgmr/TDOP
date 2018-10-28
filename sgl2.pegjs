@@ -364,19 +364,52 @@ ExponentIndicator
 SignedInteger
   = [+-]? DecimalDigit+
 
+// 16進数整数リテラル
+
 HexIntegerLiteral
-  = [+-]? "0x"i hex:$(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+  = [+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 
-const type = suffixType.get(byteSize || 'd');//
-const typeName = type[unsigned || 'i']; 
+  const type = suffixType.get(byteSize || 'd');//
+  const typeName = type[unsigned || 'i']; 
+  let value,wasmCode;
 
-return { 
-  value: parseInt(hex.replace(/\s|\r|\n/ig,''),16),
-  type:typeName,
-	unsigned:!!unsigned,
-  byteSize:type.byteSize
-};
+
+
+  let h = hex.filter(d=>{
+    return (/[0-9a-f]/i).test(d);
+  }).join('');
+
+  console.log(h);
+
+  if(h.length > type.biteSize * 2){
+    error('型の最大値を超えています。');
+  }
+
+  if(unsigned && sign == '-'){
+    error('符号なしリテラルにマイナス値は指定できません。');
+  }
+
+
+  if(type.bitSize == 64){
+    let l = parseInt(h.slice(-8),16) | 0;
+    let h = parseInt(h.slice(0,-8),16) | 0;
+    value = {low:l,high:h};
+    wasmCode = wasmModule[type.innerType].const(l,h);
+  } else {
+    value = parseInt(h,16);
+    console.log(value.toString(16));
+    wasmCode = wasmModule[type.innerType].const(value);
+  }
+
+  return { 
+    value:value,
+    type:typeName,
+    unsigned:!!unsigned,
+    byteSize:type.byteSize,
+    bitSize:type.bitSize,
+    wasm:wasmCode
+  };
 
 }
 
@@ -386,50 +419,55 @@ HexDigit
 
 // 2進整数リテラル
 
-BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
+BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? 
+{
 
-sign = sign  || '+';
-const type = suffixType.get(byteSize || 'd');//
-const typeName = type[unsigned || 'i']; 
-let b = binary.filter(d=>{
-  return (d == '0' || d == '1') 
-}).join('');
+  sign = sign  || '+';
+  const type = suffixType.get(byteSize || 'd');//
+  const typeName = type[unsigned || 'i']; 
+  let b = binary.filter(d=>{
+    return (d == '0' || d == '1') 
+  }).join('');
 
-if(b.length > type.bitSize){
-  error('型の最大ビット数を超えています。');
+  if(b.length > type.bitSize){
+    error('型の最大ビット数を超えています。');
+  }
+
+  if(unsigned && sign == '-'){
+    error('符号なしリテラルにマイナス値は指定できません。');
+  }
+
+  let value,wasmCode;
+
+  if(type.bitSize == 64){
+    let l = parseInt(b.slice(-32),2) | 0;
+    let h = parseInt(b.slice(0,-32),2) | 0;
+    value = {low:l,high:h};
+    wasmCode = wasmModule[type.innerType].const(l,h);
+  } else {
+    value = parseInt(b,2);
+    wasmCode = wasmModule[type.innerType].const(value);
+  }
+
+  return { 
+    value:value,
+    type:typeName,
+    unsigned:!!unsigned,
+    byteSize:type.byteSize,
+    bitSize:type.bitSize,
+    wasm:wasmCode
+  };
+
+
 }
 
-if(unsigned && sign == '-'){
-  error('符号なしリテラルにマイナス値は指定できません。');
-}
-
-let value,wasmCode;
-
-if(type.bitSize == 64){
-  let l = parseInt(b.slice(-32),2) | 0;
-  let h = parseInt(b.slice(0,-32),2) | 0;
-  value = {low:l,high:h};
-  wasmCode = wasmModule[type.innerType].const(l,h);
-} else {
-  value = parseInt(b,2);
-  wasmCode = wasmModule[type.innerType].const(value);
-}
-
-return { 
-  value:value,
-  type:typeName,
-  unsigned:!!unsigned,
-  byteSize:type.byteSize,
-  bitSize:type.bitSize,
-  wasm:wasmCode
-};
-
-
-}
 BinaryDigit = [01]
 
 ByteSizeSuffix = [swdl]
+
 UnsignedSuffix = 'u'
+
+// 文字列リテラル
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
