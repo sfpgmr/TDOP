@@ -161,6 +161,13 @@ _ = [\\n\\t ]*;
         });
       }
 
+      // wasm ライブラリの読み込み
+      const lib = await fetch('./sgl2lib.wasm').then(response =>
+        response.arrayBuffer()
+      ).then(bytes =>
+        WebAssembly.instantiate(bytes, importObject)
+      ).then(results=>results.exports);
+
       let sgl2PegSrc;
 
       const pegSrc = document.getElementById('peg-src');
@@ -267,7 +274,7 @@ _ = [\\n\\t ]*;
         let error = false;
 
         try {
-          const result = parser.parse(sgl2Src.value, { binaryen:binaryen,module: wasmModule });
+          const result = parser.parse(sgl2Src.value, { binaryen:binaryen,module: wasmModule,lib:lib });
           parseInfo.innerText = 'パース完了';
           parseInfo.className = 'siimple-alert siimple-alert--green';
           output.innerText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;

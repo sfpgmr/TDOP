@@ -119,6 +119,9 @@ class Scope {
 
   const binaryen = options.binaryen;
   const wasmModule = options.module;
+  
+  const lib = options.lib;
+
   const suffixType = new Map([
 	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8',innerType:'i32'}],
 	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16',innerType:'i32'}],
