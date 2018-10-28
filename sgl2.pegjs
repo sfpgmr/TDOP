@@ -457,10 +457,14 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
 
 
 }
+
 BinaryDigit = [01]
 
 ByteSizeSuffix = [swdl]
+
 UnsignedSuffix = 'u'
+
+// 文字列リテラル
 
 StringLiteral "string"
   = '"' chars:DoubleStringCharacter* '"' {
