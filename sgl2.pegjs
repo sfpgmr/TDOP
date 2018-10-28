@@ -367,7 +367,7 @@ SignedInteger
 // 16進数整数リテラル
 
 HexIntegerLiteral
-  = [+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+  = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 
   const type = suffixType.get(byteSize || 'd');//
@@ -389,13 +389,19 @@ HexIntegerLiteral
   if(unsigned && sign == '-'){
     error('符号なしリテラルにマイナス値は指定できません。');
   }
-
+console.log(lib);
 
   if(type.bitSize == 64){
-    let l = parseInt(h.slice(-8),16) | 0;
-    let h = parseInt(h.slice(0,-8),16) | 0;
-    value = {low:l,high:h};
-    wasmCode = wasmModule[type.innerType].const(l,h);
+    let low = parseInt(h.slice(-8),16) | 0;
+    let high = parseInt(h.slice(0,-8),16) | 0;
+    value = {low:low,high:high};
+    if(sign == '-'){
+      lib.i64Neg(low,high);
+      let ret = new Uint32Array(lib.memory.buffer);
+      value.low = ret[0];
+      value.high = ret[1];
+    }
+    wasmCode = wasmModule[type.innerType].const(low,high);
   } else {
     value = parseInt(h,16);
     console.log(value.toString(16));
