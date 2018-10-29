@@ -4,7 +4,7 @@
 //
 
 {
-  
+          
 
 
 // 関数スコープ
@@ -335,8 +335,8 @@ NumericLiteral "number"
     }
 
 DecimalLiteral
-  = DecimalIntegerLiteral "." DecimalDigit* ExponentPart? {
-      return { nodeType: "Literal", value: parseFloat(text()) };
+  = floatValue:$(DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) long:LongSuffix? FloatSuffix {
+      return { nodeType: "Literal", value: parseFloat(floatValue) };
     }
   / "." DecimalDigit+ ExponentPart? {
       return { nodeType: "Literal", value: parseFloat(text()) };
@@ -382,14 +382,13 @@ HexIntegerLiteral
 
   console.log(h);
 
-  if(h.length > type.biteSize * 2){
+  if(h.length > type.byteSize * 2){
     error('型の最大値を超えています。');
   }
 
   if(unsigned && sign == '-'){
     error('符号なしリテラルにマイナス値は指定できません。');
   }
-console.log(lib);
 
   if(type.bitSize == 64){
     let low = parseInt(h.slice(-8),16) | 0;
@@ -403,7 +402,7 @@ console.log(lib);
     }
     wasmCode = wasmModule[type.innerType].const(low,high);
   } else {
-    value = parseInt(h,16);
+    value = parseInt(sign + h,16);
     console.log(value.toString(16));
     wasmCode = wasmModule[type.innerType].const(value);
   }
@@ -446,12 +445,18 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
   let value,wasmCode;
 
   if(type.bitSize == 64){
-    let l = parseInt(b.slice(-32),2) | 0;
-    let h = parseInt(b.slice(0,-32),2) | 0;
-    value = {low:l,high:h};
-    wasmCode = wasmModule[type.innerType].const(l,h);
+    let low = parseInt(b.slice(-32),2) | 0;
+    let high = parseInt(b.slice(0,-32),2) | 0;
+    value = {low:low,high:high};
+    if(sign == '-'){
+      lib.i64Neg(low,high);
+      let ret = new Uint32Array(lib.memory.buffer);
+      value.low = ret[0];
+      value.high = ret[1];
+    }
+    wasmCode = wasmModule[type.innerType].const(value.low,value.high);
   } else {
-    value = parseInt(b,2);
+    value = parseInt(sign + b,2);
     wasmCode = wasmModule[type.innerType].const(value);
   }
 
@@ -469,9 +474,16 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
 
 BinaryDigit = [01]
 
-ByteSizeSuffix = [swdl]
+ByteSizeSuffix =  ByteSuffix / WordSuffix / DwordSuffix / LongSuffix
+
+ByteSuffix = 's'
+WordSuffix = 'w'
+DwordSuffix ='d'
+LongSuffix = 'l'
 
 UnsignedSuffix = 'u'
+
+FloatSuffix = 'f'
 
 // 文字列リテラル
 
