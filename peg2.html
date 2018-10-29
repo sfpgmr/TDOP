@@ -208,30 +208,7 @@ _ = [\\n\\t ]*;
         sgl2Src.value = sg;
       }
 
-      document.querySelectorAll('.OUTPUT').forEach(e => {
-        e.addEventListener('click', () => {
-          e.classList.contains('OUTPUT-SHRINK') ? e.classList.remove('OUTPUT-SHRINK') : e.classList.add('OUTPUT-SHRINK');
-        });
-        e.title = 'clickで全体表示<->縮小表示';
-      });
 
-      document.getElementById('Parse').addEventListener('click', parse);
-  
-      document.getElementById('LoadSource').addEventListener('load', () => {
-        if (localStorage) {
-          sgl2Src.value = LZUTF8.decompress(localStorage.getItem('sgl2Src'), { inputEncoding: 'Base64' });
-        }
-      });
-
-      document.getElementById('SaveSource').addEventListener('click', () => {
-        if (localStorage) {
-          localStorage && localStorage.setItem('sgl2Src', LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' }));
-        }
-      });
-
-      document.getElementById('ClearSource').onclick = function (e) {
-        localStorage && localStorage.removeItem('sgl2Src');
-      };
       let parser;
 
       async function compile() {
@@ -264,6 +241,8 @@ _ = [\\n\\t ]*;
           alert('parserがまだ作成されていません。');
         }
 
+        document.getElementById('Parse').disabled = true;
+
         const wasmModule = new binaryen.Module();
         wasmModule.setMemory(1, 1);
         output.innerHTML = parseInfo.innerHTML = '';
@@ -295,10 +274,37 @@ _ = [\\n\\t ]*;
 
         srcUrl.innerText = window.location.href.replace(/\?.*$/, '') + '?' + LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' });
 
+        document.getElementById('Parse').disabled = false;
+
       }
 
       await compile();
       await parse();
+
+      document.querySelectorAll('.OUTPUT').forEach(e => {
+        e.addEventListener('click', () => {
+          e.classList.contains('OUTPUT-SHRINK') ? e.classList.remove('OUTPUT-SHRINK') : e.classList.add('OUTPUT-SHRINK');
+        });
+        e.title = 'clickで全体表示<->縮小表示';
+      });
+
+      document.getElementById('Parse').addEventListener('click', parse);
+  
+      document.getElementById('LoadSource').addEventListener('load', () => {
+        if (localStorage) {
+          sgl2Src.value = LZUTF8.decompress(localStorage.getItem('sgl2Src'), { inputEncoding: 'Base64' });
+        }
+      });
+
+      document.getElementById('SaveSource').addEventListener('click', () => {
+        if (localStorage) {
+          localStorage && localStorage.setItem('sgl2Src', LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' }));
+        }
+      });
+
+      document.getElementById('ClearSource').onclick = function (e) {
+        localStorage && localStorage.removeItem('sgl2Src');
+      };
 
       info.innerText = '';
       info.className = '';

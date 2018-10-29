@@ -122,7 +122,13 @@ class Scope {
   
   const lib = options.lib;
 
-  const suffixType = new Map([
+  const builtinTypeInfos = new Map([
+    ['i8',{name:'i8',integer:true,signed:true,bitSize:8,byteSize:1,minValue:-128,maxValue:127,innerType:'i32'}],
+    ['i16',{name:'i16',integer:true,signed:true,bitSize:16,byteSize:2,minValue:-32768,maxValue:32767,innerType:'i32'}],
+    ['i16',{name:'i16',integer:true,signed:true,bitSize:16,byteSize:2,minValue:-32768,maxValue:32767,innerType:'i32'}]
+  ]);
+
+  const byteSizeSuffixMap = new Map([
 	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8',innerType:'i32'}],
 	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16',innerType:'i32'}],
 	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',innerType:'i32',f:'f32'}],
@@ -335,8 +341,17 @@ NumericLiteral "number"
     }
 
 DecimalLiteral
-  = floatValue:$(DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) long:LongSuffix? FloatSuffix {
-      return { nodeType: "Literal", value: parseFloat(floatValue) };
+  = floatValue:$(DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) byteSizeSuffix:LongSuffix? FloatSuffix {
+      byteSizeSuffix = byteSizeSuffix || 'd';
+      const type = byteSizeSuffixMap.get(byteSizeSuffix);
+      const value = parseFloat(floatValue);
+
+      return { 
+        nodeType: "Literal",
+        type:type.f,
+        value: value,
+        wasm:wasmModule[type.f].const(value);
+      };
     }
   / "." DecimalDigit+ ExponentPart? {
       return { nodeType: "Literal", value: parseFloat(text()) };
@@ -370,7 +385,7 @@ HexIntegerLiteral
   = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 
-  const type = suffixType.get(byteSize || 'd');//
+  const type = byteSizeSuffixMap.get(byteSize || 'd');//
   const typeName = type[unsigned || 'i']; 
   let value,wasmCode;
 
@@ -428,7 +443,7 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
 {
 
   sign = sign  || '+';
-  const type = suffixType.get(byteSize || 'd');//
+  const type = byteSizeSuffixMap.get(byteSize || 'd');//
   const typeName = type[unsigned || 'i']; 
   let b = binary.filter(d=>{
     return (d == '0' || d == '1') 
