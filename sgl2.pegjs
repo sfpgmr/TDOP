@@ -132,15 +132,15 @@ class Scope {
     ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64'}],
     ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32'}],
     ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64'}],
-    ['void',{name:'i8',size:0}],
-    ['string',{name:'i8',}]
+    ['void',{name:'void',size:0}],
+    ['string',{name:'string'}]
   ]);
 
   const byteSizeSuffixMap = new Map([
 	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')],
-	['w',{bitSize:16,byteSize:2,i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16)'}],
-	['d',{bitSize:32,byteSize:4,i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
-	['l',{bitSize:64,byteSize:8,i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
+	['w',{i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16)'}],
+	['d',{i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
+	['l',{i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
   ]);
 
   var TYPES_TO_PROPERTY_NAMES = {
