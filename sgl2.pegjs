@@ -137,7 +137,7 @@ class Scope {
 
   const byteSizeSuffixMap = new Map([
 	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')}],
-	['w',{i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16)'}],
+	['w',{i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16')}],
 	['d',{i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
 	['l',{i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
   ]);
@@ -359,6 +359,7 @@ DecimalLiteral
         value: value,
         wasm:wasmModule[type.name].const(value)
       };
+      return {value:text()};
     }
   / "." DecimalDigit+ ExponentPart? {
       return { nodeType: "Literal", value: parseFloat(text()) };
@@ -422,7 +423,6 @@ HexIntegerLiteral
     wasmCode = wasmModule[type.innerType].const(low,high);
   } else {
     value = parseInt(sign + h,16);
-    console.log(value.toString(16));
     wasmCode = wasmModule[type.innerType].const(value);
   }
 
