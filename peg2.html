@@ -217,15 +217,15 @@ _ = [\\n\\t ]*;
         pegInfo.innerHTML = '';
         pegInfo.className = '';
 
-        let string;
+        let str;
 
         try {
           parser = peg.generate(sgl2PegSrc);
           pegInfo.innerText = 'パーサ作成完了';
           pegInfo.className = 'siimple-alert siimple-alert--green';
         } catch (e) {
-          string = e.stack;
-          pegInfo.innerHTML = string.replace(/&/g, '&amp;')
+          str = e.stack;
+          pegInfo.innerHTML = str.replace(/&/g, '&amp;')
             .replace(/[<]/g, '&lt;');
           ;
           pegInfo.className = 'siimple-alert siimple-alert--red';

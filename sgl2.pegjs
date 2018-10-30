@@ -120,8 +120,7 @@ class Scope {
   
   const lib = options.lib;
 
-  const primitiveTypes = new Map(
-  [
+  const primitiveTypes = new Map([
     ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32'}],
     ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32'}],
     ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x8000000,integer:true,signed:true,innerType:'i32'}],
@@ -137,7 +136,7 @@ class Scope {
   ]);
 
   const byteSizeSuffixMap = new Map([
-	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')],
+	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')}],
 	['w',{i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16)'}],
 	['d',{i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
 	['l',{i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
@@ -351,14 +350,14 @@ NumericLiteral "number"
 DecimalLiteral
   = floatValue:$(DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) byteSizeSuffix:LongSuffix? FloatSuffix {
       byteSizeSuffix = byteSizeSuffix || 'd';
-      const type = byteSizeSuffixMap.get(byteSizeSuffix);
+      const type = byteSizeSuffixMap.get(byteSizeSuffix).f;
       const value = parseFloat(floatValue);
 
       return { 
         nodeType: "Literal",
-        type:type.f,
+        type:type,
         value: value,
-        wasm:wasmModule[type.f.name].const(value);
+        wasm:wasmModule[type.name].const(value)
       };
     }
   / "." DecimalDigit+ ExponentPart? {
@@ -367,7 +366,7 @@ DecimalLiteral
   / DecimalIntegerLiteral ((ByteSizeSuffix? UnsignedSuffix?) / ExponentPart?) {
       return { nodeType: "Literal", value: parseFloat(text()) };
   }
-  
+
 DecimalIntegerLiteral
   = "0"
   / NonZeroDigit DecimalDigit*
@@ -444,11 +443,10 @@ HexDigit
 
 // 2進整数リテラル
 
-BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b' byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? 
-{
+BinaryIntegerLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b'i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
 
   sign = sign  || '+';
-  const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
+  const suffix = byteSizeSuffixMap.get(byteSize || 'd');
   const type = suffix[unsigned || 'i']; 
   let b = binary.filter(d=>{
     return (d == '0' || d == '1') 
