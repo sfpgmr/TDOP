@@ -5,8 +5,6 @@
 
 {
           
-
-
 // 関数スコープ
 class FunctionScope {
   constructor() {
@@ -122,17 +120,27 @@ class Scope {
   
   const lib = options.lib;
 
-  const builtinTypeInfos = new Map([
-    ['i8',{name:'i8',integer:true,signed:true,bitSize:8,byteSize:1,minValue:-128,maxValue:127,innerType:'i32'}],
-    ['i16',{name:'i16',integer:true,signed:true,bitSize:16,byteSize:2,minValue:-32768,maxValue:32767,innerType:'i32'}],
-    ['i16',{name:'i16',integer:true,signed:true,bitSize:16,byteSize:2,minValue:-32768,maxValue:32767,innerType:'i32'}]
+  const primitiveTypes = new Map(
+  [
+    ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32'}],
+    ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32'}],
+    ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x8000000,integer:true,signed:true,innerType:'i32'}],
+    ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:{low:0,high:0x80000000},integer:true,signed:true,innerType:'i64'}], 
+    ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32'}],
+    ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32'}],
+    ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32'}],
+    ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64'}],
+    ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32'}],
+    ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64'}],
+    ['void',{name:'i8',size:0}],
+    ['string',{name:'i8',}]
   ]);
 
   const byteSizeSuffixMap = new Map([
-	['s',{bitSize:8,byteSize:1,i:'i8',u:'u8',innerType:'i32'}],
-	['w',{bitSize:16,byteSize:2,i:'i16',u:'u16',innerType:'i32'}],
-	['d',{bitSize:32,byteSize:4,i:'i32',u:'u32',innerType:'i32',f:'f32'}],
-	['l',{bitSize:64,byteSize:8,i:'i64',u:'u64',innerType:'i64',f:'f64'}]
+	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')],
+	['w',{bitSize:16,byteSize:2,i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16)'}],
+	['d',{bitSize:32,byteSize:4,i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
+	['l',{bitSize:64,byteSize:8,i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
   ]);
 
   var TYPES_TO_PROPERTY_NAMES = {
@@ -350,7 +358,7 @@ DecimalLiteral
         nodeType: "Literal",
         type:type.f,
         value: value,
-        wasm:wasmModule[type.f].const(value);
+        wasm:wasmModule[type.f.name].const(value);
       };
     }
   / "." DecimalDigit+ ExponentPart? {
@@ -385,17 +393,14 @@ HexIntegerLiteral
   = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
 { 
 
-  const type = byteSizeSuffixMap.get(byteSize || 'd');//
-  const typeName = type[unsigned || 'i']; 
+  const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
+  const type = suffix[unsigned || 'i']; 
   let value,wasmCode;
-
-
 
   let h = hex.filter(d=>{
     return (/[0-9a-f]/i).test(d);
   }).join('');
 
-  console.log(h);
 
   if(h.length > type.byteSize * 2){
     error('型の最大値を超えています。');
@@ -424,7 +429,7 @@ HexIntegerLiteral
 
   return { 
     value:value,
-    type:typeName,
+    type:type,
     unsigned:!!unsigned,
     byteSize:type.byteSize,
     bitSize:type.bitSize,
@@ -443,8 +448,8 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
 {
 
   sign = sign  || '+';
-  const type = byteSizeSuffixMap.get(byteSize || 'd');//
-  const typeName = type[unsigned || 'i']; 
+  const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
+  const type = suffix[unsigned || 'i']; 
   let b = binary.filter(d=>{
     return (d == '0' || d == '1') 
   }).join('');
@@ -477,7 +482,7 @@ BinaryIntegerLiteral = sign:[+-]? '0b' binary:(BinaryDigit /  WhiteSpace / LineT
 
   return { 
     value:value,
-    type:typeName,
+    type:type,
     unsigned:!!unsigned,
     byteSize:type.byteSize,
     bitSize:type.bitSize,
