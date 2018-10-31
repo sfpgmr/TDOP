@@ -337,13 +337,13 @@ BooleanLiteral
 // The "!(IdentifierStart / DecimalDigit)" predicate is not part of the official
 // grammar, it comes from text in section 7.8.3.
 NumericLiteral "number"
-  = literal:HexIntegerLiteral !(IdentifierStart / DecimalDigit) {
+  = literal:HexLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
   / literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
-  / literal:BinaryIntegerLiteral !(IdentifierStart / DecimalDigit) {
+  / literal:BinaryLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
 
@@ -389,12 +389,12 @@ SignedInteger
 
 // 16進数整数リテラル
 
-HexIntegerLiteral
+HexLiteral
   = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? suffix:(UnsignedSuffix / FloatSuffix)?
 { 
 
-  const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
-  const type = suffix[suffix || 'i']; 
+  const byteSizeSuffix = byteSizeSuffixMap.get(byteSize || 'd');//
+  const type = byteSizeSuffix[suffix || 'i']; 
   let value,wasmCode;
 
   let h = hex.filter(d=>{
@@ -405,33 +405,51 @@ HexIntegerLiteral
     error('型の最大値を超えています。');
   }
 
-  if(unsigned && sign == '-'){
+  if(suffix == 'u' && sign == '-'){
     error('符号なしリテラルにマイナス値は指定できません。');
   }
 
-  if(type.bitSize == 64){
-    let low = parseInt(h.slice(-8),16) | 0;
-    let high = parseInt(h.slice(0,-8),16) | 0;
-    value = {low:low,high:high};
-    if(sign == '-'){
-      lib.i64Neg(low,high);
-      let ret = new Uint32Array(lib.memory.buffer);
-      value.low = ret[0];
-      value.high = ret[1];
+  if(suffix == 'f'){
+    // 浮動小数点数値
+    if(type.bitSize == 64){
+      let low = parseInt(h.slice(-8),16) | 0;
+      let high = parseInt(h.slice(0,-8),16) | 0;
+      value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule[type.innerType].const(value);
+    } else if(type.bitSize == 32) {
+      value = parseInt(h,16) | 0;
+      value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule[type.innerType].const(value);
+    } else {
+      error('このサイズの16進浮動小数リテラルはサポートしていません。');
     }
-    wasmCode = wasmModule[type.innerType].const(low,high);
   } else {
-    sign = sign || '';
-    value = parseInt(sign + h,16);
-    wasmCode = wasmModule[type.innerType].const(value);
+    if(type.bitSize == 64){
+      let low = parseInt(h.slice(-8),16) | 0;
+      let high = parseInt(h.slice(0,-8),16) | 0;
+      value = {low:low,high:high};
+      if(sign == '-'){
+        lib.i64Neg(low,high);
+        let ret = new Uint32Array(lib.memory.buffer);
+        value.low = ret[0];
+        value.high = ret[1];
+      }
+      wasmCode = wasmModule[type.innerType].const(low,high);
+    } else {
+      sign = sign || '';
+      value = parseInt(sign + h,16);
+      wasmCode = wasmModule[type.innerType].const(value);
+    }
+
   }
 
   return { 
     value:value,
     type:type,
-    unsigned:!!unsigned,
+    unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
+		integer:suffix != 'f',
     wasm:wasmCode
   };
 
@@ -443,11 +461,11 @@ HexDigit
 
 // 2進整数リテラル
 
-BinaryIntegerLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b'i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix? {
+BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b'i byteSize:ByteSizeSuffix? suffix:(UnsignedSuffix / FloatSuffix)? {
 
   sign = sign  || '+';
-  const suffix = byteSizeSuffixMap.get(byteSize || 'd');
-  const type = suffix[unsigned || 'i']; 
+  const byteSuffix = byteSizeSuffixMap.get(byteSize || 'd');
+  const type = byteSuffix[suffix || 'i']; 
   let b = binary.filter(d=>{
     return (d == '0' || d == '1') 
   }).join('');
@@ -456,34 +474,52 @@ BinaryIntegerLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / Line
     error('型の最大ビット数を超えています。');
   }
 
-  if(unsigned && sign == '-'){
+  if(suffix == 'u' && sign == '-'){
     error('符号なしリテラルにマイナス値は指定できません。');
   }
 
   let value,wasmCode;
 
-  if(type.bitSize == 64){
-    let low = parseInt(b.slice(-32),2) | 0;
-    let high = parseInt(b.slice(0,-32),2) | 0;
-    value = {low:low,high:high};
-    if(sign == '-'){
-      lib.i64Neg(low,high);
-      let ret = new Uint32Array(lib.memory.buffer);
-      value.low = ret[0];
-      value.high = ret[1];
+		
+  if(suffix == 'f'){
+    // 浮動小数点数値
+    if(type.bitSize == 64){
+      let low = parseInt(b.slice(-32),2) | 0;
+      let high = parseInt(b.slice(0,-32),2) | 0;
+      value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule[type.innerType].const(value);
+    } else if(type.bitSize == 32) {
+      value = parseInt(b,2) | 0;
+      value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule[type.innerType].const(value);
+    } else {
+      error('このサイズの2進浮動小数リテラルはサポートしていません。');
     }
-    wasmCode = wasmModule[type.innerType].const(value.low,value.high);
   } else {
-    value = parseInt(sign + b,2);
-    wasmCode = wasmModule[type.innerType].const(value);
-  }
+		if(type.bitSize == 64){
+			let low = parseInt(b.slice(-32),2) | 0;
+			let high = parseInt(b.slice(0,-32),2) | 0;
+			value = {low:low,high:high};
+			if(sign == '-'){
+				lib.i64Neg(low,high);
+				let ret = new Uint32Array(lib.memory.buffer);
+				value.low = ret[0];
+				value.high = ret[1];
+			}
+			wasmCode = wasmModule[type.innerType].const(value.low,value.high);
+		} else {
+			value = parseInt(sign + b,2);
+			wasmCode = wasmModule[type.innerType].const(value);
+		}
+	}
 
   return { 
     value:value,
     type:type,
-    unsigned:!!unsigned,
+    unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
+		integer:suffix != 'f',
     wasm:wasmCode
   };
 

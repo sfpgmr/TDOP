@@ -237,10 +237,10 @@ function peg$parse(input, options) {
       peg$c70 = peg$literalExpectation("0x", true),
       peg$c71 = "x",
       peg$c72 = peg$literalExpectation("x", true),
-      peg$c73 = function(sign, hex, byteSize) { 
+      peg$c73 = function(sign, hex, byteSize, suffix) { 
 
-        const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
-        const type = suffix[unsigned || 'i']; 
+        const byteSizeSuffix = byteSizeSuffixMap.get(byteSize || 'd');//
+        const type = byteSizeSuffix[suffix || 'i']; 
         let value,wasmCode;
 
         let h = hex.filter(d=>{
@@ -251,33 +251,51 @@ function peg$parse(input, options) {
           error('型の最大値を超えています。');
         }
 
-        if(unsigned && sign == '-'){
+        if(suffix == 'u' && sign == '-'){
           error('符号なしリテラルにマイナス値は指定できません。');
         }
 
-        if(type.bitSize == 64){
-          let low = parseInt(h.slice(-8),16) | 0;
-          let high = parseInt(h.slice(0,-8),16) | 0;
-          value = {low:low,high:high};
-          if(sign == '-'){
-            lib.i64Neg(low,high);
-            let ret = new Uint32Array(lib.memory.buffer);
-            value.low = ret[0];
-            value.high = ret[1];
+        if(suffix == 'f'){
+          // 浮動小数点数値
+          if(type.bitSize == 64){
+            let low = parseInt(h.slice(-8),16) | 0;
+            let high = parseInt(h.slice(0,-8),16) | 0;
+            value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+            wasmCode = wasmModule[type.innerType].const(value);
+          } else if(type.bitSize == 32) {
+            value = parseInt(h,16) | 0;
+            value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+            wasmCode = wasmModule[type.innerType].const(value);
+          } else {
+            error('このサイズの16進浮動小数リテラルはサポートしていません。');
           }
-          wasmCode = wasmModule[type.innerType].const(low,high);
         } else {
-          sign = sign || '';
-          value = parseInt(sign + h,16);
-          wasmCode = wasmModule[type.innerType].const(value);
+          if(type.bitSize == 64){
+            let low = parseInt(h.slice(-8),16) | 0;
+            let high = parseInt(h.slice(0,-8),16) | 0;
+            value = {low:low,high:high};
+            if(sign == '-'){
+              lib.i64Neg(low,high);
+              let ret = new Uint32Array(lib.memory.buffer);
+              value.low = ret[0];
+              value.high = ret[1];
+            }
+            wasmCode = wasmModule[type.innerType].const(low,high);
+          } else {
+            sign = sign || '';
+            value = parseInt(sign + h,16);
+            wasmCode = wasmModule[type.innerType].const(value);
+          }
+
         }
 
         return { 
           value:value,
           type:type,
-          unsigned:!!unsigned,
+          unsigned:suffix == 'u',
           byteSize:type.byteSize,
           bitSize:type.bitSize,
+      		integer:suffix != 'f',
           wasm:wasmCode
         };
 
@@ -288,11 +306,11 @@ function peg$parse(input, options) {
       peg$c77 = peg$literalExpectation("0b", true),
       peg$c78 = "b",
       peg$c79 = peg$literalExpectation("b", true),
-      peg$c80 = function(sign, binary, byteSize, unsigned) {
+      peg$c80 = function(sign, binary, byteSize, suffix) {
 
         sign = sign  || '+';
-        const suffix = byteSizeSuffixMap.get(byteSize || 'd');
-        const type = suffix[unsigned || 'i']; 
+        const byteSuffix = byteSizeSuffixMap.get(byteSize || 'd');
+        const type = byteSuffix[suffix || 'i']; 
         let b = binary.filter(d=>{
           return (d == '0' || d == '1') 
         }).join('');
@@ -301,34 +319,52 @@ function peg$parse(input, options) {
           error('型の最大ビット数を超えています。');
         }
 
-        if(unsigned && sign == '-'){
+        if(suffix == 'u' && sign == '-'){
           error('符号なしリテラルにマイナス値は指定できません。');
         }
 
         let value,wasmCode;
 
-        if(type.bitSize == 64){
-          let low = parseInt(b.slice(-32),2) | 0;
-          let high = parseInt(b.slice(0,-32),2) | 0;
-          value = {low:low,high:high};
-          if(sign == '-'){
-            lib.i64Neg(low,high);
-            let ret = new Uint32Array(lib.memory.buffer);
-            value.low = ret[0];
-            value.high = ret[1];
+      		
+        if(suffix == 'f'){
+          // 浮動小数点数値
+          if(type.bitSize == 64){
+            let low = parseInt(b.slice(-32),2) | 0;
+            let high = parseInt(b.slice(0,-32),2) | 0;
+            value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+            wasmCode = wasmModule[type.innerType].const(value);
+          } else if(type.bitSize == 32) {
+            value = parseInt(b,2) | 0;
+            value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+            wasmCode = wasmModule[type.innerType].const(value);
+          } else {
+            error('このサイズの2進浮動小数リテラルはサポートしていません。');
           }
-          wasmCode = wasmModule[type.innerType].const(value.low,value.high);
         } else {
-          value = parseInt(sign + b,2);
-          wasmCode = wasmModule[type.innerType].const(value);
-        }
+      		if(type.bitSize == 64){
+      			let low = parseInt(b.slice(-32),2) | 0;
+      			let high = parseInt(b.slice(0,-32),2) | 0;
+      			value = {low:low,high:high};
+      			if(sign == '-'){
+      				lib.i64Neg(low,high);
+      				let ret = new Uint32Array(lib.memory.buffer);
+      				value.low = ret[0];
+      				value.high = ret[1];
+      			}
+      			wasmCode = wasmModule[type.innerType].const(value.low,value.high);
+      		} else {
+      			value = parseInt(sign + b,2);
+      			wasmCode = wasmModule[type.innerType].const(value);
+      		}
+      	}
 
         return { 
           value:value,
           type:type,
-          unsigned:!!unsigned,
+          unsigned:suffix == 'u',
           byteSize:type.byteSize,
           bitSize:type.bitSize,
+      		integer:suffix != 'f',
           wasm:wasmCode
         };
 
@@ -2008,7 +2044,7 @@ function peg$parse(input, options) {
 
     peg$silentFails++;
     s0 = peg$currPos;
-    s1 = peg$parseHexIntegerLiteral();
+    s1 = peg$parseHexLiteral();
     if (s1 !== peg$FAILED) {
       s2 = peg$currPos;
       peg$silentFails++;
@@ -2066,7 +2102,7 @@ function peg$parse(input, options) {
       }
       if (s0 === peg$FAILED) {
         s0 = peg$currPos;
-        s1 = peg$parseBinaryIntegerLiteral();
+        s1 = peg$parseBinaryLiteral();
         if (s1 !== peg$FAILED) {
           s2 = peg$currPos;
           peg$silentFails++;
@@ -2408,7 +2444,7 @@ function peg$parse(input, options) {
     return s0;
   }
 
-  function peg$parseHexIntegerLiteral() {
+  function peg$parseHexLiteral() {
     var s0, s1, s2, s3, s4, s5, s6;
 
     s0 = peg$currPos;
@@ -2482,7 +2518,7 @@ function peg$parse(input, options) {
               }
               if (s6 !== peg$FAILED) {
                 peg$savedPos = s0;
-                s1 = peg$c73(s1, s3, s5);
+                s1 = peg$c73(s1, s3, s5, s6);
                 s0 = s1;
               } else {
                 peg$currPos = s0;
@@ -2526,7 +2562,7 @@ function peg$parse(input, options) {
     return s0;
   }
 
-  function peg$parseBinaryIntegerLiteral() {
+  function peg$parseBinaryLiteral() {
     var s0, s1, s2, s3, s4, s5, s6;
 
     s0 = peg$currPos;
@@ -2592,6 +2628,9 @@ function peg$parse(input, options) {
             }
             if (s5 !== peg$FAILED) {
               s6 = peg$parseUnsignedSuffix();
+              if (s6 === peg$FAILED) {
+                s6 = peg$parseFloatSuffix();
+              }
               if (s6 === peg$FAILED) {
                 s6 = null;
               }
