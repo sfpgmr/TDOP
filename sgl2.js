@@ -237,7 +237,7 @@ function peg$parse(input, options) {
       peg$c70 = peg$literalExpectation("0x", true),
       peg$c71 = "x",
       peg$c72 = peg$literalExpectation("x", true),
-      peg$c73 = function(sign, hex, byteSize, unsigned) { 
+      peg$c73 = function(sign, hex, byteSize) { 
 
         const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
         const type = suffix[unsigned || 'i']; 
@@ -2475,11 +2475,14 @@ function peg$parse(input, options) {
             if (s5 !== peg$FAILED) {
               s6 = peg$parseUnsignedSuffix();
               if (s6 === peg$FAILED) {
+                s6 = peg$parseFloatSuffix();
+              }
+              if (s6 === peg$FAILED) {
                 s6 = null;
               }
               if (s6 !== peg$FAILED) {
                 peg$savedPos = s0;
-                s1 = peg$c73(s1, s3, s5, s6);
+                s1 = peg$c73(s1, s3, s5);
                 s0 = s1;
               } else {
                 peg$currPos = s0;

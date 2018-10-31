@@ -390,11 +390,11 @@ SignedInteger
 // 16進数整数リテラル
 
 HexIntegerLiteral
-  = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? unsigned:UnsignedSuffix?
+  = sign:[+-]? "0x"i hex:(HexDigit / WhiteSpace / LineTerminatorSequence / Comment )+ "x"i byteSize:ByteSizeSuffix? suffix:(UnsignedSuffix / FloatSuffix)?
 { 
 
   const suffix = byteSizeSuffixMap.get(byteSize || 'd');//
-  const type = suffix[unsigned || 'i']; 
+  const type = suffix[suffix || 'i']; 
   let value,wasmCode;
 
   let h = hex.filter(d=>{
