@@ -401,7 +401,6 @@ HexIntegerLiteral
     return (/[0-9a-f]/i).test(d);
   }).join('');
 
-
   if(h.length > type.byteSize * 2){
     error('型の最大値を超えています。');
   }
@@ -422,6 +421,7 @@ HexIntegerLiteral
     }
     wasmCode = wasmModule[type.innerType].const(low,high);
   } else {
+    sign = sign || '';
     value = parseInt(sign + h,16);
     wasmCode = wasmModule[type.innerType].const(value);
   }
