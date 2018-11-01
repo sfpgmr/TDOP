@@ -1264,12 +1264,16 @@ Statement
   / DebuggerStatement
 
 Block
-  = "{" __ body:(StatementList __)? "}" {
+  = BlockBegin __ body:(StatementList __)? BlockEnd {
       return {
         nodeType: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
       };
     }
+
+BlockBegin = '{' {createScope();}
+FunctionBlockBegin = '{'
+BlockEnd = '}' {scope.pop();}
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1277,7 +1281,10 @@ StatementList
 // 変数宣言ステートメントの処理 //
 
 VariableStatement
-  = type:Type __ declarations:VariableDeclarationList EOS {
+  = VariableDecl EOS 
+
+VariableDecl  
+  = type:Type __ declarations:VariableDeclarationList {
       return {
         nodeType: "VariableDeclaration",
         type:type,
@@ -1285,8 +1292,6 @@ VariableStatement
         kind: "var"
       };
     }
-
-
 Type = BuiltinType / CustomType
 BuiltinType = NativeType / EmulationType
 NativeType = I32Token / I64Token / F32Token / F64Token
@@ -1571,7 +1576,7 @@ DebuggerStatement
 // ----- A.5 Functions and Programs -----
 
 FunctionDeclaration
-  = FunctionToken __ id:Identifier __
+  = ExportToken? returnType:type __ id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
