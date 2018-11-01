@@ -348,7 +348,7 @@ NumericLiteral "number"
     }
 
 DecimalLiteral
-  = floatValue:$(DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) byteSizeSuffix:LongSuffix? FloatSuffix {
+  = floatValue:$((DecimalIntegerLiteral "." DecimalDigit* ExponentPart?) / ("." DecimalDigit+ ExponentPart?) / $(DecimalIntegerLiteral ExponentPart?)) byteSizeSuffix:LongSuffix? FloatSuffix {
       byteSizeSuffix = byteSizeSuffix || 'd';
       const type = byteSizeSuffixMap.get(byteSizeSuffix).f;
       const value = parseFloat(floatValue);
@@ -361,11 +361,8 @@ DecimalLiteral
       };
       return {value:text()};
     }
-  / "." DecimalDigit+ ExponentPart? {
-      return { nodeType: "Literal", value: parseFloat(text()) };
-    }
-  / DecimalIntegerLiteral ((ByteSizeSuffix? UnsignedSuffix?) / ExponentPart?) {
-      return { nodeType: "Literal", value: parseFloat(text()) };
+  / intValue:$DecimalIntegerLiteral byteSizeSuffix:ByteSizeSuffix? unsigned:UnsignedSuffix? {
+      return { nodeType: "Literal", value: parseInt(intValue,10) };
   }
 
 DecimalIntegerLiteral
