@@ -193,7 +193,7 @@ class Scope {
   }
 
   /**
-  * 整数値をを64ビットの16進数文字列に変換するコード
+  * 整数文字列を64ビットの16進数文字列に変換するコード
   */
 
   // 整数は文字列の形で指定
@@ -581,9 +581,11 @@ HexLiteral
 HexDigit
   = [0-9a-f]i
 
-
-// 2進整数リテラル
-
+/*
+  2進整数リテラル
+ 
+  
+*/
 BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b'i byteSize:ByteSizeSuffix? suffix:(UnsignedSuffix / FloatSuffix)? {
 
   sign = sign  || '+';
@@ -651,15 +653,23 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
 
 BinaryDigit = [01]
 
+/*
+  
+	i32型以外のNumeric Literalにはバイトサイズ・サフィックスをつけなればならない。
+
+*/
+
 ByteSizeSuffix =  ByteSuffix / WordSuffix / DwordSuffix / LongSuffix
 
-ByteSuffix = 's'
-WordSuffix = 'w'
-DwordSuffix ='d'
-LongSuffix = 'l'
+ByteSuffix = 's' // byte (1byte)
+WordSuffix = 'w' // word (2byte)
+DwordSuffix ='d' // double word (4byte)
+LongSuffix = 'l' // long double word (8byte)
 
-UnsignedSuffix = 'u'
+// 符号なし整数にはこのサフィックスを付与すること。
+UnsignedSuffix = 'u' // unsigned 
 
+// 浮動小数点数にはこのサフィックスを付与すること。
 FloatSuffix = 'f'
 
 // 文字列リテラル
