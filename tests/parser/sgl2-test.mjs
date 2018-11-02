@@ -40,6 +40,7 @@ try {
     const testSrc = await fs.promises.readFile(testDir + file,'utf8');
     const wasmModule = new binaryen.Module();
     wasmModule.setMemory(1, 1);
+		console.log(`***** ${file}をパースします。*****`);
     console.log(JSON.stringify(sgl2.parse(testSrc,{ binaryen:binaryen,module: wasmModule,lib:lib }),null,2));
   }
 } catch (e) {

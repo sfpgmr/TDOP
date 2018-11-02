@@ -2,6 +2,7 @@
   (export "i32tof32" (func $i32tof32))
   (export "i64tof64" (func $i64tof64))
   (export "i64Neg" (func $i64Neg))
+  (export "i64Extend" (func $i64Extend))
   (memory $memory 1)
   (export "memory" (memory $memory))
   

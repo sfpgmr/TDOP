@@ -138,11 +138,17 @@ class Scope {
   ]);
 
   const byteSizeSuffixMap = new Map([
-	['s',{i:primitiveTypes.get('i8'),u:primitiveTypes.get('u8')}],
-	['w',{i:primitiveTypes.get('i16'),u:primitiveTypes.get('u16')}],
-	['d',{i:primitiveTypes.get('i32'),u:primitiveTypes.get('u32'),f:primitiveTypes.get('f32')}],
-	['l',{i:primitiveTypes.get('i64'),u:primitiveTypes.get('u64'),f:primitiveTypes.get('f64')}]
+	['s',{i:'i8',u:'u8'}],
+	['w',{i:'i16',u:'u16'}],
+	['d',{i:'i32',u:'u32',f:'f32'}],
+	['l',{i:'i64',u:'u64',f:'f64'}]
   ]);
+  
+  byteSizeSuffixMap.forEach((v,k,m)=>{
+    for(let p in v){
+      v[p] = primitiveTypes.get(v[p]);
+    }
+  });
 
   var TYPES_TO_PROPERTY_NAMES = {
     CallExpression:   "callee",
@@ -299,9 +305,6 @@ class Scope {
       }
 			return value;
 	}
-	
-  
-
 }
 
 Start
@@ -1411,21 +1414,29 @@ BlockEnd = '}' {scope.pop();}
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
 
-// 変数宣言ステートメントの処理 //
+// 変数宣言ステートメント //
 
 VariableStatement
   = VariableDecl EOS 
 
 VariableDecl  
   = type:Type __ declarations:VariableDeclarationList {
+		  
+			declarations.forEach(n=>{
+				if(n.init && (n.init.type !== type)){
+					error("初期値の型が宣言する変数の型と一致しません。");
+				}
+				n.type = type;
+			});
+			
       return {
         nodeType: "VariableDeclaration",
         type:type,
-        declarations: declarations.map(d=>(d.type = type,d)),
+        declarations: declarations,
         kind: "var"
       };
     }
-Type = BuiltinType / CustomType
+Type = type:BuiltinType { return primitiveTypes.get(type)} / CustomType
 BuiltinType = NativeType / EmulationType
 NativeType = I32Token / I64Token / F32Token / F64Token
 EmulationType = VoidToken / BoolToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
