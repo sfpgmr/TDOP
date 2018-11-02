@@ -27,7 +27,8 @@
   "homepage": "https://github.com/sfpgmr/TDOP#readme",
   "dependencies": {
     "binaryen": "^47.0.0",
-    "pegjs": "^0.10.0"
+    "pegjs": "^0.10.0",
+    "wabt": "^1.0.6"
   },
   "devDependencies": {
     "tape": "^4.9.0",

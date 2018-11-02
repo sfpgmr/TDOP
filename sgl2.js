@@ -13860,12 +13860,14 @@ function peg$parse(input, options) {
     const wasmModule = options.module;
     
     const lib = options.lib;
-
+    lib.i64Extend(-1);
+    let ret = new Uint32Array(lib.memory.buffer);
+    const I64MIN_VALUE={low:ret[0],high:ret[1]};
     const primitiveTypes = new Map([
       ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32'}],
       ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32'}],
-      ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x8000000,integer:true,signed:true,innerType:'i32'}],
-      ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:{low:0,high:0x80000000},integer:true,signed:true,innerType:'i64'}], 
+      ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,innerType:'i32'}],
+      ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:I64MIN_VALUE,integer:true,signed:true,innerType:'i64'}], 
       ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32'}],
       ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32'}],
       ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32'}],

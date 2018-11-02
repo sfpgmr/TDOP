@@ -53,4 +53,11 @@
       )
     )
   )
+  ;; 整数値の2の補数をとる
+  (func $i64Extend (param $i32value i32) 
+    (i64.store
+      (i32.const 0)
+      (i64.extend_s/i32 (get_local $i32value))
+    )
+  )
 )
