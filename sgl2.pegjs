@@ -10,7 +10,9 @@ class FunctionScope {
   constructor() {
     this.funcVars = [];
     this.length = 0;
+    this.scopeIn();
   }
+
   scopeIn() {
     this.funcVars.push(0);
     this.length = this.funcVars.length;
@@ -23,13 +25,10 @@ class FunctionScope {
 
     this.funcVars.pop();
     this.length = this.funcVars.length;
-    if (this.length >= 1) {
+    if (this.length > 1) {
       this.stackTop = this.length - 1;
       this.current = this.funcVars[this.stackTop];
-    } else {
-      this.stackTop = undefined;
-      this.current = undefined;
-    }
+    } 
   }
 
   index(inc = true) {
@@ -48,7 +47,7 @@ class FunctionScope {
   }
 
   get global() {
-    return this.current === undefined;
+    return this.length == 1;
   }
 }
 
@@ -1423,10 +1422,17 @@ VariableDecl
   = type:Type __ declarations:VariableDeclarationList {
 		  
 			declarations.forEach(n=>{
+        //初期化式の型チェック
 				if(n.init && (n.init.type !== type)){
 					error("初期値の型が宣言する変数の型と一致しません。");
 				}
 				n.type = type;
+        // スコープに登録する
+        scope.define(n);
+        // グローバル変数どうか
+        n.global = funcScope.global;
+        // 変数インデックス
+        n.index = funcScope.index();
 			});
 			
       return {
@@ -1437,10 +1443,14 @@ VariableDecl
       };
     }
 Type = type:BuiltinType { return primitiveTypes.get(type)} / CustomType
+
 BuiltinType = NativeType / EmulationType
+
 NativeType = I32Token / I64Token / F32Token / F64Token
+
 EmulationType = VoidToken / BoolToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
-CustomType = ''
+
+CustomType = TypeToken
 
   
 
