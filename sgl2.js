@@ -10900,7 +10900,7 @@ function peg$parse(input, options) {
     }
     s0 = s1;
     if (s0 === peg$FAILED) {
-      s0 = peg$parseCustomType();
+      s0 = peg$parseTypeToken();
     }
 
     return s0;
@@ -10958,17 +10958,6 @@ function peg$parse(input, options) {
           }
         }
       }
-    }
-
-    return s0;
-  }
-
-  function peg$parseCustomType() {
-    var s0;
-
-    s0 = peg$parseTypeToken();
-    if (s0 === peg$FAILED) {
-      s0 = null;
     }
 
     return s0;
