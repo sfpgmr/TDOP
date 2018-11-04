@@ -5,111 +5,111 @@
 
 {
           
-// 関数スコープ
-class FunctionScope {
-  constructor() {
-    this.funcVars = [];
-    this.length = 0;
-    this.scopeIn();
-  }
+  // 関数スコープ
+  class FunctionScope {
+    constructor() {
+      this.funcVars = [];
+      this.length = 0;
+      this.scopeIn();
+    }
 
-  scopeIn() {
-    this.funcVars.push(0);
-    this.length = this.funcVars.length;
-    this.stackTop = this.length - 1;
-    this.current = 0;
-  }
-
-  scopeOut() {
-    if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
-
-    this.funcVars.pop();
-    this.length = this.funcVars.length;
-    if (this.length > 1) {
+    scopeIn() {
+      this.funcVars.push(0);
+      this.length = this.funcVars.length;
       this.stackTop = this.length - 1;
-      this.current = this.funcVars[this.stackTop];
-    } 
-  }
-
-  index(inc = true) {
-    if (inc) {
-      const ret = this.current;
-      this.incIndex();
-      return ret;
-    } else {
-      return this.current;
+      this.current = 0;
     }
-  }
 
-  incIndex() {
-    ++this.current;
-    this.funcVars[this.stackTop] = this.current;
-  }
+    scopeOut() {
+      if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
 
-  get global() {
-    return this.length == 1;
-  }
-}
-
-let scope;
-
-function createScope() {
-    const s = new Scope(scope);
-    scope = s;
-    return s;
-}
-
-// スコープ管理
-class Scope {
-  constructor(s) {
-    this.def = new Map();
-    this.typedef = new Map();
-    this.parent = s;
-  }
-
-  define(node) {
-    const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
-    const name = node.id.name;
-    const t = def.get(name);
-    if (t) {
-      error('変数はすでに定義されています。');
+      this.funcVars.pop();
+      this.length = this.funcVars.length;
+      if (this.length > 1) {
+        this.stackTop = this.length - 1;
+        this.current = this.funcVars[this.stackTop];
+      } 
     }
-    def.set(name, node);
-  }
 
-  find(nodeName,typedef = false,currentScope = false) {
-    if (!typedef) {
-      let e = this;
-      let node;
-      while (true) {
-        node = e.def.get(nodeName);
-        if (node) {
-          return node;
-        }
-	if(currentScope) return null;
-        e = e.parent;
-        if (!e) {
-          return null;
-        }
+    index(inc = true) {
+      if (inc) {
+        const ret = this.current;
+        this.incIndex();
+        return ret;
+      } else {
+        return this.current;
       }
-    } else {
-      let e = this;
-      let node;
-      while (e) {
-        node = e.typedef.get(nodeName);
-        if (node) {
-          return node;
-        }
-	if(currentScope) return null;
-        e = e.parent;
-      }
-      return null;
+    }
+
+    incIndex() {
+      ++this.current;
+      this.funcVars[this.stackTop] = this.current;
+    }
+
+    get global() {
+      return this.length == 1;
     }
   }
-  pop() {
-    scope = this.parent;
+
+  let scope;
+
+  function createScope() {
+      const s = new Scope(scope);
+      scope = s;
+      return s;
   }
-}
+
+  // スコープ管理
+  class Scope {
+    constructor(s) {
+      this.def = new Map();
+      this.typedef = new Map();
+      this.parent = s;
+    }
+
+    define(node) {
+      const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+      const name = node.id.name;
+      const t = def.get(name);
+      if (t) {
+        error('変数はすでに定義されています。');
+      }
+      def.set(name, node);
+    }
+
+    find(nodeName,typedef = false,currentScope = false) {
+      if (!typedef) {
+        let e = this;
+        let node;
+        while (true) {
+          node = e.def.get(nodeName);
+          if (node) {
+            return node;
+          }
+          if(currentScope) return null;
+          e = e.parent;
+          if (!e) {
+            return null;
+          }
+        }
+      } else {
+        let e = this;
+        let node;
+        while (e) {
+          node = e.typedef.get(nodeName);
+          if (node) {
+            return node;
+          }
+          if(currentScope) return null;
+          e = e.parent;
+        }
+        return null;
+      }
+    }
+    pop() {
+      scope = this.parent;
+    }
+  }
 
   let funcScope = new FunctionScope();
   let scopeTop = createScope(); 
@@ -476,10 +476,8 @@ DecimalLiteral
       return { 
         nodeType: "Literal",
         type:type,
-        value: value,
-        wasm:wasmModule[type.name].const(value)
+        value: value
       };
-      return {value:text()};
     }
   / sign:Sign? intValue:$DecimalIntegerLiteral byteSizeSuffix:ByteSizeSuffix? unsigned:UnsignedSuffix? {
       byteSizeSuffix = byteSizeSuffix || 'd';
@@ -487,15 +485,14 @@ DecimalLiteral
       const type = byteSizeSuffixMap.get(byteSizeSuffix)[unsigned];
 			let value;
 			if(type.byteSize == 64){
-				 value = hexToInt64(decimalToHex(intValue),sign);
+				value = hexToInt64(decimalToHex(intValue),sign);
 			} else {
 				value = parseInt(sign + intValue,10);
 			}
       return { 
 				nodeType: "Literal",
 				type:type, 
-				value: value,
-				wasm:wasmModule[type.innerType]
+				value: value
 			};
   }
 
@@ -1021,7 +1018,7 @@ PropertySetParameterList
 MemberExpression
   = head:(
         PrimaryExpression
-      / FunctionExpression
+      /// FunctionExpression
       / NewToken __ callee:MemberExpression __ args:Arguments {
           return { nodeType: "NewExpression", callee: callee, arguments: args };
         }
@@ -1400,15 +1397,16 @@ Statement
 
 Block
   = BlockBegin __ body:(StatementList __)? BlockEnd {
+      console.log(body);
       return {
         nodeType: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
       };
     }
 
-BlockBegin = '{' {createScope();}
+BlockBegin = '{' 
 FunctionBlockBegin = '{'
-BlockEnd = '}' {scope.pop();}
+BlockEnd = '}'
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1428,11 +1426,11 @@ VariableDecl
 				}
 				n.type = type;
         // スコープに登録する
-        scope.define(n);
+        // scope.define(n);
         // グローバル変数どうか
-        n.global = funcScope.global;
+        // n.global = funcScope.global;
         // 変数インデックス
-        n.index = funcScope.index();
+        // n.index = funcScope.index();
 			});
 			
       return {
@@ -1730,35 +1728,40 @@ DebuggerStatement
 // ----- A.5 Functions and Programs -----
 
 FunctionDeclaration
-  = ExportToken? returnType:Type __ id:Identifier __
+  = export_:ExportToken? __ returnType:Type __ id:Identifier __
     "(" __ params:(FormalParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
       return {
         nodeType: "FunctionDeclaration",
+        returnType:returnType,
+        export:!!export_,
         id: id,
         params: optionalList(extractOptional(params, 0)),
         body: body
       };
     }
 
-FunctionExpression
-  = FunctionToken __ id:(Identifier __)?
-    "(" __ params:(FormalParameterList __)? ")" __
-    "{" __ body:FunctionBody __ "}"
-    {
-      return {
-        nodeType: "FunctionExpression",
-        id: extractOptional(id, 0),
-        params: optionalList(extractOptional(params, 0)),
-        body: body
-      };
-    }
+//FunctionExpression
+//  = FunctionToken __ id:(Identifier __)?
+//    "(" __ params:(VariableDeclarationList __)? ")" __
+//    "{" __ body:FunctionBody __ "}"
+//    {
+//      return {
+//        nodeType: "FunctionExpression",
+//        id: extractOptional(id, 0),
+//        params: optionalList(extractOptional(params, 0)),
+//        body: body
+//      };
+//    }
 
 FormalParameterList
-  = head:Identifier tail:(__ "," __ Identifier)* {
+  = head:FormalParameter tail:(__ "," __ FormalParameter)* {
       return buildList(head, tail, 3);
     }
+
+FormalParameter
+  = Type __ Identifier;
 
 FunctionBody
   = body:SourceElements? {
