@@ -1,0 +1,121 @@
+{
+  "scope": {
+    "def": {},
+    "typedef": {}
+  },
+  "program": {
+    "nodeType": "Program",
+    "body": [
+      {
+        "nodeType": "VariableDeclaration",
+        "type": {
+          "name": "f32",
+          "size": 4,
+          "bitSize": 32,
+          "byteSize": 4,
+          "max": 3.402823466e+38,
+          "min": 1.175494351e-38,
+          "integer": false,
+          "innerType": "f32",
+          "kind": "Native"
+        },
+        "declarations": [
+          {
+            "nodeType": "VariableDeclarator",
+            "id": {
+              "nodeType": "Identifier",
+              "name": "a"
+            },
+            "init": {
+              "value": 1.401298464324817e-45,
+              "type": {
+                "name": "f32",
+                "size": 4,
+                "bitSize": 32,
+                "byteSize": 4,
+                "max": 3.402823466e+38,
+                "min": 1.175494351e-38,
+                "integer": false,
+                "innerType": "f32",
+                "kind": "Native"
+              },
+              "unsigned": false,
+              "byteSize": 4,
+              "bitSize": 32,
+              "integer": false
+            },
+            "type": {
+              "name": "f32",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 3.402823466e+38,
+              "min": 1.175494351e-38,
+              "integer": false,
+              "innerType": "f32",
+              "kind": "Native"
+            },
+            "global": true,
+            "index": 0
+          }
+        ],
+        "kind": "var"
+      },
+      {
+        "nodeType": "VariableDeclaration",
+        "type": {
+          "name": "f32",
+          "size": 4,
+          "bitSize": 32,
+          "byteSize": 4,
+          "max": 3.402823466e+38,
+          "min": 1.175494351e-38,
+          "integer": false,
+          "innerType": "f32",
+          "kind": "Native"
+        },
+        "declarations": [
+          {
+            "nodeType": "VariableDeclarator",
+            "id": {
+              "nodeType": "Identifier",
+              "name": "b"
+            },
+            "init": {
+              "value": -1.401298464324817e-45,
+              "type": {
+                "name": "f32",
+                "size": 4,
+                "bitSize": 32,
+                "byteSize": 4,
+                "max": 3.402823466e+38,
+                "min": 1.175494351e-38,
+                "integer": false,
+                "innerType": "f32",
+                "kind": "Native"
+              },
+              "unsigned": false,
+              "byteSize": 4,
+              "bitSize": 32,
+              "integer": false
+            },
+            "type": {
+              "name": "f32",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 3.402823466e+38,
+              "min": 1.175494351e-38,
+              "integer": false,
+              "innerType": "f32",
+              "kind": "Native"
+            },
+            "global": true,
+            "index": 1
+          }
+        ],
+        "kind": "var"
+      }
+    ]
+  }
+}

@@ -270,22 +270,18 @@ function peg$parse(input, options) {
             let low = parseInt(h.slice(-8),16) | 0;
             let high = parseInt(h.slice(0,-8),16) | 0;
             value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-            wasmCode = wasmModule[type.innerType].const(value);
           } else if(type.bitSize == 32) {
             value = parseInt(h,16) | 0;
             value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-            wasmCode = wasmModule[type.innerType].const(value);
           } else {
             error('このサイズの16進浮動小数リテラルはサポートしていません。');
           }
         } else {
           if(type.bitSize == 64){
       			value = hexToInt64(h);
-            wasmCode = wasmModule[type.innerType].const(value.low,value.high);
           } else {
             sign = sign || '';
             value = parseInt(sign + h,16);
-            wasmCode = wasmModule[type.innerType].const(value);
           }
 
         }
@@ -296,8 +292,7 @@ function peg$parse(input, options) {
           unsigned:suffix == 'u',
           byteSize:type.byteSize,
           bitSize:type.bitSize,
-      		integer:suffix != 'f',
-          wasm:wasmCode
+      		integer:suffix != 'f'
         };
 
       },
@@ -333,11 +328,9 @@ function peg$parse(input, options) {
             let low = parseInt(b.slice(-32),2) | 0;
             let high = parseInt(b.slice(0,-32),2) | 0;
             value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-            wasmCode = wasmModule[type.innerType].const(value);
           } else if(type.bitSize == 32) {
             value = parseInt(b,2) | 0;
             value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-            wasmCode = wasmModule[type.innerType].const(value);
           } else {
             error('このサイズの2進浮動小数リテラルはサポートしていません。');
           }
@@ -352,10 +345,8 @@ function peg$parse(input, options) {
       				value.low = ret[0];
       				value.high = ret[1];
       			}
-      			wasmCode = wasmModule[type.innerType].const(value.low,value.high);
       		} else {
       			value = parseInt(sign + b,2);
-      			wasmCode = wasmModule[type.innerType].const(value);
       		}
       	}
 
@@ -365,11 +356,8 @@ function peg$parse(input, options) {
           unsigned:suffix == 'u',
           byteSize:type.byteSize,
           bitSize:type.bitSize,
-      		integer:suffix != 'f',
-          wasm:wasmCode
+      		integer:suffix != 'f'
         };
-
-
       },
       peg$c80 = /^[01]/,
       peg$c81 = peg$classExpectation(["0", "1"], false, false),
@@ -851,7 +839,7 @@ function peg$parse(input, options) {
               // グローバル変数どうか
               n.global = funcScope.global;
               // 変数インデックス
-              n.index = funcScope.index();
+              funcScope.index(n);
       			});
       			
             return {
@@ -861,7 +849,7 @@ function peg$parse(input, options) {
               kind: "var"
             };
           },
-      peg$c395 = function(type) { return primitiveTypes.get(type)},
+      peg$c395 = function(type) { return primitiveTypes.get(type);},
       peg$c396 = function(id, init) {
             return {
               nodeType: "VariableDeclarator",
@@ -1024,19 +1012,19 @@ function peg$parse(input, options) {
       peg$c425 = function(block) { return block; },
       peg$c426 = function() { return { nodeType: "DebuggerStatement" }; },
       peg$c427 = function(export_, returnType, id, params_) {
-              console.log(params_[0]);
+              // console.log(params_[0]);
+              // スコープの新規作成
               createScope();
               funcScope.scopeIn();
+              // パラメータをスコープに登録する
               params_[0].forEach(p=>{
                 scope.define(p);
-                p.index = funcScope.index();
+                funcScope.index(p);
               });
               return params_;
             },
-      peg$c428 = function(export_, returnType, id, params, body) {
-            scope.pop();
-            funcScope.scopeOut();
-            return {
+      peg$c428 = function(export_, returnType, id, params, body) { 
+            let node = {
               nodeType: "FunctionDeclaration",
               returnType:returnType,
               export:!!export_,
@@ -1044,6 +1032,11 @@ function peg$parse(input, options) {
               params: optionalList(extractOptional(params, 0)),
               body: body
             };
+            
+            // wasm関数の定義
+            scope.pop();
+            funcScope.scopeOut();
+            return node;
           },
       peg$c429 = function(type, id) {
       		return {
@@ -13555,10 +13548,10 @@ function peg$parse(input, options) {
       }
 
       scopeIn() {
-        this.funcVars.push(0);
+        this.funcVars.push({index:0,localVars:[]});
         this.length = this.funcVars.length;
         this.stackTop = this.length - 1;
-        this.current = 0;
+        this.current = this.funcVars[0];
       }
 
       scopeOut() {
@@ -13572,24 +13565,29 @@ function peg$parse(input, options) {
         } 
       }
 
-      index(inc = true) {
+      index(localVar,inc = true) {
+        this.current.localVars.push[localVar];
         if (inc) {
-          const ret = this.current;
+          localVar.index = this.current.index;
           this.incIndex();
           return ret;
         } else {
-          return this.current;
+          localVar.index = this.current.index;
         }
       }
 
       incIndex() {
-        ++this.current;
-        this.funcVars[this.stackTop] = this.current;
+        ++this.current.index;
+        //this.funcVars[this.stackTop] = this.current;
       }
 
       get global() {
         return this.length == 1;
       }
+
+      get localVars(){
+        return this.current.localVars;
+      }  
     }
 
     let scope;
@@ -13663,18 +13661,18 @@ function peg$parse(input, options) {
     let ret = new Uint32Array(lib.memory.buffer);
     const I64MIN_VALUE={low:ret[0],high:ret[1]};
     const primitiveTypes = new Map([
-      ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32'}],
-      ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32'}],
-      ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,innerType:'i32'}],
-      ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:I64MIN_VALUE,integer:true,signed:true,innerType:'i64'}], 
-      ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32'}],
-      ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32'}],
-      ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32'}],
-      ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64'}],
-      ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32'}],
-      ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64'}],
-      ['void',{name:'void',size:0}],
-      ['string',{name:'string'}]
+      ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32',kind:'Emulation'}],
+      ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32',kind:'Emulation'}],
+      ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,innerType:'i32',kind:'Native'}],
+      ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:I64MIN_VALUE,integer:true,signed:true,innerType:'i64',kind:'Native'}], 
+      ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+      ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+      ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+      ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64',kind:'Emulation'}],
+      ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32',kind:'Native'}],
+      ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64',kind:'Native'}],
+      ['void',{name:'void',size:0,kind:'Emulation'}],
+      ['string',{name:'string',kind:'Emulation'}]
     ]);
 
     const byteSizeSuffixMap = new Map([
@@ -13845,6 +13843,16 @@ function peg$parse(input, options) {
         }
   			return value;
   	}
+
+    // binaryen type情報の取得
+    function getBinaryenType(type){
+      return binaryen[type.name] || binaryen[type.innerType] || null;
+    }
+
+    // module type の取得
+    function getModuleType(type){
+      return module[type.name] || module[type.innerType] || null;
+    }
 
 
   peg$result = peg$startRuleFunction();

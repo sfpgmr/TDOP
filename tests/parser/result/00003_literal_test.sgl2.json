@@ -1,0 +1,29 @@
+{
+  "scope": {
+    "def": {},
+    "typedef": {}
+  },
+  "program": {
+    "nodeType": "Program",
+    "body": [
+      {
+        "nodeType": "ExpressionStatement",
+        "expression": {
+          "nodeType": "Literal",
+          "type": {
+            "name": "f64",
+            "size": 8,
+            "bitSize": 64,
+            "byteSize": 8,
+            "max": 1.7976931348623157e+308,
+            "min": 5e-324,
+            "integer": false,
+            "innerType": "f64",
+            "kind": "Native"
+          },
+          "value": 10.354
+        }
+      }
+    ]
+  }
+}

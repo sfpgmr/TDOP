@@ -42,7 +42,7 @@ try {
     wasmModule.setMemory(1, 1);
     console.log(`***** ${file}をパースします。*****`);
     const ast =  JSON.stringify(sgl2.parse(testSrc,{ binaryen:binaryen,module: wasmModule,lib:lib }),null,2);
-    await fs.promises.writeFile('./tests/ast.json',ast,'utf8');
+    await fs.promises.writeFile('./tests/parser/result/' + file + '.json',ast,'utf8');
     console.log(ast);
   }
 } catch (e) {

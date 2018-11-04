@@ -127,18 +127,18 @@
   let ret = new Uint32Array(lib.memory.buffer);
   const I64MIN_VALUE={low:ret[0],high:ret[1]};
   const primitiveTypes = new Map([
-    ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32'}],
-    ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32'}],
-    ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,innerType:'i32'}],
-    ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:I64MIN_VALUE,integer:true,signed:true,innerType:'i64'}], 
-    ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32'}],
-    ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32'}],
-    ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32'}],
-    ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64'}],
-    ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32'}],
-    ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64'}],
-    ['void',{name:'void',size:0}],
-    ['string',{name:'string'}]
+    ['i8', {name:'i8',size:1,bitSize:8,byteSize:1,max:127,min:-128,integer:true,signed:true,innerType:'i32',kind:'Emulation'}],
+    ['i16',{name:'i16',size:2,bitSize:16,byteSize:2,max:32767,min:-32768,integer:true,signed:true,innerType:'i32',kind:'Emulation'}],
+    ['i32',{name:'i32',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,innerType:'i32',kind:'Native'}],
+    ['i64',{name:'i64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0x7fffffff},min:I64MIN_VALUE,integer:true,signed:true,innerType:'i64',kind:'Native'}], 
+    ['u8',{name:'u8',size:1,bitSize:8,byteSize:1,max:255,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+    ['u16',{name:'i16',size:2,bitSize:16,byteSize:2,max:65535,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+    ['u32',{name:'u32',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,innerType:'i32',kind:'Emulation'}],
+    ['u64',{name:'u64',size:8,bitSize:64,byteSize:8,max:{low:0xffffffff,high:0xffffffff},min:{low:0,high:0},integer:true,signed:false,innerType:'i64',kind:'Emulation'}],
+    ['f32',{name:'f32',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,innerType:'f32',kind:'Native'}],
+    ['f64',{name:'f64',size:8,bitSize:64,byteSize:8,max:Number.MAX_VALUE,min:Number.MIN_VALUE,integer:false,innerType:'f64',kind:'Native'}],
+    ['void',{name:'void',size:0,kind:'Emulation'}],
+    ['string',{name:'string',kind:'Emulation'}]
   ]);
 
   const byteSizeSuffixMap = new Map([
@@ -317,7 +317,7 @@
 
   // module type の取得
   function getModuleType(type){
-    return module[type.name] || module[type.innerType] || null);
+    return module[type.name] || module[type.innerType] || null;
   }
 }
 
@@ -1301,12 +1301,27 @@ AssignmentExpression
     "=" !"=" __
     right:AssignmentExpression
     {
-      return {
+
+      let leftOp;
+      switch (left.nodeType){
+        case 'Identifier':
+          let node = scope.find(left.name,false);
+          if(!node) {
+            error(`変数が定義されていません。`);
+          } 
+          
+          leftOp = node.global ? wasmModule.setLocal.bind(wasmModule,node.index) : wasmModule.setGlobal.bind(wasmModule,node.index);
+        break;
+      }
+      
+      return leftOp(right);
+
+      /*return {
         nodeType: "AssignmentExpression",
         operator: "=",
         left: left,
         right: right
-      };
+      };*/
     }
   / left:LeftHandSideExpression __
     operator:AssignmentOperator __
@@ -1437,13 +1452,13 @@ VariableDecl
         kind: "var"
       };
     }
-Type = type:BuiltinType { return primitiveTypes.get(type)} / CustomType
+Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomType
 
 BuiltinType = NativeType / EmulationType
 
-NativeType = I32Token / I64Token / F32Token / F64Token
+NativeType = I32Token / I64Token / F32Token / F64Token 
 
-EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
+EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
 
 CustomType = TypeToken
 
@@ -1752,6 +1767,8 @@ FunctionDeclaration
       };
       
       // wasm関数の定義
+      wasmModule.addFunct
+      
       scope.pop();
       funcScope.scopeOut();
       return node;
