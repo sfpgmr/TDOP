@@ -1023,7 +1023,19 @@ function peg$parse(input, options) {
           },
       peg$c425 = function(block) { return block; },
       peg$c426 = function() { return { nodeType: "DebuggerStatement" }; },
-      peg$c427 = function(export_, returnType, id, params, body) {
+      peg$c427 = function(export_, returnType, id, params_) {
+              console.log(params_[0]);
+              createScope();
+              funcScope.scopeIn();
+              params_[0].forEach(p=>{
+                scope.define(p);
+                p.index = funcScope.index();
+              });
+              return params_;
+            },
+      peg$c428 = function(export_, returnType, id, params, body) {
+            scope.pop();
+            funcScope.scopeOut();
             return {
               nodeType: "FunctionDeclaration",
               returnType:returnType,
@@ -1033,26 +1045,26 @@ function peg$parse(input, options) {
               body: body
             };
           },
-      peg$c428 = function(type, id) {
+      peg$c429 = function(type, id) {
       		return {
       			type:type,
       			id:id,
       			nodeType:'FunctionlParameter'
       		};
       	},
-      peg$c429 = function(body) {
+      peg$c430 = function(body) {
             return {
               nodeType: "BlockStatement",
               body: optionalList(body)
             };
           },
-      peg$c430 = function(body) {
+      peg$c431 = function(body) {
             return {
               nodeType: "Program",
               body: optionalList(body)
             };
           },
-      peg$c431 = function(head, tail) {
+      peg$c432 = function(head, tail) {
             return buildList(head, tail, 1);
           },
 
@@ -13183,23 +13195,29 @@ function peg$parse(input, options) {
                   s8 = peg$parse__();
                   if (s8 !== peg$FAILED) {
                     s9 = peg$currPos;
-                    s10 = peg$parseFunctionParameterList();
-                    if (s10 !== peg$FAILED) {
-                      s11 = peg$parse__();
-                      if (s11 !== peg$FAILED) {
-                        s10 = [s10, s11];
-                        s9 = s10;
+                    s10 = peg$currPos;
+                    s11 = peg$parseFunctionParameterList();
+                    if (s11 !== peg$FAILED) {
+                      s12 = peg$parse__();
+                      if (s12 !== peg$FAILED) {
+                        s11 = [s11, s12];
+                        s10 = s11;
                       } else {
-                        peg$currPos = s9;
-                        s9 = peg$FAILED;
+                        peg$currPos = s10;
+                        s10 = peg$FAILED;
                       }
                     } else {
-                      peg$currPos = s9;
-                      s9 = peg$FAILED;
+                      peg$currPos = s10;
+                      s10 = peg$FAILED;
                     }
-                    if (s9 === peg$FAILED) {
-                      s9 = null;
+                    if (s10 === peg$FAILED) {
+                      s10 = null;
                     }
+                    if (s10 !== peg$FAILED) {
+                      peg$savedPos = s9;
+                      s10 = peg$c427(s1, s3, s5, s10);
+                    }
+                    s9 = s10;
                     if (s9 !== peg$FAILED) {
                       if (input.charCodeAt(peg$currPos) === 41) {
                         s10 = peg$c263;
@@ -13234,7 +13252,7 @@ function peg$parse(input, options) {
                                   }
                                   if (s16 !== peg$FAILED) {
                                     peg$savedPos = s0;
-                                    s1 = peg$c427(s1, s3, s5, s9, s14);
+                                    s1 = peg$c428(s1, s3, s5, s9, s14);
                                     s0 = s1;
                                   } else {
                                     peg$currPos = s0;
@@ -13407,7 +13425,7 @@ function peg$parse(input, options) {
         s3 = peg$parseIdentifier();
         if (s3 !== peg$FAILED) {
           peg$savedPos = s0;
-          s1 = peg$c428(s1, s3);
+          s1 = peg$c429(s1, s3);
           s0 = s1;
         } else {
           peg$currPos = s0;
@@ -13435,7 +13453,7 @@ function peg$parse(input, options) {
     }
     if (s1 !== peg$FAILED) {
       peg$savedPos = s0;
-      s1 = peg$c429(s1);
+      s1 = peg$c430(s1);
     }
     s0 = s1;
 
@@ -13452,7 +13470,7 @@ function peg$parse(input, options) {
     }
     if (s1 !== peg$FAILED) {
       peg$savedPos = s0;
-      s1 = peg$c430(s1);
+      s1 = peg$c431(s1);
     }
     s0 = s1;
 
@@ -13501,7 +13519,7 @@ function peg$parse(input, options) {
       }
       if (s2 !== peg$FAILED) {
         peg$savedPos = s0;
-        s1 = peg$c431(s1, s2);
+        s1 = peg$c432(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -13591,7 +13609,7 @@ function peg$parse(input, options) {
       }
 
       define(node) {
-        const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+        const def = (node.nodeType == 'VariableDeclarator' || node.nodeType == 'FunctionlParameter') ? this.def: this.typedef;
         const name = node.id.name;
         const t = def.get(name);
         if (t) {

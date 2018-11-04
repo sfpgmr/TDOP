@@ -14,10 +14,10 @@
     }
 
     scopeIn() {
-      this.funcVars.push(0);
+      this.funcVars.push({index:0,localVars:[]});
       this.length = this.funcVars.length;
       this.stackTop = this.length - 1;
-      this.current = 0;
+      this.current = this.funcVars[0];
     }
 
     scopeOut() {
@@ -31,24 +31,29 @@
       } 
     }
 
-    index(inc = true) {
+    index(localVar,inc = true) {
+      this.current.localVars.push[localVar];
       if (inc) {
-        const ret = this.current;
+        localVar.index = this.current.index;
         this.incIndex();
         return ret;
       } else {
-        return this.current;
+        localVar.index = this.current.index;
       }
     }
 
     incIndex() {
-      ++this.current;
-      this.funcVars[this.stackTop] = this.current;
+      ++this.current.index;
+      //this.funcVars[this.stackTop] = this.current;
     }
 
     get global() {
       return this.length == 1;
     }
+
+    get localVars(){
+      return this.current.localVars;
+    } 
   }
 
   let scope;
@@ -68,7 +73,7 @@
     }
 
     define(node) {
-      const def = node.nodeType == 'VariableDeclarator' ? this.def: this.typedef;
+      const def = (node.nodeType == 'VariableDeclarator' || node.nodeType == 'FunctionlParameter') ? this.def: this.typedef;
       const name = node.id.name;
       const t = def.get(name);
       if (t) {
@@ -581,8 +586,6 @@ HexDigit
 
 /*
   2進整数リテラル
- 
-  
 */
 BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTerminatorSequence / Comment)+ 'b'i byteSize:ByteSizeSuffix? suffix:(UnsignedSuffix / FloatSuffix)? {
 
@@ -610,11 +613,9 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
       let low = parseInt(b.slice(-32),2) | 0;
       let high = parseInt(b.slice(0,-32),2) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule[type.innerType].const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(b,2) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule[type.innerType].const(value);
     } else {
       error('このサイズの2進浮動小数リテラルはサポートしていません。');
     }
@@ -629,10 +630,8 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
 				value.low = ret[0];
 				value.high = ret[1];
 			}
-			wasmCode = wasmModule[type.innerType].const(value.low,value.high);
 		} else {
 			value = parseInt(sign + b,2);
-			wasmCode = wasmModule[type.innerType].const(value);
 		}
 	}
 
@@ -643,7 +642,6 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
     byteSize:type.byteSize,
     bitSize:type.bitSize,
 		integer:suffix != 'f',
-    wasm:wasmCode
   };
 
 
@@ -1428,7 +1426,7 @@ VariableDecl
         // グローバル変数どうか
         n.global = funcScope.global;
         // 変数インデックス
-        n.index = funcScope.index();
+        funcScope.index(n);
 			});
 			
       return {
@@ -1727,9 +1725,22 @@ DebuggerStatement
 
 FunctionDeclaration
   = export_:ExportToken? __ returnType:Type __ id:Identifier __
-    "(" __ params:(FunctionParameterList __)? ")" __
+    "(" __ params:(params_:(FunctionParameterList __)? {
+        console.log(params_[0]);
+        createScope();
+        funcScope.scopeIn();
+        params_[0].forEach(p=>{
+          scope.define(p);
+          p.index = funcScope.index();
+        });
+        return params_;
+      }
+    ) 
+    ")" __
     "{" __ body:FunctionBody __ "}"
     {
+      scope.pop();
+      funcScope.scopeOut();
       return {
         nodeType: "FunctionDeclaration",
         returnType:returnType,
