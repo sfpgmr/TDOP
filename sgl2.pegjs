@@ -307,7 +307,7 @@
 }
 
 Start
-  = __ program:Program __ { return program; }
+  = __ program:Program __ { return {scope:scope,program:program}; }
 
 // ----- A.1 Lexical Grammar -----
 
@@ -425,7 +425,6 @@ FutureReservedWord
   / EnumToken
   / ExtendsToken
   / FinallyToken
-  / FunctionToken
   / InToken
   / InstanceofToken
   / SuperToken
@@ -855,7 +854,6 @@ F32Token        = "f32"
 F64Token        = "f64"        
 FinallyToken    = "finally"    !IdentifierPart
 ForToken        = "for"        !IdentifierPart
-FunctionToken   = "function"   !IdentifierPart
 GetToken        = "get"        !IdentifierPart
 I8Token         = "i8"         
 I16Token        = "i16"        
@@ -896,13 +894,13 @@ _
   = (WhiteSpace / MultiLineCommentNoLineTerminator)*
 
 
-// Automatic Semicolon Insertion
+// End of Statement
 
 EOS
-  = __ ";"
-  / _ SingleLineComment? LineTerminatorSequence
-  / _ &"}" 
-  / __ EOF
+  = __ ";" 
+ // _ SingleLineComment? LineTerminatorSequence
+ // _ &"}" 
+ // __ EOF
 
 EOF
   = !.
@@ -1397,16 +1395,15 @@ Statement
 
 Block
   = BlockBegin __ body:(StatementList __)? BlockEnd {
-      console.log(body);
       return {
         nodeType: "BlockStatement",
         body: optionalList(extractOptional(body, 0))
       };
     }
 
-BlockBegin = '{' 
+BlockBegin = '{' {createScope(); return text();} 
 FunctionBlockBegin = '{'
-BlockEnd = '}'
+BlockEnd = '}' {scope.pop();return text();}
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1414,7 +1411,7 @@ StatementList
 // 変数宣言ステートメント //
 
 VariableStatement
-  = VariableDecl EOS 
+  = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
   = type:Type __ declarations:VariableDeclarationList {
@@ -1426,11 +1423,12 @@ VariableDecl
 				}
 				n.type = type;
         // スコープに登録する
-        // scope.define(n);
+        scope.define(n);
+				console.log(n);
         // グローバル変数どうか
-        // n.global = funcScope.global;
+        n.global = funcScope.global;
         // 変数インデックス
-        // n.index = funcScope.index();
+        n.index = funcScope.index();
 			});
 			
       return {
@@ -1446,7 +1444,7 @@ BuiltinType = NativeType / EmulationType
 
 NativeType = I32Token / I64Token / F32Token / F64Token
 
-EmulationType = VoidToken / BoolToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
+EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token
 
 CustomType = TypeToken
 
@@ -1490,7 +1488,7 @@ EmptyStatement
   = ";" { return { nodeType: "EmptyStatement" }; }
 
 ExpressionStatement
-  = !("{" / FunctionToken) expression:Expression EOS {
+  = !("{" /* / FunctionToken */ ) expression:Expression EOS {
       return {
         nodeType: "ExpressionStatement",
         expression: expression
@@ -1729,7 +1727,7 @@ DebuggerStatement
 
 FunctionDeclaration
   = export_:ExportToken? __ returnType:Type __ id:Identifier __
-    "(" __ params:(FormalParameterList __)? ")" __
+    "(" __ params:(FunctionParameterList __)? ")" __
     "{" __ body:FunctionBody __ "}"
     {
       return {
@@ -1755,13 +1753,19 @@ FunctionDeclaration
 //      };
 //    }
 
-FormalParameterList
-  = head:FormalParameter tail:(__ "," __ FormalParameter)* {
+FunctionParameterList
+  = head:FunctionParameter tail:(__ "," __ FunctionParameter)* {
       return buildList(head, tail, 3);
     }
 
-FormalParameter
-  = Type __ Identifier;
+FunctionParameter
+  = type:Type __ id:Identifier  {
+		return {
+			type:type,
+			id:id,
+			nodeType:'FunctionlParameter'
+		};
+	};
 
 FunctionBody
   = body:SourceElements? {

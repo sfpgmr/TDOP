@@ -1,6 +1,8 @@
 export i32 main (i32 a){
   i32 b = 1;
+	i32 c = 1;
   {
     i32 c = 1;
+		i32 d = 1;
   }
 }
