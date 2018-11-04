@@ -53,7 +53,7 @@
 
     get localVars(){
       return this.current.localVars;
-    } 
+    }  
   }
 
   let scope;
@@ -309,6 +309,16 @@
       }
 			return value;
 	}
+
+  // binaryen type情報の取得
+  function getBinaryenType(type){
+    return binaryen[type.name] || binaryen[type.innerType] || null;
+  }
+
+  // module type の取得
+  function getModuleType(type){
+    return module[type.name] || module[type.innerType] || null);
+  }
 }
 
 Start
@@ -1726,22 +1736,22 @@ DebuggerStatement
 FunctionDeclaration
   = export_:ExportToken? __ returnType:Type __ id:Identifier __
     "(" __ params:(params_:(FunctionParameterList __)? {
-        console.log(params_[0]);
+        // console.log(params_[0]);
+        // スコープの新規作成
         createScope();
         funcScope.scopeIn();
+        // パラメータをスコープに登録する
         params_[0].forEach(p=>{
           scope.define(p);
-          p.index = funcScope.index();
+          funcScope.index(p);
         });
         return params_;
       }
     ) 
     ")" __
     "{" __ body:FunctionBody __ "}"
-    {
-      scope.pop();
-      funcScope.scopeOut();
-      return {
+    { 
+      let node = {
         nodeType: "FunctionDeclaration",
         returnType:returnType,
         export:!!export_,
@@ -1749,6 +1759,11 @@ FunctionDeclaration
         params: optionalList(extractOptional(params, 0)),
         body: body
       };
+      
+      // wasm関数の定義
+      scope.pop();
+      funcScope.scopeOut();
+      return node;
     }
 
 //FunctionExpression
