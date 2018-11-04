@@ -559,22 +559,18 @@ HexLiteral
       let low = parseInt(h.slice(-8),16) | 0;
       let high = parseInt(h.slice(0,-8),16) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule[type.innerType].const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(h,16) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule[type.innerType].const(value);
     } else {
       error('このサイズの16進浮動小数リテラルはサポートしていません。');
     }
   } else {
     if(type.bitSize == 64){
 			value = hexToInt64(h);
-      wasmCode = wasmModule[type.innerType].const(value.low,value.high);
     } else {
       sign = sign || '';
       value = parseInt(sign + h,16);
-      wasmCode = wasmModule[type.innerType].const(value);
     }
 
   }
@@ -585,8 +581,7 @@ HexLiteral
     unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
-		integer:suffix != 'f',
-    wasm:wasmCode
+		integer:suffix != 'f'
   };
 
 }
@@ -651,18 +646,14 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
     unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
-		integer:suffix != 'f',
+		integer:suffix != 'f'
   };
-
-
 }
 
 BinaryDigit = [01]
 
 /*
-  
 	i32型以外のNumeric Literalにはバイトサイズ・サフィックスをつけなればならない。
-
 */
 
 ByteSizeSuffix =  ByteSuffix / WordSuffix / DwordSuffix / LongSuffix
