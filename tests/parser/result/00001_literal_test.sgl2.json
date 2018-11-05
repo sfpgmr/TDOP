@@ -4,30 +4,33 @@
     "typedef": {}
   },
   "program": {
-    "nodeType": "Program",
-    "body": [
-      {
-        "nodeType": "ExpressionStatement",
-        "expression": {
-          "value": 6535,
-          "type": {
-            "name": "i32",
-            "size": 4,
-            "bitSize": 32,
-            "byteSize": 4,
-            "max": 2147483647,
-            "min": -2147483648,
-            "integer": true,
-            "signed": true,
-            "innerType": "i32",
-            "kind": "Native"
-          },
-          "unsigned": false,
-          "byteSize": 4,
-          "bitSize": 32,
-          "integer": true
-        }
+    "ptr": 5406872,
+    "i32": {
+      "trunc_s": {},
+      "trunc_u": {},
+      "atomic": {
+        "rmw": {},
+        "rmw8_u": {},
+        "rmw16_u": {}
       }
-    ]
+    },
+    "i64": {
+      "trunc_s": {},
+      "trunc_u": {},
+      "atomic": {
+        "rmw": {},
+        "rmw8_u": {},
+        "rmw16_u": {},
+        "rmw32_u": {}
+      }
+    },
+    "f32": {
+      "convert_s": {},
+      "convert_u": {}
+    },
+    "f64": {
+      "convert_s": {},
+      "convert_u": {}
+    }
   }
 }

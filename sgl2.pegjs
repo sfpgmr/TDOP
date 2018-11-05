@@ -317,7 +317,7 @@
 
   // module type の取得
   function getModuleType(type){
-    return module[type.name] || module[type.innerType] || null;
+    return wamModule[type.name] || module[type.innerType] || null;
   }
 
   // 
@@ -1514,19 +1514,23 @@ VariableDecl
 				n.type = type;
         // スコープに登録する
         scope.define(n);
-				console.log(n);
+				//console.log(n);
         // グローバル変数どうか
         n.global = funcScope.global;
         // 変数インデックス
         funcScope.index(n);
+        // グローバル変数
+        if(n.global){
+          wasmModule.addGlobal(n.value, getBinaryenType(n.type.name) ,true, n.init );
+        }
 			});
-			
-      return {
-        nodeType: "VariableDeclaration",
-        type:type,
-        declarations: declarations,
-        kind: "var"
-      };
+		  	
+      //return {
+      //  nodeType: "VariableDeclaration",
+      //  type:type,
+      //  declarations: declarations,
+      //  kind: "var"
+      //};
     }
 Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomType
 
@@ -1841,13 +1845,20 @@ FunctionDeclaration
         params: optionalList(extractOptional(params, 0)),
         body: body
       };
-      
-      // wasm関数の定義
-      wasmModule.addFunct
+      /********************
+       * wasm関数の定義 
+       ********************/
+      const paramTypes = params[0].map(p=>getBinaryenType(p.type.name));
+      const localVars = funcScope.localVars.map(l=>getBinaryenType(l.type.name));
+      const funcType = wasmModule.addFunctionType(id.name, getBinaryenType(returnType.name), paramTypes);
+      wasmModule.addFunction(id, funcType, localVars, wasmModule.block(null,body));
+      if (!!export_) {
+        wasmModule.addFunctionExport(id.name, id.name);
+      }
       
       scope.pop();
       funcScope.scopeOut();
-      return node;
+      //return node;
     }
 
 //FunctionExpression
@@ -1887,10 +1898,11 @@ FunctionBody
 
 Program
   = body:SourceElements? {
-      return {
-        nodeType: "Program",
-        body: optionalList(body)
-      };
+      return wasmModule;
+      //return {
+      //  nodeType: "Program",
+      //  body: optionalList(body)
+      //};
     }
 
 SourceElements
