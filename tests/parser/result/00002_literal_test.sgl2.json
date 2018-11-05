@@ -4,26 +4,33 @@
     "typedef": {}
   },
   "program": {
-    "nodeType": "Program",
-    "body": [
-      {
-        "nodeType": "ExpressionStatement",
-        "expression": {
-          "nodeType": "Literal",
-          "type": {
-            "name": "f32",
-            "size": 4,
-            "bitSize": 32,
-            "byteSize": 4,
-            "max": 3.402823466e+38,
-            "min": 1.175494351e-38,
-            "integer": false,
-            "innerType": "f32",
-            "kind": "Native"
-          },
-          "value": 10.1
-        }
+    "ptr": 5407112,
+    "i32": {
+      "trunc_s": {},
+      "trunc_u": {},
+      "atomic": {
+        "rmw": {},
+        "rmw8_u": {},
+        "rmw16_u": {}
       }
-    ]
+    },
+    "i64": {
+      "trunc_s": {},
+      "trunc_u": {},
+      "atomic": {
+        "rmw": {},
+        "rmw8_u": {},
+        "rmw16_u": {},
+        "rmw32_u": {}
+      }
+    },
+    "f32": {
+      "convert_s": {},
+      "convert_u": {}
+    },
+    "f64": {
+      "convert_s": {},
+      "convert_u": {}
+    }
   }
 }
