@@ -319,6 +319,76 @@
   function getModuleType(type){
     return module[type.name] || module[type.innerType] || null;
   }
+
+  // 
+  function getLeftOp(left){
+    let leftOp;
+    switch (left.nodeType){
+      case 'Identifier':
+        let node = scope.find(left.name,false);
+        if(!node) {
+          error(`変数が定義されていません。`);
+        } 
+        leftOp = node.global ? wasmModule.setLocal.bind(wasmModule,node.index) : wasmModule.setGlobal.bind(wasmModule,node.index);
+      break;
+    }
+    return leftOp;
+  }
+
+  function getLoadOp(node){
+    let loadOp;
+    switch (node.nodeType){
+      case 'Identifier':
+        let id = scope.find(node.name,false);
+        if(!id) {
+          error(`変数が定義されていません。`);
+        } 
+        loadOp = id.global ? wasmModule.setLocal.bind(wasmModule,id.index) : wasmModule.setGlobal.bind(wasmModule,id.index);
+      break;
+    }
+    return loadOp;
+  }
+
+  function buildAssignmentOp(left,op,right){
+    let wasmCode = getLeftOp(left)(
+      wasmModule[left.type.innerType][op](
+        getLoadOp(left),right.wasmCode
+      )
+    );
+    return wasmCode;
+  }
+
+  function getAssignmentOp(left,op,right){
+    let wasmCode;
+    switch(op){
+      case "*=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+      case "/=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+       break;
+      case "%=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+       break;
+      case "+=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+      case "-=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+      case "<<=":
+      case ">>=":
+      case ">>>=":
+      case "&=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+      case "^=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+      case "|=":
+        wasmCode = buildAssignmentOp(left,'mul',right);
+        break;
+    }
 }
 
 Start
@@ -486,27 +556,32 @@ DecimalLiteral
 			sign = sign || '+';
       const type = byteSizeSuffixMap.get(byteSizeSuffix).f;
       const value = parseFloat(floatValue);
+      const wasmCode = wasmModule[type.name].const(value);
 
       return { 
         nodeType: "Literal",
         type:type,
-        value: value
+        value: value,
+        wasmCode:wasmCode
       };
     }
   / sign:Sign? intValue:$DecimalIntegerLiteral byteSizeSuffix:ByteSizeSuffix? unsigned:UnsignedSuffix? {
       byteSizeSuffix = byteSizeSuffix || 'd';
 			unsigned = unsigned || 'i';
       const type = byteSizeSuffixMap.get(byteSizeSuffix)[unsigned];
-			let value;
+			let value,wasmCode;
 			if(type.byteSize == 64){
 				value = hexToInt64(decimalToHex(intValue),sign);
+        wasmCode = wasmModule.i64.const(value.low,value.high);
 			} else {
 				value = parseInt(sign + intValue,10);
+        wasmCode = wasmModule.i32.const(value);
 			}
       return { 
 				nodeType: "Literal",
 				type:type, 
-				value: value
+				value: value,
+        wasmCode:wasmCode
 			};
   }
 
@@ -559,20 +634,23 @@ HexLiteral
       let low = parseInt(h.slice(-8),16) | 0;
       let high = parseInt(h.slice(0,-8),16) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule.f64.const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(h,16) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule.f32.const(value);
     } else {
       error('このサイズの16進浮動小数リテラルはサポートしていません。');
     }
   } else {
     if(type.bitSize == 64){
 			value = hexToInt64(h);
+      wasmCode = wasmModule.i64.const(value);
     } else {
       sign = sign || '';
       value = parseInt(sign + h,16);
+      wasmCode = wasmModule.i32.const(value);
     }
-
   }
 
   return { 
@@ -581,7 +659,8 @@ HexLiteral
     unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
-		integer:suffix != 'f'
+		integer:suffix != 'f',
+    wasmCode:wasmCode
   };
 
 }
@@ -618,9 +697,11 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
       let low = parseInt(b.slice(-32),2) | 0;
       let high = parseInt(b.slice(0,-32),2) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule.f64.const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(b,2) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
+      wasmCode = wasmModule.f32.const(value);
     } else {
       error('このサイズの2進浮動小数リテラルはサポートしていません。');
     }
@@ -635,8 +716,10 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
 				value.low = ret[0];
 				value.high = ret[1];
 			}
+      wasmCode = wasmModule.i64.const(value.low,value.high);
 		} else {
 			value = parseInt(sign + b,2);
+      wasmCode = wasmModule.i32.const(value);
 		}
 	}
 
@@ -646,7 +729,8 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
     unsigned:suffix == 'u',
     byteSize:type.byteSize,
     bitSize:type.bitSize,
-		integer:suffix != 'f'
+		integer:suffix != 'f',
+    wasmCode:wasmCode
   };
 }
 
@@ -1188,7 +1272,7 @@ RelationalOperatorNoIn
   / $InstanceofToken
 
 EqualityExpression
-  = head:RelationalExpression
+  = head:RelationalExpression 
     tail:(__ EqualityOperator __ RelationalExpression)*
     { return buildBinaryExpression(head, tail); }
 
@@ -1302,26 +1386,13 @@ AssignmentExpression
     right:AssignmentExpression
     {
 
-      let leftOp;
-      switch (left.nodeType){
-        case 'Identifier':
-          let node = scope.find(left.name,false);
-          if(!node) {
-            error(`変数が定義されていません。`);
-          } 
-          
-          leftOp = node.global ? wasmModule.setLocal.bind(wasmModule,node.index) : wasmModule.setGlobal.bind(wasmModule,node.index);
-        break;
-      }
-      
-      return leftOp(right);
-
-      /*return {
+      return {
         nodeType: "AssignmentExpression",
         operator: "=",
         left: left,
-        right: right
-      };*/
+        right: right,
+        wasmCode:getLeftOp(left)(right.wasmCode)
+      };
     }
   / left:LeftHandSideExpression __
     operator:AssignmentOperator __
@@ -1331,7 +1402,8 @@ AssignmentExpression
         nodeType: "AssignmentExpression",
         operator: operator,
         left: left,
-        right: right
+        right: right,
+        wasmCode:getLeftOp(left)(right.wasmCode)
       };
     }
   / ConditionalExpression
@@ -1345,7 +1417,8 @@ AssignmentExpressionNoIn
         nodeType: "AssignmentExpression",
         operator: "=",
         left: left,
-        right: right
+        right: right,
+        wasmCode:getLeftOp(left)(right.wasmCode)
       };
     }
   / left:LeftHandSideExpression __
@@ -1356,7 +1429,8 @@ AssignmentExpressionNoIn
         nodeType: "AssignmentExpression",
         operator: operator,
         left: left,
-        right: right
+        right: right,
+        wasmCode: getLeftOp(left)(right.wasmCode)
       };
     }
   / ConditionalExpressionNoIn
@@ -1368,7 +1442,9 @@ AssignmentOperator
   / "+="
   / "-="
   / "<<="
+  / "<<&="
   / ">>="
+  / ">>&="
   / ">>>="
   / "&="
   / "^="
