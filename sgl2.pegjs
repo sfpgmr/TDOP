@@ -343,17 +343,29 @@
         if(!id) {
           error(`変数が定義されていません。`);
         } 
-        loadOp = id.global ? wasmModule.setLocal.bind(wasmModule,id.index) : wasmModule.setGlobal.bind(wasmModule,id.index);
+        loadOp = id.global ? wasmModule.getLocal.bind(wasmModule,id.index) : wasmModule.getGlobal.bind(wasmModule,id.index);
       break;
     }
     return loadOp;
   }
 
+
   function buildAssignmentOp(left,op,right){
     let op_ = op.replace('=','');
+    op_ = arithmeticOps.get(op_);
     
+    let type = left.type;
+
+    if(type.unsigned) {
+      op_ = op_.u;
+    } else if(type.integer){
+      op_ = op_.i;
+    } else {
+      op_ = op_.f;
+    }
+
     let wasmCode = getLeftOp(left)(
-      wasmModule[left.type.innerType][op](
+      wasmModule[left.type.innerType][op_](
         getLoadOp(left),right.wasmCode
       )
     );
@@ -361,52 +373,22 @@
   }
 
   const arithmeticOps = new Map([
-    ["*",{f:'mul',i:'mul',u:'mul'}],
+   ["*",{f:'mul',i:'mul',u:'mul'}],
    ["/",{f:'div',i:'div_s',u:'div_u'}],
    ["%",{f:'rem',i:'rem_s',u:'rem_u'}],
    ["+",{f:'add',i:'add',u:'add'}],
    ["-",{f:'sub',i:'sub',u:'sub'}],
    ["<<",{i:'shl',u:'shl'}],
-   ["<<&",{op:'rotl'}],
-   [">>",{op:'shr_s'}],
-   [">>&",{op:'rotr'}],
-   [">>>",{op:'shr_u'}],
-   ["&",{op:'and'}],
-   ["^",{op:'xor'}],
-   ["!",{op:'not'}],
-   ["|",{op:'or'}/^]]);
-  function getAssignmentOp(left,op,right){
-    let wasmCode;
-    switch(op){
-      case "*=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
-        break;
-      case "/=":
-        wasmCode = buildAssignmentOp(left,'div',right);
-       break;
-      case "%=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
-       break;
-      case "+=":
-        wasmCode = buildAssignmentOp(left,'add',right);
-        break;
-      case "-=":
-        wasmCode = buildAssignmentOp(left,'sub',right);
-        break;
-      case "<<=":
-      case ">>=":
-      case ">>>=":
-      case "&=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
-        break;
-      case "^=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
-        break;
-      case "|=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
-        break;
-    }
-  }
+   ["<<&",{i:'rotl',u:'rotl'}],
+   [">>",{i:'shr_s'}],
+   [">>&",{i:'rotr',u:'rotr'}],
+   [">>>",{u:'shr_u'}],
+   ["&",{i:'and',u:'and'}],
+   ["^",{i:'xor',u:'xor'}],
+   ["!",{i:'not',u:'not'}],
+   ["|",{i:'or',u:'or'}]]);
+
+
 }
 
 Start
@@ -1421,7 +1403,7 @@ AssignmentExpression
         operator: operator,
         left: left,
         right: right,
-        wasmCode:getLeftOp(left)(right.wasmCode)
+        wasmCode:buildAssignmentOp(left,op,right)
       };
     }
   / ConditionalExpression
