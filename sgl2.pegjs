@@ -321,7 +321,7 @@
   }
 
   // 
-  function getLeftOp(left){
+  function getStoreOp(left){
     let leftOp;
     switch (left.nodeType){
       case 'Identifier':
@@ -351,25 +351,41 @@
 
 
   function buildAssignmentOp(left,op,right){
-    let op_ = op.replace('=','');
-    op_ = arithmeticOps.get(op_);
     
-    let type = left.type;
+    let op_ = getArithmeticOp(left.type,op);
 
-    if(type.unsigned) {
-      op_ = op_.u;
-    } else if(type.integer){
-      op_ = op_.i;
-    } else {
-      op_ = op_.f;
-    }
-
-    let wasmCode = getLeftOp(left)(
-      wasmModule[left.type.innerType][op_](
+    return getStoreOp(left)(
+      op_(
         getLoadOp(left),right.wasmCode
       )
     );
-    return wasmCode;
+  }
+
+  function buildArithmeticOp(left,op,right)
+  {
+    return getArithmeticOp(left.type,op)(
+      getLoadOp(left.wasmCode,right.wasmCode)
+    );
+
+  }  
+
+  function getArithmeticOp(type,op){
+    let op_ = arithmeticOps.get(op);
+    !op_ && error(op + '演算子はこの言語ではサポートしていません。'); 
+
+    if(type.unsigned) {
+      op_ = op_.u;
+      !op_ && error(op + '演算子は符号なし整数型はサポートしていません。'); 
+    } else if(type.integer){
+      op_ = op_.i;
+      !op_ && error(op + '演算子は符号あり整数型はサポートしていません。'); 
+    } else {
+      op_ = op_.f;
+      !op_ && error(op + '演算子は浮動小数点型はサポートしていません。'); 
+    }
+
+    return wasmModule[type.innerType][op_];
+
   }
 
   const arithmeticOps = new Map([
@@ -1173,8 +1189,11 @@ ArgumentList
     }
 
 LeftHandSideExpression
-  = CallExpression
-  / NewExpression
+  = op:(CallExpression
+  / NewExpression) {
+		op.left = true;
+		return op;
+	}
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator {
@@ -1391,7 +1410,7 @@ AssignmentExpression
         operator: "=",
         left: left,
         right: right,
-        wasmCode:getLeftOp(left)(right.wasmCode)
+        wasmCode:getStoreOp(left)(right.wasmCode)
       };
     }
   / left:LeftHandSideExpression __
@@ -1418,7 +1437,7 @@ AssignmentExpressionNoIn
         operator: "=",
         left: left,
         right: right,
-        wasmCode:getLeftOp(left)(right.wasmCode)
+        wasmCode:getStoreOp(left)(right.wasmCode)
       };
     }
   / left:LeftHandSideExpression __
@@ -1430,7 +1449,7 @@ AssignmentExpressionNoIn
         operator: operator,
         left: left,
         right: right,
-        wasmCode: getLeftOp(left)(right.wasmCode)
+        wasmCode: buildAssignmentOp(left,op,right)
       };
     }
   / ConditionalExpressionNoIn
@@ -1898,11 +1917,12 @@ FunctionBody
 
 Program
   = body:SourceElements? {
-      return wasmModule;
-      //return {
-      //  nodeType: "Program",
-      //  body: optionalList(body)
-      //};
+      //return wasmModule;
+      return {
+        nodeType: "Program",
+        body: optionalList(body),
+        wasmModule:wasmModule
+      };
     }
 
 SourceElements
