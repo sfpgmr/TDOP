@@ -350,6 +350,8 @@
   }
 
   function buildAssignmentOp(left,op,right){
+    let op_ = op.replace('=','');
+    
     let wasmCode = getLeftOp(left)(
       wasmModule[left.type.innerType][op](
         getLoadOp(left),right.wasmCode
@@ -358,6 +360,21 @@
     return wasmCode;
   }
 
+  const arithmeticOps = new Map([
+    ["*",{f:'mul',i:'mul',u:'mul'}],
+   ["/",{f:'div',i:'div_s',u:'div_u'}],
+   ["%",{f:'rem',i:'rem_s',u:'rem_u'}],
+   ["+",{f:'add',i:'add',u:'add'}],
+   ["-",{f:'sub',i:'sub',u:'sub'}],
+   ["<<",{i:'shl',u:'shl'}],
+   ["<<&",{op:'rotl'}],
+   [">>",{op:'shr_s'}],
+   [">>&",{op:'rotr'}],
+   [">>>",{op:'shr_u'}],
+   ["&",{op:'and'}],
+   ["^",{op:'xor'}],
+   ["!",{op:'not'}],
+   ["|",{op:'or'}/^]]);
   function getAssignmentOp(left,op,right){
     let wasmCode;
     switch(op){
@@ -365,16 +382,16 @@
         wasmCode = buildAssignmentOp(left,'mul',right);
         break;
       case "/=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
+        wasmCode = buildAssignmentOp(left,'div',right);
        break;
       case "%=":
         wasmCode = buildAssignmentOp(left,'mul',right);
        break;
       case "+=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
+        wasmCode = buildAssignmentOp(left,'add',right);
         break;
       case "-=":
-        wasmCode = buildAssignmentOp(left,'mul',right);
+        wasmCode = buildAssignmentOp(left,'sub',right);
         break;
       case "<<=":
       case ">>=":
@@ -389,6 +406,7 @@
         wasmCode = buildAssignmentOp(left,'mul',right);
         break;
     }
+  }
 }
 
 Start
