@@ -4,7 +4,8 @@ export i32 main (i32 a,i32 d){
   {
     i32 c = 3;
 		i32 d = 4;
+    a = c + 1;
   }
-  a = a + b;
+  a = (a = a + b);
   return a + b + c + d;
 }

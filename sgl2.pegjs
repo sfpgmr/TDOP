@@ -452,10 +452,12 @@ Identifier
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* {
-      return {
+      let ret = {
         nodeType: "Identifier",
         name: head + tail.join("")
       };
+      ret.declaration = scope.find(ret.name);
+      return ret;
     }
 
 IdentifierStart
@@ -578,7 +580,7 @@ DecimalLiteral
         nodeType: "Literal",
         type:type,
         value: value,
-        wasmCode:wasmCode
+       // wasmCode:wasmCode
       };
     }
   / sign:Sign? intValue:$DecimalIntegerLiteral byteSizeSuffix:ByteSizeSuffix? unsigned:UnsignedSuffix? {
@@ -590,14 +592,14 @@ DecimalLiteral
 				value = hexToInt64(decimalToHex(intValue),sign);
         wasmCode = wasmModule.i64.const(value.low,value.high);
 			} else {
-				value = parseInt(sign + intValue,10);
+				value = parseInt((sign||'') + intValue,10);
         wasmCode = wasmModule.i32.const(value);
 			}
       return { 
 				nodeType: "Literal",
 				type:type, 
 				value: value,
-        wasmCode:wasmCode
+        //wasmCode:wasmCode
 			};
   }
 
@@ -650,22 +652,22 @@ HexLiteral
       let low = parseInt(h.slice(-8),16) | 0;
       let high = parseInt(h.slice(0,-8),16) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule.f64.const(value);
+      // wasmCode = wasmModule.f64.const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(h,16) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule.f32.const(value);
+      //wasmCode = wasmModule.f32.const(value);
     } else {
       error('このサイズの16進浮動小数リテラルはサポートしていません。');
     }
   } else {
     if(type.bitSize == 64){
 			value = hexToInt64(h);
-      wasmCode = wasmModule.i64.const(value);
+      //wasmCode = wasmModule.i64.const(value);
     } else {
       sign = sign || '';
       value = parseInt(sign + h,16);
-      wasmCode = wasmModule.i32.const(value);
+      //wasmCode = wasmModule.i32.const(value);
     }
   }
 
@@ -713,11 +715,11 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
       let low = parseInt(b.slice(-32),2) | 0;
       let high = parseInt(b.slice(0,-32),2) | 0;
       value = lib.i64tof64(low,high,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule.f64.const(value);
+      //wasmCode = wasmModule.f64.const(value);
     } else if(type.bitSize == 32) {
       value = parseInt(b,2) | 0;
       value = lib.i32tof32(value,sign == '-' ? 0x80000000 : 0);
-      wasmCode = wasmModule.f32.const(value);
+      //wasmCode = wasmModule.f32.const(value);
     } else {
       error('このサイズの2進浮動小数リテラルはサポートしていません。');
     }
@@ -732,10 +734,10 @@ BinaryLiteral = sign:[+-]? '0b'i binary:(BinaryDigit /  WhiteSpace / LineTermina
 				value.low = ret[0];
 				value.high = ret[1];
 			}
-      wasmCode = wasmModule.i64.const(value.low,value.high);
+      //wasmCode = wasmModule.i64.const(value.low,value.high);
 		} else {
 			value = parseInt(sign + b,2);
-      wasmCode = wasmModule.i32.const(value);
+      //wasmCode = wasmModule.i32.const(value);
 		}
 	}
 
@@ -1191,7 +1193,7 @@ ArgumentList
 LeftHandSideExpression
   = op:(CallExpression
   / NewExpression) {
-		op.left = true;
+//		op.left = true;
 		return op;
 	}
 
@@ -1400,7 +1402,7 @@ ConditionalExpressionNoIn
   / LogicalORExpressionNoIn
 
 AssignmentExpression
-  = left:LeftHandSideExpression __
+  = left:LeftHandSideExpression &{left.lhs = true; return true;} __
     "=" !"=" __
     right:AssignmentExpression
     {
@@ -1410,7 +1412,7 @@ AssignmentExpression
         operator: "=",
         left: left,
         right: right,
-        wasmCode:getStoreOp(left)(right.wasmCode)
+        //wasmCode:getStoreOp(left)(right.wasmCode)
       };
     }
   / left:LeftHandSideExpression __
@@ -1422,7 +1424,7 @@ AssignmentExpression
         operator: operator,
         left: left,
         right: right,
-        wasmCode:buildAssignmentOp(left,op,right)
+        //wasmCode:buildAssignmentOp(left,op,right)
       };
     }
   / ConditionalExpression
@@ -1437,7 +1439,7 @@ AssignmentExpressionNoIn
         operator: "=",
         left: left,
         right: right,
-        wasmCode:getStoreOp(left)(right.wasmCode)
+        //wasmCode:getStoreOp(left)(right.wasmCode)
       };
     }
   / left:LeftHandSideExpression __
@@ -1449,7 +1451,7 @@ AssignmentExpressionNoIn
         operator: operator,
         left: left,
         right: right,
-        wasmCode: buildAssignmentOp(left,op,right)
+        //wasmCode: buildAssignmentOp(left,op,right)
       };
     }
   / ConditionalExpressionNoIn
@@ -1540,16 +1542,16 @@ VariableDecl
         funcScope.index(n);
         // グローバル変数
         if(n.global){
-          wasmModule.addGlobal(n.value, getBinaryenType(n.type.name) ,true, n.init );
+          //wasmModule.addGlobal(n.value, getBinaryenType(n.type.name) ,true, n.init );
         }
 			});
 		  	
-      //return {
-      //  nodeType: "VariableDeclaration",
-      //  type:type,
-      //  declarations: declarations,
-      //  kind: "var"
-      //};
+      return {
+        nodeType: "VariableDeclaration",
+        type:type,
+        declarations: declarations,
+        kind: "var"
+      };
     }
 Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomType
 
@@ -1866,7 +1868,7 @@ FunctionDeclaration
       };
       /********************
        * wasm関数の定義 
-       ********************/
+       *******************
       const paramTypes = params[0].map(p=>getBinaryenType(p.type.name));
       const localVars = funcScope.localVars.map(l=>getBinaryenType(l.type.name));
       const funcType = wasmModule.addFunctionType(id.name, getBinaryenType(returnType.name), paramTypes);
@@ -1874,10 +1876,10 @@ FunctionDeclaration
       if (!!export_) {
         wasmModule.addFunctionExport(id.name, id.name);
       }
-      
+     */ 
       scope.pop();
       funcScope.scopeOut();
-      //return node;
+      return node;
     }
 
 //FunctionExpression
