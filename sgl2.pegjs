@@ -80,6 +80,7 @@
         error('変数はすでに定義されています。');
       }
       def.set(name, node);
+      node.scope = this;
     }
 
     find(nodeName,typedef = false,currentScope = false) {
