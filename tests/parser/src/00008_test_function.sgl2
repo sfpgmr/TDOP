@@ -1,12 +1,11 @@
 export i32 main (i32 a,i32 d){
-  i32 b = 1;
-	i32 c = 2;
-  {
+  i32 b = 1,c = 2;
+  /*{
     i32 c = 3;
 		i32 d = 4;
     a = c + 1;
   }
   a = (a = a + b);
-	a = b = c;
-  return a + b + c + d;
+	a = b = c;*/
+  return a + b , c + d;
 }

@@ -458,9 +458,9 @@ IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* {
 			let ret = {
         nodeType: "Identifier",
-        name: head + tail.join("")
+        name: head + tail.join(""),
+        scope: scope
       };
-      //ret.declaration = scope.find(ret.name);
       return ret;
     }
 
@@ -1509,16 +1509,17 @@ Statement
   / DebuggerStatement 
 
 Block
-  = BlockBegin __ body:(StatementList __)? BlockEnd {
+  = BlockBegin __ body:(StatementList __)? scope_:BlockEnd {
       return {
         nodeType: "BlockStatement",
-        body: optionalList(extractOptional(body, 0))
+        body: optionalList(extractOptional(body, 0)),
+        scope:scope_
       };
     }
 
 BlockBegin = '{' {createScope(); return text();} 
 FunctionBlockBegin = '{'
-BlockEnd = '}' {scope.pop();return text();}
+BlockEnd = '}' {const s = scope;scope.pop();return s;}
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1868,7 +1869,8 @@ FunctionDeclaration
         export:!!export_,
         id: id,
         params: optionalList(extractOptional(params, 0)),
-        body: body
+        body: body,
+        localVars: funcScope.localVars
       };
       /********************
        * wasm関数の定義 
@@ -1917,7 +1919,8 @@ FunctionBody
   = body:SourceElements? {
       return {
         nodeType: "BlockStatement",
-        body: optionalList(body)
+        body: optionalList(body),
+        scope: scope
       };
     }
 
@@ -1927,7 +1930,7 @@ Program
       return {
         nodeType: "Program",
         body: optionalList(body),
-        wasmModule:wasmModule
+        //wasmModule:wasmModule
       };
     }
 

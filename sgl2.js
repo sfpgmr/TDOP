@@ -183,9 +183,9 @@ function peg$parse(input, options) {
       peg$c37 = function(head, tail) {
       			let ret = {
               nodeType: "Identifier",
-              name: head + tail.join("")
+              name: head + tail.join(""),
+              scope: scope
             };
-            //ret.declaration = scope.find(ret.name);
             return ret;
           },
       peg$c38 = "$",
@@ -862,14 +862,15 @@ function peg$parse(input, options) {
               ? { nodeType: "SequenceExpression", expressions: buildList(head, tail, 3) }
               : head;
           },
-      peg$c396 = function(body) {
+      peg$c396 = function(body, scope_) {
             return {
               nodeType: "BlockStatement",
-              body: optionalList(extractOptional(body, 0))
+              body: optionalList(extractOptional(body, 0)),
+              scope:scope_
             };
           },
       peg$c397 = function() {createScope(); return text();},
-      peg$c398 = function() {scope.pop();return text();},
+      peg$c398 = function() {const s = scope;scope.pop();return s;},
       peg$c399 = function(head, tail) { return buildList(head, tail, 1); },
       peg$c400 = function(varDecl) {return varDecl;},
       peg$c401 = function(type, declarations) {
@@ -1082,7 +1083,8 @@ function peg$parse(input, options) {
               export:!!export_,
               id: id,
               params: optionalList(extractOptional(params, 0)),
-              body: body
+              body: body,
+              localVars: funcScope.localVars
             };
             /********************
              * wasm関数の定義 
@@ -1109,7 +1111,8 @@ function peg$parse(input, options) {
       peg$c438 = function(body) {
             return {
               nodeType: "BlockStatement",
-              body: optionalList(body)
+              body: optionalList(body),
+              scope: scope
             };
           },
       peg$c439 = function(body) {
@@ -1117,7 +1120,7 @@ function peg$parse(input, options) {
             return {
               nodeType: "Program",
               body: optionalList(body),
-              wasmModule:wasmModule
+              //wasmModule:wasmModule
             };
           },
       peg$c440 = function(head, tail) {
@@ -10678,7 +10681,7 @@ function peg$parse(input, options) {
           s4 = peg$parseBlockEnd();
           if (s4 !== peg$FAILED) {
             peg$savedPos = s0;
-            s1 = peg$c396(s3);
+            s1 = peg$c396(s3, s4);
             s0 = s1;
           } else {
             peg$currPos = s0;
