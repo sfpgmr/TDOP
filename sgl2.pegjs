@@ -449,15 +449,18 @@ SingleLineComment
   = "//" (!LineTerminator SourceCharacter)*
 
 Identifier
-  = !ReservedWord name:IdentifierName { return name; }
+  = !ReservedWord name:IdentifierName 
+	{ 
+		return name; 
+	}
 
 IdentifierName "identifier"
   = head:IdentifierStart tail:IdentifierPart* {
-      let ret = {
+			let ret = {
         nodeType: "Identifier",
         name: head + tail.join("")
       };
-      ret.declaration = scope.find(ret.name);
+      //ret.declaration = scope.find(ret.name);
       return ret;
     }
 
@@ -1403,7 +1406,7 @@ ConditionalExpressionNoIn
   / LogicalORExpressionNoIn
 
 AssignmentExpression
-  = left:LeftHandSideExpression &{left.lhs = true; return true;} __
+  = left:LeftHandSideExpression __
     "=" !"=" __
     right:AssignmentExpression
     {
@@ -1503,7 +1506,7 @@ Statement
   / SwitchStatement
   / ThrowStatement
   / TryStatement
-  / DebuggerStatement
+  / DebuggerStatement 
 
 Block
   = BlockBegin __ body:(StatementList __)? BlockEnd {
@@ -1595,10 +1598,10 @@ VariableDeclarationNoIn
     }
 
 Initialiser
-  = "=" !"=" __ expression:AssignmentExpression { return expression; }
+  = "=" !"=" __ expression:AssignmentExpression { return expression;}
 
 InitialiserNoIn
-  = "=" !"=" __ expression:AssignmentExpressionNoIn { return expression; }
+  = "=" !"=" __  expression:AssignmentExpressionNoIn { return expression; }
 
 EmptyStatement
   = ";" { return { nodeType: "EmptyStatement" }; }

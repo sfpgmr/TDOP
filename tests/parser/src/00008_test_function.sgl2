@@ -7,5 +7,6 @@ export i32 main (i32 a,i32 d){
     a = c + 1;
   }
   a = (a = a + b);
+	a = b = c;
   return a + b + c + d;
 }
