@@ -57,6 +57,7 @@
   }
 
   let scope;
+  //let typeDeclMap = new Map
 
   function createScope() {
       const s = new Scope(scope);
@@ -1567,6 +1568,11 @@ NativeType = I32Token / I64Token / F32Token / F64Token
 EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
 
 CustomType = TypeToken
+
+TypeAliasStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Identifier __ EOS {
+  if(scopeTop !== scope) { error("エイリアスはグローバルスコープのみ定義が可能です．"); }
+  
+  }
 
   
 
