@@ -57,8 +57,7 @@
   }
 
   let scope;
-  //let typeDeclMap = new Map
-
+  
   function createScope() {
       const s = new Scope(scope);
       scope = s;
@@ -69,12 +68,11 @@
   class Scope {
     constructor(s) {
       this.def = new Map();
-      this.typedef = new Map();
       this.parent = s;
     }
 
     define(node) {
-      const def = (node.nodeType == 'VariableDeclarator' || node.nodeType == 'FunctionlParameter') ? this.def: this.typedef;
+      const def =  this.def;
       const name = node.id.name;
       const t = def.get(name);
       if (t) {
@@ -84,7 +82,7 @@
       node.scope = this;
     }
 
-    find(nodeName,typedef = false,currentScope = false) {
+    find(nodeName,currentScope = false) {
       if (!typedef) {
         let e = this;
         let node;
@@ -99,20 +97,9 @@
             return null;
           }
         }
-      } else {
-        let e = this;
-        let node;
-        while (e) {
-          node = e.typedef.get(nodeName);
-          if (node) {
-            return node;
-          }
-          if(currentScope) return null;
-          e = e.parent;
-        }
-        return null;
       }
     }
+
     pop() {
       scope = this.parent;
     }
@@ -142,6 +129,33 @@
     ['void',{name:'void',size:0,kind:'Emulation'}],
     ['string',{name:'string',kind:'Emulation'}]
   ]);
+
+  const customTypes = new Map();
+  const typeAliases = new Map();
+
+  
+  function findType(name){
+    let type = primitiveTypes.get(name);
+    !type && (type = customtypes.get(name));
+    !type && (type = typeAliases.get(name));
+    return type;
+  }
+
+  function defineType(type){
+    if(!findType(type.name)){
+      customType.set(type.name,type);
+    } else {
+      error("型名はすでに定義済みです。");
+    }
+  }
+
+  function defineTypeAlias(typeAlias){
+    if(!findType(typeAlias.name)){
+      typeAliases.set(typeAlias.name,typeAlias);
+    } else {
+      error("エイリアス名はすでに定義済みです。");
+    }
+  }
 
   const byteSizeSuffixMap = new Map([
 	['s',{i:'i8',u:'u8'}],
@@ -410,7 +424,7 @@
 }
 
 Start
-  = __ program:Program __ { return {scope:scope,program:program}; }
+  = __ program:Program __ { return {typeAliases:typeAliases,customTypes:customTypes,scope:scope,program:program}; }
 
 // ----- A.1 Lexical Grammar -----
 
@@ -1570,9 +1584,19 @@ EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Tok
 CustomType = TypeToken
 
 TypeAliasStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Identifier __ EOS {
-  if(scopeTop !== scope) { error("エイリアスはグローバルスコープのみ定義が可能です．"); }
-  
+  if(scopeTop !== scope) { 
+    error("エイリアスはグローバルスコープのみ定義が可能です．"); 
   }
+  let sourceType = findType(typeName.name);
+  if(!sourceType){
+    error("ソース型名が見つかりません。");
+  }
+  return {
+    nodeType:"TypeAliasDeclaration",
+    name:aliasName.name,
+    sourceType:sourceType
+  };
+}
 
   
 
