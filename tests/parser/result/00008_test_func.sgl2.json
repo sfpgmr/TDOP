@@ -1,7 +1,8 @@
 {
+  "typeAliases": {},
+  "customTypes": {},
   "scope": {
-    "def": {},
-    "typedef": {}
+    "def": {}
   },
   "program": {
     "nodeType": "Program",
@@ -25,8 +26,7 @@
           "nodeType": "Identifier",
           "name": "main",
           "scope": {
-            "def": {},
-            "typedef": {}
+            "def": {}
           }
         },
         "params": [
@@ -47,17 +47,14 @@
               "nodeType": "Identifier",
               "name": "a",
               "scope": {
-                "def": {},
-                "typedef": {}
+                "def": {}
               }
             },
             "nodeType": "FunctionlParameter",
             "scope": {
               "def": {},
-              "typedef": {},
               "parent": {
-                "def": {},
-                "typedef": {}
+                "def": {}
               }
             },
             "index": 0
@@ -79,17 +76,14 @@
               "nodeType": "Identifier",
               "name": "d",
               "scope": {
-                "def": {},
-                "typedef": {}
+                "def": {}
               }
             },
             "nodeType": "FunctionlParameter",
             "scope": {
               "def": {},
-              "typedef": {},
               "parent": {
-                "def": {},
-                "typedef": {}
+                "def": {}
               }
             },
             "index": 1
@@ -120,10 +114,8 @@
                     "name": "b",
                     "scope": {
                       "def": {},
-                      "typedef": {},
                       "parent": {
-                        "def": {},
-                        "typedef": {}
+                        "def": {}
                       }
                     }
                   },
@@ -157,10 +149,8 @@
                   },
                   "scope": {
                     "def": {},
-                    "typedef": {},
                     "parent": {
-                      "def": {},
-                      "typedef": {}
+                      "def": {}
                     }
                   },
                   "global": false,
@@ -173,10 +163,8 @@
                     "name": "c",
                     "scope": {
                       "def": {},
-                      "typedef": {},
                       "parent": {
-                        "def": {},
-                        "typedef": {}
+                        "def": {}
                       }
                     }
                   },
@@ -210,10 +198,8 @@
                   },
                   "scope": {
                     "def": {},
-                    "typedef": {},
                     "parent": {
-                      "def": {},
-                      "typedef": {}
+                      "def": {}
                     }
                   },
                   "global": false,
@@ -238,10 +224,8 @@
                         "name": "a",
                         "scope": {
                           "def": {},
-                          "typedef": {},
                           "parent": {
-                            "def": {},
-                            "typedef": {}
+                            "def": {}
                           }
                         }
                       },
@@ -250,10 +234,8 @@
                         "name": "b",
                         "scope": {
                           "def": {},
-                          "typedef": {},
                           "parent": {
-                            "def": {},
-                            "typedef": {}
+                            "def": {}
                           }
                         }
                       }
@@ -263,10 +245,8 @@
                       "name": "c",
                       "scope": {
                         "def": {},
-                        "typedef": {},
                         "parent": {
-                          "def": {},
-                          "typedef": {}
+                          "def": {}
                         }
                       }
                     }
@@ -279,10 +259,8 @@
                       "name": "c",
                       "scope": {
                         "def": {},
-                        "typedef": {},
                         "parent": {
-                          "def": {},
-                          "typedef": {}
+                          "def": {}
                         }
                       }
                     },
@@ -291,10 +269,8 @@
                       "name": "d",
                       "scope": {
                         "def": {},
-                        "typedef": {},
                         "parent": {
-                          "def": {},
-                          "typedef": {}
+                          "def": {}
                         }
                       }
                     }
@@ -305,10 +281,8 @@
           ],
           "scope": {
             "def": {},
-            "typedef": {},
             "parent": {
-              "def": {},
-              "typedef": {}
+              "def": {}
             }
           }
         },

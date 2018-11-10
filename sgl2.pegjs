@@ -1509,6 +1509,7 @@ ExpressionNoIn
 Statement
   = Block
   / VariableStatement
+	/ TypeAliasStatement
   / EmptyStatement
   / ExpressionStatement
   / IfStatement
@@ -1583,7 +1584,7 @@ EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Tok
 
 CustomType = TypeToken
 
-TypeAliasStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Identifier __ EOS {
+TypeAliasStatement = TypeToken __ aliasName:IdentifierName __ '=' __ typeName:IdentifierName __ EOS {
   if(scopeTop !== scope) { 
     error("エイリアスはグローバルスコープのみ定義が可能です．"); 
   }
@@ -1883,10 +1884,12 @@ FunctionDeclaration
         createScope();
         funcScope.scopeIn();
         // パラメータをスコープに登録する
-        params_[0].forEach(p=>{
-          scope.define(p);
-          funcScope.index(p);
-        });
+				if(params_ && params_[0]){
+					params_[0].forEach(p=>{
+						scope.define(p);
+						funcScope.index(p);
+					});
+				}
         return params_;
       }
     ) 
