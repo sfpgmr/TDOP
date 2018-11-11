@@ -133,7 +133,7 @@
   const customTypes = new Map();
   const typeAliases = new Map();
 
-  
+  // 型の検索 
   function findType(name){
     let type = primitiveTypes.get(name);
     !type && (type = customTypes.get(name));
@@ -141,6 +141,7 @@
     return type;
   }
 
+  // 型定義
   function defineType(type){
     if(!findType(type.name)){
       customType.set(type.name,type);
@@ -149,12 +150,27 @@
     }
   }
 
+  // 型エイリアスの定義
   function defineTypeAlias(typeAlias){
     if(!findType(typeAlias.name)){
       typeAliases.set(typeAlias.name,typeAlias);
     } else {
       error("エイリアス名はすでに定義済みです。");
     }
+  }
+
+  // エイリアスのもとの型を得る
+  function getSourceType(type){
+    if(type.nodeType == 'TypeAliasDeclaration'){
+      return getSourceType(type.sourceType);
+    } else {
+      return type;
+    }
+  }
+
+  // 型が等しいかチェックする
+  function typeEqual(srcType,destType){
+    return getSourceType(srcType).name == getSourceType(destType).name;
   }
 
   const byteSizeSuffixMap = new Map([
@@ -570,8 +586,7 @@ BooleanLiteral
   = TrueToken  { return { nodeType: "Literal", value: true  }; }
   / FalseToken { return { nodeType: "Literal", value: false }; }
 
-// The "!(IdentifierStart / DecimalDigit)" predicate is not part of the official
-// grammar, it comes from text in section 7.8.3.
+// 数値リテラル
 NumericLiteral "number"
   = literal:HexLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
@@ -582,6 +597,7 @@ NumericLiteral "number"
   / literal:BinaryLiteral !(IdentifierStart / DecimalDigit) {
       return literal;
     }
+
 
 DecimalLiteral
   = sign:Sign? floatValue:$(
@@ -1509,7 +1525,8 @@ ExpressionNoIn
 Statement
   = Block
   / VariableStatement
-	/ TypeAliasStatement
+  / CustomTypeDeclarationStatement 
+	/ TypeAliasDeclStatement
   / EmptyStatement
   / ExpressionStatement
   / IfStatement
@@ -1550,8 +1567,8 @@ VariableDecl
 		  
 			declarations.forEach(n=>{
         //初期化式の型チェック
-				if(n.init && (n.init.type !== type)){
-          console.log(n.init.type,type);
+				if(n.init && (!typeEqual(n.init.type,type))){
+          //console.log(n.init.type,type);
 					error("初期値の型が宣言する変数の型と一致しません。");
 				}
 				n.type = type;
@@ -1575,35 +1592,6 @@ VariableDecl
         kind: "var"
       };
     }
-Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomType
-
-BuiltinType = NativeType / EmulationType
-
-NativeType = I32Token / I64Token / F32Token / F64Token 
-
-EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
-
-CustomType = customType:IdentifierName &{customType = findType(customType.name); return customType;} {
-  return findType(customType.name);
-}
-
-TypeAliasStatement = TypeToken __ aliasName:IdentifierName __ '=' __ typeName:IdentifierName __ EOS {
-  if(scopeTop !== scope) { 
-    error("エイリアスはグローバルスコープのみ定義が可能です．"); 
-  }
-  let sourceType = findType(typeName.name);
-  if(!sourceType){
-    error("ソース型名が見つかりません。");
-  }
-  let node = {
-    nodeType:"TypeAliasDeclaration",
-    type:sourceType,
-    name:aliasName.name,
-    sourceType:sourceType
-  };
-  defineTypeAlias(node);  
-  return node;
-}
 
   
 
@@ -1640,6 +1628,42 @@ Initialiser
 
 InitialiserNoIn
   = "=" !"=" __  expression:AssignmentExpressionNoIn { return expression; }
+
+// 型 -------------------------
+
+Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomTypeOrTypeAlias
+
+BuiltinType = NativeType / EmulationType
+
+NativeType = I32Token / I64Token / F32Token / F64Token 
+
+EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
+
+CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType.name); return customType;} {
+  return findType(customType.name);
+}
+
+CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ "{" __ body:CustomTypeDeclBody __ "}" __ EOS
+
+CustomTypeDeclBody = VariableStatement+;
+
+// 
+TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {
+  if(scopeTop !== scope) { 
+    error("エイリアスはグローバルスコープのみ定義が可能です．"); 
+  }
+  let sourceType = findType(typeName.name);
+  if(!sourceType){
+    error("ソース型名が見つかりません。");
+  }
+  let node = {
+    nodeType:"TypeAliasDeclaration",
+    name:aliasName.name,
+    sourceType:sourceType
+  };
+  defineTypeAlias(node);  
+  return node;
+}
 
 EmptyStatement
   = ";" { return { nodeType: "EmptyStatement" }; }

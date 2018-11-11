@@ -877,8 +877,8 @@ function peg$parse(input, options) {
       		  
       			declarations.forEach(n=>{
               //初期化式の型チェック
-      				if(n.init && (n.init.type !== type)){
-                console.log(n.init.type,type);
+      				if(n.init && (!typeEqual(n.init.type,type))){
+                //console.log(n.init.type,type);
       					error("初期値の型が宣言する変数の型と一致しません。");
       				}
       				n.type = type;
@@ -902,12 +902,20 @@ function peg$parse(input, options) {
               kind: "var"
             };
           },
-      peg$c402 = function(type) { return primitiveTypes.get(type);},
-      peg$c403 = function(customType) {customType = findType(customType.name); return customType;},
-      peg$c404 = function(customType) {
+      peg$c402 = function(id, init) {
+            return {
+              nodeType: "VariableDeclarator",
+              id: id,
+              init: extractOptional(init, 1)
+            };
+          },
+      peg$c403 = function(expression) { return expression;},
+      peg$c404 = function(type) { return primitiveTypes.get(type);},
+      peg$c405 = function(customType) {customType = findType(customType.name); return customType;},
+      peg$c406 = function(customType) {
         return findType(customType.name);
       },
-      peg$c405 = function(aliasName, typeName) {
+      peg$c407 = function(aliasName, typeName) {
         if(scopeTop !== scope) { 
           error("エイリアスはグローバルスコープのみ定義が可能です．"); 
         }
@@ -917,21 +925,12 @@ function peg$parse(input, options) {
         }
         let node = {
           nodeType:"TypeAliasDeclaration",
-          type:sourceType,
           name:aliasName.name,
           sourceType:sourceType
         };
         defineTypeAlias(node);  
         return node;
       },
-      peg$c406 = function(id, init) {
-            return {
-              nodeType: "VariableDeclarator",
-              id: id,
-              init: extractOptional(init, 1)
-            };
-          },
-      peg$c407 = function(expression) { return expression;},
       peg$c408 = function() { return { nodeType: "EmptyStatement" }; },
       peg$c409 = function(expression) {
             return {
@@ -10632,33 +10631,36 @@ function peg$parse(input, options) {
     if (s0 === peg$FAILED) {
       s0 = peg$parseVariableStatement();
       if (s0 === peg$FAILED) {
-        s0 = peg$parseTypeAliasStatement();
+        s0 = peg$parseCustomTypeDeclarationStatement();
         if (s0 === peg$FAILED) {
-          s0 = peg$parseEmptyStatement();
+          s0 = peg$parseTypeAliasDeclStatement();
           if (s0 === peg$FAILED) {
-            s0 = peg$parseExpressionStatement();
+            s0 = peg$parseEmptyStatement();
             if (s0 === peg$FAILED) {
-              s0 = peg$parseIfStatement();
+              s0 = peg$parseExpressionStatement();
               if (s0 === peg$FAILED) {
-                s0 = peg$parseIterationStatement();
+                s0 = peg$parseIfStatement();
                 if (s0 === peg$FAILED) {
-                  s0 = peg$parseContinueStatement();
+                  s0 = peg$parseIterationStatement();
                   if (s0 === peg$FAILED) {
-                    s0 = peg$parseBreakStatement();
+                    s0 = peg$parseContinueStatement();
                     if (s0 === peg$FAILED) {
-                      s0 = peg$parseReturnStatement();
+                      s0 = peg$parseBreakStatement();
                       if (s0 === peg$FAILED) {
-                        s0 = peg$parseWithStatement();
+                        s0 = peg$parseReturnStatement();
                         if (s0 === peg$FAILED) {
-                          s0 = peg$parseLabelledStatement();
+                          s0 = peg$parseWithStatement();
                           if (s0 === peg$FAILED) {
-                            s0 = peg$parseSwitchStatement();
+                            s0 = peg$parseLabelledStatement();
                             if (s0 === peg$FAILED) {
-                              s0 = peg$parseThrowStatement();
+                              s0 = peg$parseSwitchStatement();
                               if (s0 === peg$FAILED) {
-                                s0 = peg$parseTryStatement();
+                                s0 = peg$parseThrowStatement();
                                 if (s0 === peg$FAILED) {
-                                  s0 = peg$parseDebuggerStatement();
+                                  s0 = peg$parseTryStatement();
+                                  if (s0 === peg$FAILED) {
+                                    s0 = peg$parseDebuggerStatement();
+                                  }
                                 }
                               }
                             }
@@ -10892,183 +10894,6 @@ function peg$parse(input, options) {
     return s0;
   }
 
-  function peg$parseType() {
-    var s0, s1;
-
-    s0 = peg$currPos;
-    s1 = peg$parseBuiltinType();
-    if (s1 !== peg$FAILED) {
-      peg$savedPos = s0;
-      s1 = peg$c402(s1);
-    }
-    s0 = s1;
-    if (s0 === peg$FAILED) {
-      s0 = peg$parseCustomType();
-    }
-
-    return s0;
-  }
-
-  function peg$parseBuiltinType() {
-    var s0;
-
-    s0 = peg$parseNativeType();
-    if (s0 === peg$FAILED) {
-      s0 = peg$parseEmulationType();
-    }
-
-    return s0;
-  }
-
-  function peg$parseNativeType() {
-    var s0;
-
-    s0 = peg$parseI32Token();
-    if (s0 === peg$FAILED) {
-      s0 = peg$parseI64Token();
-      if (s0 === peg$FAILED) {
-        s0 = peg$parseF32Token();
-        if (s0 === peg$FAILED) {
-          s0 = peg$parseF64Token();
-        }
-      }
-    }
-
-    return s0;
-  }
-
-  function peg$parseEmulationType() {
-    var s0;
-
-    s0 = peg$parseVoidToken();
-    if (s0 === peg$FAILED) {
-      s0 = peg$parseBoolToken();
-      if (s0 === peg$FAILED) {
-        s0 = peg$parseStringToken();
-        if (s0 === peg$FAILED) {
-          s0 = peg$parseI8Token();
-          if (s0 === peg$FAILED) {
-            s0 = peg$parseI16Token();
-            if (s0 === peg$FAILED) {
-              s0 = peg$parseU8Token();
-              if (s0 === peg$FAILED) {
-                s0 = peg$parseU16Token();
-                if (s0 === peg$FAILED) {
-                  s0 = peg$parseU32Token();
-                  if (s0 === peg$FAILED) {
-                    s0 = peg$parseU64Token();
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return s0;
-  }
-
-  function peg$parseCustomType() {
-    var s0, s1, s2;
-
-    s0 = peg$currPos;
-    s1 = peg$parseIdentifierName();
-    if (s1 !== peg$FAILED) {
-      peg$savedPos = peg$currPos;
-      s2 = peg$c403(s1);
-      if (s2) {
-        s2 = void 0;
-      } else {
-        s2 = peg$FAILED;
-      }
-      if (s2 !== peg$FAILED) {
-        peg$savedPos = s0;
-        s1 = peg$c404(s1);
-        s0 = s1;
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-
-    return s0;
-  }
-
-  function peg$parseTypeAliasStatement() {
-    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9;
-
-    s0 = peg$currPos;
-    s1 = peg$parseTypeToken();
-    if (s1 !== peg$FAILED) {
-      s2 = peg$parse__();
-      if (s2 !== peg$FAILED) {
-        s3 = peg$parseIdentifierName();
-        if (s3 !== peg$FAILED) {
-          s4 = peg$parse__();
-          if (s4 !== peg$FAILED) {
-            if (input.charCodeAt(peg$currPos) === 61) {
-              s5 = peg$c308;
-              peg$currPos++;
-            } else {
-              s5 = peg$FAILED;
-              if (peg$silentFails === 0) { peg$fail(peg$c309); }
-            }
-            if (s5 !== peg$FAILED) {
-              s6 = peg$parse__();
-              if (s6 !== peg$FAILED) {
-                s7 = peg$parseIdentifierName();
-                if (s7 !== peg$FAILED) {
-                  s8 = peg$parse__();
-                  if (s8 !== peg$FAILED) {
-                    s9 = peg$parseEOS();
-                    if (s9 !== peg$FAILED) {
-                      peg$savedPos = s0;
-                      s1 = peg$c405(s3, s7);
-                      s0 = s1;
-                    } else {
-                      peg$currPos = s0;
-                      s0 = peg$FAILED;
-                    }
-                  } else {
-                    peg$currPos = s0;
-                    s0 = peg$FAILED;
-                  }
-                } else {
-                  peg$currPos = s0;
-                  s0 = peg$FAILED;
-                }
-              } else {
-                peg$currPos = s0;
-                s0 = peg$FAILED;
-              }
-            } else {
-              peg$currPos = s0;
-              s0 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s0;
-            s0 = peg$FAILED;
-          }
-        } else {
-          peg$currPos = s0;
-          s0 = peg$FAILED;
-        }
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-
-    return s0;
-  }
-
   function peg$parseVariableDeclarationList() {
     var s0, s1, s2, s3, s4, s5, s6, s7;
 
@@ -11279,7 +11104,7 @@ function peg$parse(input, options) {
       }
       if (s2 !== peg$FAILED) {
         peg$savedPos = s0;
-        s1 = peg$c406(s1, s2);
+        s1 = peg$c402(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -11319,7 +11144,7 @@ function peg$parse(input, options) {
       }
       if (s2 !== peg$FAILED) {
         peg$savedPos = s0;
-        s1 = peg$c406(s1, s2);
+        s1 = peg$c402(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -11367,7 +11192,7 @@ function peg$parse(input, options) {
           s4 = peg$parseAssignmentExpression();
           if (s4 !== peg$FAILED) {
             peg$savedPos = s0;
-            s1 = peg$c407(s4);
+            s1 = peg$c403(s4);
             s0 = s1;
           } else {
             peg$currPos = s0;
@@ -11425,6 +11250,288 @@ function peg$parse(input, options) {
             peg$savedPos = s0;
             s1 = peg$c265(s4);
             s0 = s1;
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseType() {
+    var s0, s1;
+
+    s0 = peg$currPos;
+    s1 = peg$parseBuiltinType();
+    if (s1 !== peg$FAILED) {
+      peg$savedPos = s0;
+      s1 = peg$c404(s1);
+    }
+    s0 = s1;
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseCustomTypeOrTypeAlias();
+    }
+
+    return s0;
+  }
+
+  function peg$parseBuiltinType() {
+    var s0;
+
+    s0 = peg$parseNativeType();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseEmulationType();
+    }
+
+    return s0;
+  }
+
+  function peg$parseNativeType() {
+    var s0;
+
+    s0 = peg$parseI32Token();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseI64Token();
+      if (s0 === peg$FAILED) {
+        s0 = peg$parseF32Token();
+        if (s0 === peg$FAILED) {
+          s0 = peg$parseF64Token();
+        }
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseEmulationType() {
+    var s0;
+
+    s0 = peg$parseVoidToken();
+    if (s0 === peg$FAILED) {
+      s0 = peg$parseBoolToken();
+      if (s0 === peg$FAILED) {
+        s0 = peg$parseStringToken();
+        if (s0 === peg$FAILED) {
+          s0 = peg$parseI8Token();
+          if (s0 === peg$FAILED) {
+            s0 = peg$parseI16Token();
+            if (s0 === peg$FAILED) {
+              s0 = peg$parseU8Token();
+              if (s0 === peg$FAILED) {
+                s0 = peg$parseU16Token();
+                if (s0 === peg$FAILED) {
+                  s0 = peg$parseU32Token();
+                  if (s0 === peg$FAILED) {
+                    s0 = peg$parseU64Token();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return s0;
+  }
+
+  function peg$parseCustomTypeOrTypeAlias() {
+    var s0, s1, s2;
+
+    s0 = peg$currPos;
+    s1 = peg$parseIdentifier();
+    if (s1 !== peg$FAILED) {
+      peg$savedPos = peg$currPos;
+      s2 = peg$c405(s1);
+      if (s2) {
+        s2 = void 0;
+      } else {
+        s2 = peg$FAILED;
+      }
+      if (s2 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s1 = peg$c406(s1);
+        s0 = s1;
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseCustomTypeDeclarationStatement() {
+    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11;
+
+    s0 = peg$currPos;
+    s1 = peg$parseTypeToken();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parse__();
+      if (s2 !== peg$FAILED) {
+        s3 = peg$parseIdentifier();
+        if (s3 !== peg$FAILED) {
+          s4 = peg$parse__();
+          if (s4 !== peg$FAILED) {
+            if (input.charCodeAt(peg$currPos) === 123) {
+              s5 = peg$c275;
+              peg$currPos++;
+            } else {
+              s5 = peg$FAILED;
+              if (peg$silentFails === 0) { peg$fail(peg$c276); }
+            }
+            if (s5 !== peg$FAILED) {
+              s6 = peg$parse__();
+              if (s6 !== peg$FAILED) {
+                s7 = peg$parseCustomTypeDeclBody();
+                if (s7 !== peg$FAILED) {
+                  s8 = peg$parse__();
+                  if (s8 !== peg$FAILED) {
+                    if (input.charCodeAt(peg$currPos) === 125) {
+                      s9 = peg$c277;
+                      peg$currPos++;
+                    } else {
+                      s9 = peg$FAILED;
+                      if (peg$silentFails === 0) { peg$fail(peg$c278); }
+                    }
+                    if (s9 !== peg$FAILED) {
+                      s10 = peg$parse__();
+                      if (s10 !== peg$FAILED) {
+                        s11 = peg$parseEOS();
+                        if (s11 !== peg$FAILED) {
+                          s1 = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11];
+                          s0 = s1;
+                        } else {
+                          peg$currPos = s0;
+                          s0 = peg$FAILED;
+                        }
+                      } else {
+                        peg$currPos = s0;
+                        s0 = peg$FAILED;
+                      }
+                    } else {
+                      peg$currPos = s0;
+                      s0 = peg$FAILED;
+                    }
+                  } else {
+                    peg$currPos = s0;
+                    s0 = peg$FAILED;
+                  }
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseCustomTypeDeclBody() {
+    var s0, s1;
+
+    s0 = [];
+    s1 = peg$parseVariableStatement();
+    if (s1 !== peg$FAILED) {
+      while (s1 !== peg$FAILED) {
+        s0.push(s1);
+        s1 = peg$parseVariableStatement();
+      }
+    } else {
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseTypeAliasDeclStatement() {
+    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9;
+
+    s0 = peg$currPos;
+    s1 = peg$parseTypeToken();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parse__();
+      if (s2 !== peg$FAILED) {
+        s3 = peg$parseIdentifier();
+        if (s3 !== peg$FAILED) {
+          s4 = peg$parse__();
+          if (s4 !== peg$FAILED) {
+            if (input.charCodeAt(peg$currPos) === 61) {
+              s5 = peg$c308;
+              peg$currPos++;
+            } else {
+              s5 = peg$FAILED;
+              if (peg$silentFails === 0) { peg$fail(peg$c309); }
+            }
+            if (s5 !== peg$FAILED) {
+              s6 = peg$parse__();
+              if (s6 !== peg$FAILED) {
+                s7 = peg$parseType();
+                if (s7 !== peg$FAILED) {
+                  s8 = peg$parse__();
+                  if (s8 !== peg$FAILED) {
+                    s9 = peg$parseEOS();
+                    if (s9 !== peg$FAILED) {
+                      peg$savedPos = s0;
+                      s1 = peg$c407(s3, s7);
+                      s0 = s1;
+                    } else {
+                      peg$currPos = s0;
+                      s0 = peg$FAILED;
+                    }
+                  } else {
+                    peg$currPos = s0;
+                    s0 = peg$FAILED;
+                  }
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
+              } else {
+                peg$currPos = s0;
+                s0 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
           } else {
             peg$currPos = s0;
             s0 = peg$FAILED;
@@ -13884,7 +13991,7 @@ function peg$parse(input, options) {
     const customTypes = new Map();
     const typeAliases = new Map();
 
-    
+    // 型の検索 
     function findType(name){
       let type = primitiveTypes.get(name);
       !type && (type = customTypes.get(name));
@@ -13892,6 +13999,7 @@ function peg$parse(input, options) {
       return type;
     }
 
+    // 型定義
     function defineType(type){
       if(!findType(type.name)){
         customType.set(type.name,type);
@@ -13900,12 +14008,27 @@ function peg$parse(input, options) {
       }
     }
 
+    // 型エイリアスの定義
     function defineTypeAlias(typeAlias){
       if(!findType(typeAlias.name)){
         typeAliases.set(typeAlias.name,typeAlias);
       } else {
         error("エイリアス名はすでに定義済みです。");
       }
+    }
+
+    // エイリアスのもとの型を得る
+    function getSourceType(type){
+      if(type.nodeType == 'TypeAliasDeclaration'){
+        return getSourceType(type.sourceType);
+      } else {
+        return type;
+      }
+    }
+
+    // 型が等しいかチェックする
+    function typeEqual(srcType,destType){
+      return getSourceType(srcType).name == getSourceType(destType).name;
     }
 
     const byteSizeSuffixMap = new Map([

@@ -1,6 +1,13 @@
 type A = i32;
+type B = A;
+
+type C {
+  i32 a = 1;
+  i32 b = 2;
+};
 
 export i32 main (){
-  A b = 1,c = 2;
+  A b = 1;
+  B c = 2;
   return b + c;
 }
