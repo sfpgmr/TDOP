@@ -1560,7 +1560,7 @@ StatementList
 // 変数宣言ステートメント //
 
 VariableStatement
-  = varDecl:VariableDecl EOS {return varDecl;}
+  = varDecl:VariableDecl __ EOS {return varDecl;}
 
 VariableDecl  
   = type:Type __ declarations:VariableDeclarationList {
@@ -1584,7 +1584,7 @@ VariableDecl
           //wasmModule.addGlobal(n.value, getBinaryenType(n.type.name) ,true, n.init );
         }
 			});
-		  	
+		   
       return {
         nodeType: "VariableDeclaration",
         type:type,
@@ -1644,7 +1644,7 @@ CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody __ BlockEnd __ EOS {
+CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody* __ BlockEnd __ EOS {
 	
 	if(findType(typeName.name)){
 		error(`型名はすでに定義されています。${typeNmae.name}`);
@@ -1659,8 +1659,9 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin 
 	defineType(node);
 	return node;
 }
-:
-CustomTypeDeclBody = (VariableStatement / StandardFunctionDeclaration )*
+
+CustomTypeDeclBody = VariableStatement / StandardFunctionDeclaration
+//CustomTypeDeclBody = (VariableStatement)*
 
 // 
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {
@@ -1946,7 +1947,7 @@ StandardFunctionDeclaration
       }
     ) 
     ")" __
-    "{" __ body:FunctionBody __ "}"
+    "{" __ body:FunctionBody __ "}" __ EOS
     { 
       let node = {
         nodeType: "FunctionDeclaration",

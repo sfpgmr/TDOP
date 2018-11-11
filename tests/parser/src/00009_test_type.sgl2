@@ -3,13 +3,14 @@ type B = A;
 
 type C {
   i32 a = 1;
-	i32 func(i32 a_){
-		return a_;
-	};
+	//i32 b = 1;
+	/*i32 func (i32 e){
+		return e;
+	};*/
 };
 
 export i32 main (){
   A b = 1;
   B c = 2;
   return b + c;
-}
+};
