@@ -1017,6 +1017,7 @@ TryToken        = "try"        !IdentifierPart
 TypeToken       = "type"       
 TypeofToken     = "typeof"     !IdentifierPart
 VarToken        = "var"        !IdentifierPart
+VectorToken     = "vec"        !IdentifierPart
 VoidToken       = "void"       
 WhileToken      = "while"      !IdentifierPart
 WithToken       = "with"       !IdentifierPart
@@ -1628,6 +1629,13 @@ Initialiser
 
 InitialiserNoIn
   = "=" !"=" __  expression:AssignmentExpressionNoIn { return expression; }
+
+// ベクトル
+VectorTypeName = VectorToken dimension:[234] {return {
+	nodeType:'vector',
+	dimension:parseInt(dimension)
+};}
+
 
 // 型 -------------------------
 
