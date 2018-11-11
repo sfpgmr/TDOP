@@ -136,7 +136,7 @@
   
   function findType(name){
     let type = primitiveTypes.get(name);
-    !type && (type = customtypes.get(name));
+    !type && (type = customTypes.get(name));
     !type && (type = typeAliases.get(name));
     return type;
   }
@@ -1551,6 +1551,7 @@ VariableDecl
 			declarations.forEach(n=>{
         //初期化式の型チェック
 				if(n.init && (n.init.type !== type)){
+          console.log(n.init.type,type);
 					error("初期値の型が宣言する変数の型と一致しません。");
 				}
 				n.type = type;
@@ -1561,7 +1562,7 @@ VariableDecl
         n.global = funcScope.global;
         // 変数インデックス
         funcScope.index(n);
-        // グローバル変数
+        // グローバル変数 
         if(n.global){
           //wasmModule.addGlobal(n.value, getBinaryenType(n.type.name) ,true, n.init );
         }
@@ -1582,7 +1583,9 @@ NativeType = I32Token / I64Token / F32Token / F64Token
 
 EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
 
-CustomType = TypeToken
+CustomType = customType:IdentifierName &{customType = findType(customType.name); return customType;} {
+  return findType(customType.name);
+}
 
 TypeAliasStatement = TypeToken __ aliasName:IdentifierName __ '=' __ typeName:IdentifierName __ EOS {
   if(scopeTop !== scope) { 
@@ -1592,11 +1595,14 @@ TypeAliasStatement = TypeToken __ aliasName:IdentifierName __ '=' __ typeName:Id
   if(!sourceType){
     error("ソース型名が見つかりません。");
   }
-  return {
+  let node = {
     nodeType:"TypeAliasDeclaration",
+    type:sourceType,
     name:aliasName.name,
     sourceType:sourceType
   };
+  defineTypeAlias(node);  
+  return node;
 }
 
   

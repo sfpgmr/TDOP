@@ -1,4 +1,5 @@
 type A = i32;
+
 export i32 main (){
   A b = 1,c = 2;
   return b + c;
