@@ -3,7 +3,9 @@ type B = A;
 
 type C {
   i32 a = 1;
-  i32 b = 2;
+	i32 func(i32 a_){
+		return a_;
+	};
 };
 
 export i32 main (){

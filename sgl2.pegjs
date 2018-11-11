@@ -144,7 +144,7 @@
   // 型定義
   function defineType(type){
     if(!findType(type.name)){
-      customType.set(type.name,type);
+      customTypes.set(type.name,type);
     } else {
       error("型名はすでに定義済みです。");
     }
@@ -1639,13 +1639,28 @@ NativeType = I32Token / I64Token / F32Token / F64Token
 
 EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token 
 
+// 型名
 CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType.name); return customType;} {
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ "{" __ body:CustomTypeDeclBody __ "}" __ EOS
+CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody __ BlockEnd __ EOS {
+	
+	if(findType(typeName.name)){
+		error(`型名はすでに定義されています。${typeNmae.name}`);
+	}
 
-CustomTypeDeclBody = VariableStatement+;
+	const node = {
+		nodeType:'CustomTypeDeclaration',
+		name:typeName.name,
+		body:body
+	};
+
+	defineType(node);
+	return node;
+}
+:
+CustomTypeDeclBody = (VariableStatement / StandardFunctionDeclaration )*
 
 // 
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {
@@ -1907,7 +1922,14 @@ DebuggerStatement
 // ----- A.5 Functions and Programs -----
 
 FunctionDeclaration
-  = export_:ExportToken? __ returnType:Type __ id:Identifier __
+  = export_:ExportToken? __ funcDecl:StandardFunctionDeclaration
+    {
+			funcDecl.export = !!export_;
+			return funcDecl;
+		}
+
+StandardFunctionDeclaration
+  = returnType:Type __ id:Identifier __
     "(" __ params:(params_:(FunctionParameterList __)? {
         // console.log(params_[0]);
         // スコープの新規作成
@@ -1929,7 +1951,6 @@ FunctionDeclaration
       let node = {
         nodeType: "FunctionDeclaration",
         returnType:returnType,
-        export:!!export_,
         id: id,
         params: optionalList(extractOptional(params, 0)),
         body: body,
@@ -1950,7 +1971,6 @@ FunctionDeclaration
       funcScope.scopeOut();
       return node;
     }
-
 //FunctionExpression
 //  = FunctionToken __ id:(Identifier __)?
 //    "(" __ params:(VariableDeclarationList __)? ")" __
