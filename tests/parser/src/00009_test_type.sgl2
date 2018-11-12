@@ -3,10 +3,10 @@ type B = A;
 
 type C {
   i32 a = 1;
-	//i32 b = 1;
-	/*i32 func (i32 e){
-		return e;
-	};*/
+  i32 b = 1;
+	i32 c(){
+		return 10;
+	};
 };
 
 export i32 main (){

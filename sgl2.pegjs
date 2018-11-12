@@ -1553,7 +1553,7 @@ Block
 
 BlockBegin = '{' {createScope(); return text();} 
 FunctionBlockBegin = '{'
-BlockEnd = '}' {const s = scope;scope.pop();return s;}
+BlockEnd = '}' {const s = scope;scope.pop();return text();}
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1561,7 +1561,7 @@ StatementList
 // 変数宣言ステートメント //
 
 VariableStatement
-  = varDecl:VariableDecl __ EOS {return varDecl;}
+  = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
   = type:Type __ declarations:VariableDeclarationList {
@@ -1652,7 +1652,7 @@ CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody* __ BlockEnd __ EOS {
+CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody* __ BlockEnd EOS {
 	
 	if(findType(typeName.name)){
 		error(`型名はすでに定義されています。${typeNmae.name}`);
@@ -1668,8 +1668,8 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin 
 	return node;
 }
 
-CustomTypeDeclBody = VariableStatement / StandardFunctionDeclaration
-//CustomTypeDeclBody = (VariableStatement)*
+CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}
+//CustomTypeDeclBody = VariableStatement
 
 // 
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {
