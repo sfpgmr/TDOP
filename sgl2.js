@@ -11420,6 +11420,9 @@ function peg$parse(input, options) {
                     s0 = peg$parseU64Token();
                     if (s0 === peg$FAILED) {
                       s0 = peg$parseVectorTypeToken();
+                      if (s0 === peg$FAILED) {
+                        s0 = peg$parseMatrixTypeToken();
+                      }
                     }
                   }
                 }

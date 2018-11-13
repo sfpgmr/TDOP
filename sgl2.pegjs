@@ -173,6 +173,20 @@
     return getSourceType(srcType).name == getSourceType(destType).name;
   }
 
+	// 型情報を取得する
+	function getTypeInfo(type){
+		let typeName = typeof type;
+		switch(typeName){
+			case 'string':
+				return primitiveTypes.get(type);
+			case 'object':
+				if(type.name){
+				}
+		}
+		 
+
+	}
+
   const byteSizeSuffixMap = new Map([
 	['s',{i:'i8',u:'u8'}],
 	['w',{i:'i16',u:'u16'}],
@@ -1686,16 +1700,15 @@ TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Ty
 
 // ベクトル
 VectorTypeToken = VectorToken dimension:[234] {return {
-	nodeType:'vector',
-	dimension:parseInt(dimension)
-};}
+	name:'vector',
+	dimension:parseInt(dimension)};}
 
 // 行列型
 MatrixTypeToken = MatrixToken coloumn:[234] 'x' row:[234] {
-return {nodeType:'matrix',column:column,row:row};
-}
+return {name:'matrix',column:column,row:row};
 
-EmptyStatement
+
+nt
   = ";" { return { nodeType: "EmptyStatement" }; }
 
 ExpressionStatement
