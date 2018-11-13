@@ -1,6 +1,6 @@
-type A {a,b};
 type A = i32;
 type B = A;
+vec4 a;
 
 type C {
   i32 a = 1;

@@ -1640,7 +1640,7 @@ BuiltinType = NativeType / EmulationType
 
 NativeType = I32Token / I64Token / F32Token / F64Token 
 
-EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token / VectorTypeToken
+EmulationType = VoidToken / BoolToken / StringToken / I8Token / I16Token / U8Token / U16Token / U32Token / U64Token / VectorTypeToken / MatrixTypeToken
 
 // 型名
 CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType.name); return customType;} {
