@@ -954,11 +954,10 @@ function peg$parse(input, options) {
       peg$c414 = /^[234]/,
       peg$c415 = peg$classExpectation(["2", "3", "4"], false, false),
       peg$c416 = function(dimension) {return {
-      	nodeType:'vector',
-      	dimension:parseInt(dimension)
-      };},
+      	name:'vector',
+      	dimension:parseInt(dimension)};},
       peg$c417 = function(coloumn, row) {
-      return {nodeType:'matrix',column:column,row:row};
+      return {name:'matrix',column:column,row:row};
       },
       peg$c418 = function() { return { nodeType: "EmptyStatement" }; },
       peg$c419 = function(expression) {
@@ -14227,6 +14226,20 @@ function peg$parse(input, options) {
     function typeEqual(srcType,destType){
       return getSourceType(srcType).name == getSourceType(destType).name;
     }
+
+  	// 型情報を取得する
+  	function getTypeInfo(type){
+  		let typeName = typeof type;
+  		switch(typeName){
+  			case 'string':
+  				return primitiveTypes.get(type);
+  			case 'object':
+  				if(type.name){
+  				}
+  		}
+  		 
+
+  	}
 
     const byteSizeSuffixMap = new Map([
   	['s',{i:'i8',u:'u8'}],

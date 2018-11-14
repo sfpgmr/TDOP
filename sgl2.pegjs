@@ -130,6 +130,9 @@
     ['string',{name:'string',kind:'Emulation'}]
   ]);
 
+  function buildVectorType(){
+  
+  }
   const customTypes = new Map();
   const typeAliases = new Map();
 
@@ -1706,9 +1709,9 @@ VectorTypeToken = VectorToken dimension:[234] {return {
 // 行列型
 MatrixTypeToken = MatrixToken coloumn:[234] 'x' row:[234] {
 return {name:'matrix',column:column,row:row};
+}
 
-
-nt
+EmptyStatement
   = ";" { return { nodeType: "EmptyStatement" }; }
 
 ExpressionStatement
