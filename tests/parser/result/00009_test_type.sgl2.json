@@ -2,7 +2,10 @@
   "typeAliases": {},
   "customTypes": {},
   "scope": {
-    "def": {}
+    "def": {},
+    "parent": {
+      "def": {}
+    }
   },
   "program": {
     "nodeType": "Program",
@@ -48,6 +51,39 @@
         "name": "C",
         "body": [
           {
+            "nodeType": "FunctionDeclaration",
+            "returnType": {
+              "name": "void",
+              "size": 0,
+              "kind": "Emulation"
+            },
+            "id": {
+              "nodeType": "Identifier",
+              "name": "func",
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              }
+            },
+            "params": [],
+            "body": {
+              "nodeType": "BlockStatement",
+              "body": [],
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                }
+              }
+            },
+            "localVars": []
+          },
+          {
             "nodeType": "VariableDeclaration",
             "type": {
               "name": "i32",
@@ -74,22 +110,7 @@
                     }
                   }
                 },
-                "init": {
-                  "nodeType": "Literal",
-                  "type": {
-                    "name": "i32",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
-                    "signed": true,
-                    "innerType": "i32",
-                    "kind": "Native"
-                  },
-                  "value": 1
-                },
+                "init": null,
                 "type": {
                   "name": "i32",
                   "size": 4,
@@ -109,7 +130,41 @@
                   }
                 },
                 "global": true,
-                "index": 0
+                "index": 1
+              },
+              {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "b",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": null,
+                "type": {
+                  "name": "i32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "innerType": "i32",
+                  "kind": "Native"
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": true,
+                "index": 2
               }
             ],
             "kind": "var"
@@ -133,7 +188,7 @@
                 "nodeType": "VariableDeclarator",
                 "id": {
                   "nodeType": "Identifier",
-                  "name": "b",
+                  "name": "c",
                   "scope": {
                     "def": {},
                     "parent": {
@@ -176,7 +231,91 @@
                   }
                 },
                 "global": true,
-                "index": 1
+                "index": 3
+              },
+              {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "d",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": null,
+                "type": {
+                  "name": "i32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "innerType": "i32",
+                  "kind": "Native"
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": true,
+                "index": 4
+              }
+            ],
+            "kind": "var"
+          },
+          {
+            "nodeType": "VariableDeclaration",
+            "type": {
+              "name": "f32",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 3.402823466e+38,
+              "min": 1.175494351e-38,
+              "integer": false,
+              "innerType": "f32",
+              "kind": "Native"
+            },
+            "declarations": [
+              {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "e",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": null,
+                "type": {
+                  "name": "f32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 3.402823466e+38,
+                  "min": 1.175494351e-38,
+                  "integer": false,
+                  "innerType": "f32",
+                  "kind": "Native"
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": true,
+                "index": 5
               }
             ],
             "kind": "var"
@@ -197,7 +336,7 @@
             },
             "id": {
               "nodeType": "Identifier",
-              "name": "c",
+              "name": "func2",
               "scope": {
                 "def": {},
                 "parent": {
@@ -212,20 +351,17 @@
                 {
                   "nodeType": "ReturnStatement",
                   "argument": {
-                    "nodeType": "Literal",
-                    "type": {
-                      "name": "i32",
-                      "size": 4,
-                      "bitSize": 32,
-                      "byteSize": 4,
-                      "max": 2147483647,
-                      "min": -2147483648,
-                      "integer": true,
-                      "signed": true,
-                      "innerType": "i32",
-                      "kind": "Native"
-                    },
-                    "value": 10
+                    "nodeType": "Identifier",
+                    "name": "a",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {},
+                        "parent": {
+                          "def": {}
+                        }
+                      }
+                    }
                   }
                 }
               ],
@@ -338,7 +474,7 @@
                     }
                   },
                   "global": false,
-                  "index": 3
+                  "index": 7
                 }
               ],
               "kind": "var"
@@ -421,10 +557,345 @@
                     }
                   },
                   "global": false,
-                  "index": 4
+                  "index": 8
                 }
               ],
               "kind": "var"
+            },
+            {
+              "nodeType": "ForStatement",
+              "init": {
+                "nodeType": "VariableDeclaration",
+                "declarations": {
+                  "nodeType": "VariableDeclaration",
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "declarations": [
+                    {
+                      "nodeType": "VariableDeclarator",
+                      "id": {
+                        "nodeType": "Identifier",
+                        "name": "a",
+                        "scope": {
+                          "def": {},
+                          "parent": {
+                            "def": {},
+                            "parent": {
+                              "def": {}
+                            }
+                          }
+                        }
+                      },
+                      "init": {
+                        "nodeType": "Literal",
+                        "type": {
+                          "name": "i32",
+                          "size": 4,
+                          "bitSize": 32,
+                          "byteSize": 4,
+                          "max": 2147483647,
+                          "min": -2147483648,
+                          "integer": true,
+                          "signed": true,
+                          "innerType": "i32",
+                          "kind": "Native"
+                        },
+                        "value": 1
+                      },
+                      "type": {
+                        "name": "i32",
+                        "size": 4,
+                        "bitSize": 32,
+                        "byteSize": 4,
+                        "max": 2147483647,
+                        "min": -2147483648,
+                        "integer": true,
+                        "signed": true,
+                        "innerType": "i32",
+                        "kind": "Native"
+                      },
+                      "scope": {
+                        "def": {},
+                        "parent": {
+                          "def": {},
+                          "parent": {
+                            "def": {}
+                          }
+                        }
+                      },
+                      "global": false,
+                      "index": 9
+                    }
+                  ],
+                  "kind": "var"
+                },
+                "kind": "var"
+              },
+              "test": {
+                "nodeType": "BinaryExpression",
+                "operator": "<",
+                "left": {
+                  "nodeType": "Identifier",
+                  "name": "a",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "nodeType": "Literal",
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "value": 10
+                }
+              },
+              "update": {
+                "nodeType": "UpdateExpression",
+                "operator": "++",
+                "argument": {
+                  "nodeType": "Identifier",
+                  "name": "a",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  }
+                },
+                "prefix": true
+              },
+              "body": {
+                "nodeType": "BlockStatement",
+                "body": [
+                  {
+                    "nodeType": "ExpressionStatement",
+                    "expression": {
+                      "nodeType": "AssignmentExpression",
+                      "operator": "=",
+                      "left": {
+                        "nodeType": "Identifier",
+                        "name": "b",
+                        "scope": {
+                          "def": {},
+                          "parent": {
+                            "def": {},
+                            "parent": {
+                              "def": {},
+                              "parent": {
+                                "def": {}
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "nodeType": "BinaryExpression",
+                        "operator": "+",
+                        "left": {
+                          "nodeType": "Identifier",
+                          "name": "b",
+                          "scope": {
+                            "def": {},
+                            "parent": {
+                              "def": {},
+                              "parent": {
+                                "def": {},
+                                "parent": {
+                                  "def": {}
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "right": {
+                          "nodeType": "Literal",
+                          "type": {
+                            "name": "i32",
+                            "size": 4,
+                            "bitSize": 32,
+                            "byteSize": 4,
+                            "max": 2147483647,
+                            "min": -2147483648,
+                            "integer": true,
+                            "signed": true,
+                            "innerType": "i32",
+                            "kind": "Native"
+                          },
+                          "value": 1
+                        }
+                      }
+                    }
+                  }
+                ],
+                "scope": "}"
+              }
+            },
+            {
+              "nodeType": "VariableDeclaration",
+              "type": {
+                "name": "i32",
+                "size": 4,
+                "bitSize": 32,
+                "byteSize": 4,
+                "max": 2147483647,
+                "min": -2147483648,
+                "integer": true,
+                "signed": true,
+                "innerType": "i32",
+                "kind": "Native"
+              },
+              "declarations": [
+                {
+                  "nodeType": "VariableDeclarator",
+                  "id": {
+                    "nodeType": "Identifier",
+                    "name": "d",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {},
+                        "parent": {
+                          "def": {}
+                        }
+                      }
+                    }
+                  },
+                  "init": {
+                    "nodeType": "Literal",
+                    "type": {
+                      "name": "i32",
+                      "size": 4,
+                      "bitSize": 32,
+                      "byteSize": 4,
+                      "max": 2147483647,
+                      "min": -2147483648,
+                      "integer": true,
+                      "signed": true,
+                      "innerType": "i32",
+                      "kind": "Native"
+                    },
+                    "value": 10
+                  },
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  },
+                  "global": false,
+                  "index": 10
+                }
+              ],
+              "kind": "var"
+            },
+            {
+              "nodeType": "WhileStatement",
+              "test": {
+                "nodeType": "BinaryExpression",
+                "operator": ">",
+                "left": {
+                  "nodeType": "Identifier",
+                  "name": "d",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "nodeType": "Literal",
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "value": 0
+                }
+              },
+              "body": {
+                "nodeType": "BlockStatement",
+                "body": [
+                  {
+                    "nodeType": "ExpressionStatement",
+                    "expression": {
+                      "nodeType": "UpdateExpression",
+                      "operator": "++",
+                      "argument": {
+                        "nodeType": "Identifier",
+                        "name": "c",
+                        "scope": {
+                          "def": {},
+                          "parent": {
+                            "def": {},
+                            "parent": {
+                              "def": {},
+                              "parent": {
+                                "def": {}
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "prefix": true
+                    }
+                  }
+                ],
+                "scope": "}"
+              }
             },
             {
               "nodeType": "ReturnStatement",
@@ -437,7 +908,10 @@
                   "scope": {
                     "def": {},
                     "parent": {
-                      "def": {}
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
                     }
                   }
                 },
@@ -447,7 +921,10 @@
                   "scope": {
                     "def": {},
                     "parent": {
-                      "def": {}
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
                     }
                   }
                 }
@@ -457,7 +934,10 @@
           "scope": {
             "def": {},
             "parent": {
-              "def": {}
+              "def": {},
+              "parent": {
+                "def": {}
+              }
             }
           }
         },

@@ -1754,8 +1754,8 @@ IterationStatement
     body:Statement
     { return { nodeType: "WhileStatement", test: test, body: body }; }
   / ForToken __
-    "(" __
-    init:(ExpressionNoIn __)? ";" __
+    ("(" {createScope(); return text(); })  __
+    init:(ExpressionNoIn __ )? ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
@@ -1771,7 +1771,7 @@ IterationStatement
     }
   / ForToken __
     "(" __
-    VarToken __ declarations:VariableDeclarationListNoIn __ ";" __
+    declarations:VariableDecl __ ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
@@ -1806,7 +1806,7 @@ IterationStatement
     }
   / ForToken __
     "(" __
-    VarToken __ declarations:VariableDeclarationListNoIn __
+    declarations:VariableDecl __
     InToken __
     right:Expression __
     ")" __
