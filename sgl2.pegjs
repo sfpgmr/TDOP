@@ -997,7 +997,7 @@ CoroutineToken  = "coroutine"  !IdentifierPart
 DebuggerToken   = "debugger"   !IdentifierPart
 DefaultToken    = "default"    !IdentifierPart
 DeleteToken     = "delete"     !IdentifierPart
-DoToken         = "do"         !IdentifierPart
+DoToken         = "do"         !IdentifierPart //{createScope();return text();} 
 ElseToken       = "else"       !IdentifierPart
 EnumToken       = "enum"       !IdentifierPart
 ExportToken     = "export"     !IdentifierPart
@@ -1006,7 +1006,7 @@ FalseToken      = "false"      !IdentifierPart
 F32Token        = "f32"        
 F64Token        = "f64"        
 FinallyToken    = "finally"    !IdentifierPart
-ForToken        = "for"        !IdentifierPart
+ForToken        = "for"        !IdentifierPart 
 GetToken        = "get"        !IdentifierPart
 I8Token         = "i8"         
 I16Token        = "i16"        
@@ -1037,7 +1037,7 @@ TypeofToken     = "typeof"     !IdentifierPart
 VarToken        = "var"        !IdentifierPart
 VectorToken     = "vec"        !IdentifierPart
 VoidToken       = "void"       
-WhileToken      = "while"      !IdentifierPart
+WhileToken      = "while"      !IdentifierPart //{createScope();return text();}
 WithToken       = "with"       !IdentifierPart
 
 // Skipped
@@ -1748,19 +1748,20 @@ IfStatement
 IterationStatement
   = DoToken __
     body:Statement __
-    WhileToken __ "(" __ test:Expression __ ")" EOS
-    { return { nodeType: "DoWhileStatement", body: body, test: test }; }
+    WhileToken  __ "(" __ test:Expression __ ")" EOS
+    { /*scope.pop();*/ return { nodeType: "DoWhileStatement", body: body, test: test }; }
   / WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement
-    { return { nodeType: "WhileStatement", test: test, body: body }; }
+    { /*scope.pop();*/return { nodeType: "WhileStatement", test: test, body: body }; }
   / ForToken __
-    ("(" {createScope(); return text(); })  __
+    "(" &{console.log("*****scope******");return true;}  __
     init:(ExpressionNoIn __ )? ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
     body:Statement
     {
+      /*scope.pop();*/
       return {
         nodeType: "ForStatement",
         init: extractOptional(init, 0),
@@ -1770,13 +1771,14 @@ IterationStatement
       };
     }
   / ForToken __
-    "(" __
+    "(" &{console.log("*****scope******");return true;} __
     declarations:VariableDecl __ ";" __
     test:(Expression __)? ";" __
     update:(Expression __)?
     ")" __
     body:Statement
     {
+      /*scope.pop();*/
       return {
         nodeType: "ForStatement",
         init: {
@@ -1797,6 +1799,7 @@ IterationStatement
     ")" __
     body:Statement
     {
+      /*scope.pop();*/
       return {
         nodeType: "ForInStatement",
         left: left,
@@ -1805,13 +1808,14 @@ IterationStatement
       };
     }
   / ForToken __
-    "(" __
+    ("(" {console.log("*****scope******");return true;}) __
     declarations:VariableDecl __
     InToken __
     right:Expression __
     ")" __
     body:Statement
     {
+      /*scope.pop();*/
       return {
         nodeType: "ForInStatement",
         left: {
