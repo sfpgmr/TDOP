@@ -1561,17 +1561,28 @@ Statement
   / DebuggerStatement 
 
 Block
-  = BlockBegin __ body:(StatementList __)? scope_:BlockEnd {
+  = ScopedBlockBegin __ body:(StatementList __)? BlockEnd {
+      const node = {
+        nodeType: "BlockStatement",
+        body: optionalList(extractOptional(body, 0)),
+        scope:scope
+      };
+      scope.pop();
+      return node;
+    }
+
+NonScopedBlock
+  = BlockBegin __ body:(StatementList __)? BlockEnd {
       return {
         nodeType: "BlockStatement",
         body: optionalList(extractOptional(body, 0)),
-        scope:scope_
+        scope:scope
       };
     }
 
-BlockBegin = '{' {createScope(); return text();} 
-FunctionBlockBegin = '{'
-BlockEnd = '}' {const s = scope;scope.pop();return text();}
+BlockBegin = '{' 
+ScopedBlockBegin = BlockBegin { createScope();return  text();}
+BlockEnd = '}' 
 
 StatementList
   = head:Statement tail:(__ Statement)* { return buildList(head, tail, 1); }
@@ -1664,7 +1675,7 @@ CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin __ body:CustomTypeDeclBody* __ BlockEnd EOS {
+CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ ScopedBlockBegin  __ body:CustomTypeDeclBody* __ BlockEnd EOS {
 	
 	if(findType(typeName.name)){
 		error(`型名はすでに定義されています。${typeNmae.name}`);
@@ -1677,6 +1688,7 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ BlockBegin 
 	};
 
 	defineType(node);
+  scope.pop();
 	return node;
 }
 
@@ -1770,7 +1782,7 @@ IterationStatement
       };
 		}))
     ")" __
-    body:Statement
+    "{" __ body:Statement __ "}"
     {
       scope.pop()
 			params.body = body;
@@ -1929,8 +1941,7 @@ StandardFunctionDeclaration
         return params_;
       }
     ) 
-    ")" __
-    "{" __ body:FunctionBody __ "}" __ EOS
+    ")" __ body:NonScopedBlock __ EOS
     { 
       let node = {
         nodeType: "FunctionDeclaration",
