@@ -1597,7 +1597,7 @@ VariableStatement
   = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
-  = type:Type modifier:(Pointer/Reference)? __ declarations:VariableDeclarationList {
+  = type:Type /*modifier:(Pointer/Reference)?*/ __ declarations:VariableDeclarationList {
 		  
 			declarations.forEach(n=>{
         //初期化式の型チェック
