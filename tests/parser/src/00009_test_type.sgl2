@@ -32,7 +32,8 @@ operator<T> mul (vec2<T> lhs,vec2<T> rhs)
 export i32 main (){
   A b = 1;
   B c = 2;
-  i32 *e = 0x1fx; 
+  i32 *ptr = 0x1fx; 
+
 	
 	for(i32 a = 1; a < 10;++a){
 		b = b + 1;

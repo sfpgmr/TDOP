@@ -578,7 +578,7 @@
                   "nodeType": "VariableDeclarator",
                   "id": {
                     "nodeType": "Identifier",
-                    "name": "e",
+                    "name": "ptr",
                     "scope": {
                       "def": {},
                       "parent": {
