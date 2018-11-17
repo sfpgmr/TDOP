@@ -1291,6 +1291,7 @@ UnaryOperator
   / $("-" !"=")
   / "~"
   / "!"
+  / "*"
 
 MultiplicativeExpression
   = head:UnaryExpression
@@ -1441,6 +1442,8 @@ ConditionalExpression
     }
   / LogicalORExpression
 
+PointerOperator = "*"
+
 ConditionalExpressionNoIn
   = test:LogicalORExpressionNoIn __
     "?" __ consequent:AssignmentExpression __
@@ -1582,6 +1585,7 @@ NonScopedBlock
 
 BlockBegin = '{' 
 ScopedBlockBegin = BlockBegin { createScope();return  text();}
+ScopeBegin = &{createScope();return true;}
 BlockEnd = '}' 
 
 StatementList
@@ -1593,7 +1597,7 @@ VariableStatement
   = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
-  = type:Type __ declarations:VariableDeclarationList {
+  = type:Type modifier:(Pointer/Reference)? __ declarations:VariableDeclarationList {
 		  
 			declarations.forEach(n=>{
         //初期化式の型チェック
@@ -1758,14 +1762,14 @@ IfStatement
     }
 
 IterationStatement
-  = DoToken __
-    body:Statement __
+  = DoToken ScopeBegin  __
+    body:NonScopedBlock __
     WhileToken  __ "(" __ test:Expression __ ")" EOS
-    { /*scope.pop();*/ return { nodeType: "DoWhileStatement", body: body, test: test }; }
-  / WhileToken __ "(" __ test:Expression __ ")" __
-    body:Statement
-    { /*scope.pop();*/return { nodeType: "WhileStatement", test: test, body: body }; }
-  / ForToken &{createScope();return true;}__
+    { scope.pop(); return { nodeType: "DoWhileStatement", body: body, test: test }; }
+  / WhileToken ScopeBegin __ "(" __ test:Expression __ ")" __
+    body:NonScopedBlock __
+    { scope.pop(); return { nodeType: "WhileStatement", test: test, body: body }; }
+  / ForToken ScopeBegin __
     "(" __ params:(( init:(ExpressionNoIn / VariableDecl __ )? ";" __ test:(Expression __)? ";" update:(Expression __)? {
 			return {
 				nodeType:"ForStatement",
@@ -1773,8 +1777,7 @@ IterationStatement
 				test: extractOptional(test, 0),
 				update: extractOptional(update, 0)
 			};
-		}) / 
-		( left:(LeftHandSideExpression / VariableDecl) __ InToken __ right:Expression __ {
+		}) / ( left:(LeftHandSideExpression / VariableDecl) __ InToken __ right:Expression __ {
       return {
         nodeType: "ForInStatement",
         left: left,
@@ -1782,7 +1785,7 @@ IterationStatement
       };
 		}))
     ")" __
-    "{" __ body:Statement __ "}"
+     body:NonScopedBlock 
     {
       scope.pop()
 			params.body = body;

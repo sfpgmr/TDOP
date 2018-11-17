@@ -686,54 +686,68 @@
                 "prefix": true
               },
               "body": {
-                "nodeType": "ExpressionStatement",
-                "expression": {
-                  "nodeType": "AssignmentExpression",
-                  "operator": "=",
-                  "left": {
-                    "nodeType": "Identifier",
-                    "name": "b",
-                    "scope": {
-                      "def": {},
-                      "parent": {
-                        "def": {},
-                        "parent": {
-                          "def": {}
+                "nodeType": "BlockStatement",
+                "body": [
+                  {
+                    "nodeType": "ExpressionStatement",
+                    "expression": {
+                      "nodeType": "AssignmentExpression",
+                      "operator": "=",
+                      "left": {
+                        "nodeType": "Identifier",
+                        "name": "b",
+                        "scope": {
+                          "def": {},
+                          "parent": {
+                            "def": {},
+                            "parent": {
+                              "def": {}
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "nodeType": "BinaryExpression",
+                        "operator": "+",
+                        "left": {
+                          "nodeType": "Identifier",
+                          "name": "b",
+                          "scope": {
+                            "def": {},
+                            "parent": {
+                              "def": {},
+                              "parent": {
+                                "def": {}
+                              }
+                            }
+                          }
+                        },
+                        "right": {
+                          "nodeType": "Literal",
+                          "type": {
+                            "name": "i32",
+                            "size": 4,
+                            "bitSize": 32,
+                            "byteSize": 4,
+                            "max": 2147483647,
+                            "min": -2147483648,
+                            "integer": true,
+                            "signed": true,
+                            "innerType": "i32",
+                            "kind": "Native"
+                          },
+                          "value": 1
                         }
                       }
                     }
-                  },
-                  "right": {
-                    "nodeType": "BinaryExpression",
-                    "operator": "+",
-                    "left": {
-                      "nodeType": "Identifier",
-                      "name": "b",
-                      "scope": {
-                        "def": {},
-                        "parent": {
-                          "def": {},
-                          "parent": {
-                            "def": {}
-                          }
-                        }
-                      }
-                    },
-                    "right": {
-                      "nodeType": "Literal",
-                      "type": {
-                        "name": "i32",
-                        "size": 4,
-                        "bitSize": 32,
-                        "byteSize": 4,
-                        "max": 2147483647,
-                        "min": -2147483648,
-                        "integer": true,
-                        "signed": true,
-                        "innerType": "i32",
-                        "kind": "Native"
-                      },
-                      "value": 1
+                  }
+                ],
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
                     }
                   }
                 }
@@ -817,7 +831,10 @@
                   "scope": {
                     "def": {},
                     "parent": {
-                      "def": {}
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
                     }
                   }
                 },
