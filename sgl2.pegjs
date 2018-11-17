@@ -1753,79 +1753,28 @@ IterationStatement
   / WhileToken __ "(" __ test:Expression __ ")" __
     body:Statement
     { /*scope.pop();*/return { nodeType: "WhileStatement", test: test, body: body }; }
-  / ForToken __
-    "(" &{console.log("*****scope******");return true;}  __
-    init:(ExpressionNoIn __ )? ";" __
-    test:(Expression __)? ";" __
-    update:(Expression __)?
-    ")" __
-    body:Statement
-    {
-      /*scope.pop();*/
-      return {
-        nodeType: "ForStatement",
-        init: extractOptional(init, 0),
-        test: extractOptional(test, 0),
-        update: extractOptional(update, 0),
-        body: body
-      };
-    }
-  / ForToken __
-    "(" &{console.log("*****scope******");return true;} __
-    declarations:VariableDecl __ ";" __
-    test:(Expression __)? ";" __
-    update:(Expression __)?
-    ")" __
-    body:Statement
-    {
-      /*scope.pop();*/
-      return {
-        nodeType: "ForStatement",
-        init: {
-          nodeType: "VariableDeclaration",
-          declarations: declarations,
-          kind: "var"
-        },
-        test: extractOptional(test, 0),
-        update: extractOptional(update, 0),
-        body: body
-      };
-    }
-  / ForToken __
-    "(" __
-    left:LeftHandSideExpression __
-    InToken __
-    right:Expression __
-    ")" __
-    body:Statement
-    {
-      /*scope.pop();*/
+  / ForToken &{createScope();return true;}__
+    "(" __ params:(( init:(ExpressionNoIn / VariableDecl __ )? ";" __ test:(Expression __)? ";" update:(Expression __)? {
+			return {
+				nodeType:"ForStatement",
+				init:extractOptional(init, 0),
+				test: extractOptional(test, 0),
+				update: extractOptional(update, 0)
+			};
+		}) / 
+		( left:(LeftHandSideExpression / VariableDecl) __ InToken __ right:Expression __ {
       return {
         nodeType: "ForInStatement",
         left: left,
-        right: right,
-        body: body
+        right: right
       };
-    }
-  / ForToken __
-    ("(" {console.log("*****scope******");return true;}) __
-    declarations:VariableDecl __
-    InToken __
-    right:Expression __
+		}))
     ")" __
     body:Statement
     {
-      /*scope.pop();*/
-      return {
-        nodeType: "ForInStatement",
-        left: {
-          nodeType: "VariableDeclaration",
-          declarations: declarations,
-          kind: "var"
-        },
-        right: right,
-        body: body
-      };
+      scope.pop()
+			params.body = body;
+			return params;
     }
 
 ContinueStatement
