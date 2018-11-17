@@ -886,7 +886,7 @@ function peg$parse(input, options) {
       peg$c403 = function() {createScope();return true;},
       peg$c404 = function(head, tail) { return buildList(head, tail, 1); },
       peg$c405 = function(varDecl) {return varDecl;},
-      peg$c406 = function(type, declarations) {
+      peg$c406 = function(type, modifier, declarations) {
       		  
       			declarations.forEach(n=>{
               //初期化式の型チェック
@@ -895,9 +895,16 @@ function peg$parse(input, options) {
       					error("初期値の型が宣言する変数の型と一致しません。");
       				}
       				n.type = type;
+              switch (modifier){
+                case '*':
+                  n.pointer = true;
+                  break;
+                case '&':
+                  n.reference = true;
+                  break;
+              }
               // スコープに登録する
               scope.define(n);
-      				//console.log(n);
               // グローバル変数どうか
               n.global = funcScope.global;
               // 変数インデックス
@@ -11013,18 +11020,48 @@ function peg$parse(input, options) {
   }
 
   function peg$parseVariableDecl() {
-    var s0, s1, s2, s3;
+    var s0, s1, s2, s3, s4, s5;
 
     s0 = peg$currPos;
     s1 = peg$parseType();
     if (s1 !== peg$FAILED) {
       s2 = peg$parse__();
       if (s2 !== peg$FAILED) {
-        s3 = peg$parseVariableDeclarationList();
+        if (input.charCodeAt(peg$currPos) === 42) {
+          s3 = peg$c320;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c321); }
+        }
+        if (s3 === peg$FAILED) {
+          if (input.charCodeAt(peg$currPos) === 38) {
+            s3 = peg$c351;
+            peg$currPos++;
+          } else {
+            s3 = peg$FAILED;
+            if (peg$silentFails === 0) { peg$fail(peg$c352); }
+          }
+        }
+        if (s3 === peg$FAILED) {
+          s3 = null;
+        }
         if (s3 !== peg$FAILED) {
-          peg$savedPos = s0;
-          s1 = peg$c406(s1, s3);
-          s0 = s1;
+          s4 = peg$parse__();
+          if (s4 !== peg$FAILED) {
+            s5 = peg$parseVariableDeclarationList();
+            if (s5 !== peg$FAILED) {
+              peg$savedPos = s0;
+              s1 = peg$c406(s1, s3, s5);
+              s0 = s1;
+            } else {
+              peg$currPos = s0;
+              s0 = peg$FAILED;
+            }
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
         } else {
           peg$currPos = s0;
           s0 = peg$FAILED;

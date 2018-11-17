@@ -1597,7 +1597,7 @@ VariableStatement
   = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
-  = type:Type /*modifier:(Pointer/Reference)?*/ __ declarations:VariableDeclarationList {
+  = type:Type __ modifier:('*'/'&')? __ declarations:VariableDeclarationList {
 		  
 			declarations.forEach(n=>{
         //初期化式の型チェック
@@ -1606,9 +1606,16 @@ VariableDecl
 					error("初期値の型が宣言する変数の型と一致しません。");
 				}
 				n.type = type;
+        switch (modifier){
+          case '*':
+            n.pointer = true;
+            break;
+          case '&':
+            n.reference = true;
+            break;
+        }
         // スコープに登録する
         scope.define(n);
-				//console.log(n);
         // グローバル変数どうか
         n.global = funcScope.global;
         // 変数インデックス
