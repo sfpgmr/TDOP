@@ -14008,7 +14008,7 @@ function peg$parse(input, options) {
 
     // エイリアスのもとの型を得る
     function getSourceType(type){
-      if(type.nodeType == 'TypeAliasDeclaration'){
+      if(type && type.nodeType == 'TypeAliasDeclaration'){
         return getSourceType(type.sourceType);
       } else {
         return type;

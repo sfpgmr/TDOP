@@ -35,6 +35,7 @@ export i32 main (){
   i32 *ptr = 0x1fx; 
   i32 ptr2 = 0x1x;
   *ptr2 = *ptr;
+  i32 g = ptr2[3];
 
 	
 	for(i32 a = 1; a < 10;++a){

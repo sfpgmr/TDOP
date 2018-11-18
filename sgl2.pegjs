@@ -164,7 +164,7 @@
 
   // エイリアスのもとの型を得る
   function getSourceType(type){
-    if(type.nodeType == 'TypeAliasDeclaration'){
+    if(type && type.nodeType == 'TypeAliasDeclaration'){
       return getSourceType(type.sourceType);
     } else {
       return type;
@@ -173,6 +173,7 @@
 
   // 型が等しいかチェックする
   function typeEqual(srcType,destType){
+    console.log(srcType,destType);
     return getSourceType(srcType).name == getSourceType(destType).name;
   }
 
