@@ -129,7 +129,22 @@
                       }
                     }
                   },
-                  "init": null,
+                  "init": {
+                    "nodeType": "Literal",
+                    "type": {
+                      "name": "i32",
+                      "size": 4,
+                      "bitSize": 32,
+                      "byteSize": 4,
+                      "max": 2147483647,
+                      "min": -2147483648,
+                      "integer": true,
+                      "signed": true,
+                      "innerType": "i32",
+                      "kind": "Native"
+                    },
+                    "value": 1
+                  },
                   "type": {
                     "name": "i32",
                     "size": 4,
@@ -198,6 +213,53 @@
                     "value": 3
                   },
                   "computed": true
+                }
+              }
+            },
+            {
+              "nodeType": "ExpressionStatement",
+              "expression": {
+                "nodeType": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                  "nodeType": "MemberExpression",
+                  "object": {
+                    "nodeType": "Identifier",
+                    "name": "ptr2",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  },
+                  "property": {
+                    "nodeType": "Literal",
+                    "type": {
+                      "name": "i32",
+                      "size": 4,
+                      "bitSize": 32,
+                      "byteSize": 4,
+                      "max": 2147483647,
+                      "min": -2147483648,
+                      "integer": true,
+                      "signed": true,
+                      "innerType": "i32",
+                      "kind": "Native"
+                    },
+                    "value": 4
+                  },
+                  "computed": true
+                },
+                "right": {
+                  "nodeType": "Identifier",
+                  "name": "g",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
                 }
               }
             },
