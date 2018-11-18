@@ -14017,6 +14017,7 @@ function peg$parse(input, options) {
 
     // 型が等しいかチェックする
     function typeEqual(srcType,destType){
+      console.log(srcType,destType);
       return getSourceType(srcType).name == getSourceType(destType).name;
     }
 

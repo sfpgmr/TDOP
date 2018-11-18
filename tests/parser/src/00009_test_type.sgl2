@@ -1,4 +1,4 @@
-type A = i32;
+/*type A = i32;
 type B = A;
 type C {
 	
@@ -12,6 +12,7 @@ type C {
 		return a;
 	};
 };
+*/
 
 //vec4 a;
 
@@ -30,14 +31,17 @@ operator<T> mul (vec2<T> lhs,vec2<T> rhs)
 */
 
 export i32 main (){
-  A b = 1;
+/*  A b = 1;
   B c = 2;
-  i32 *ptr = 0x1fx; 
-  i32 ptr2 = 0x1x;
-  *ptr2 = *ptr;
-  i32 g = ptr2[3];
+  i32 *ptr = 0x1fx ;*/ 
 
-	
+  i32 ptr2 = 0x1x;
+  
+  //*ptr2 = *ptr;
+  i32 g;
+  g = ptr2[3];
+
+	/*************************
 	for(i32 a = 1; a < 10;++a){
 		b = b + 1;
 	}
@@ -55,4 +59,6 @@ export i32 main (){
   }
 
   return b + c;
+  ********/
+  return 1;
 };
