@@ -1246,10 +1246,14 @@ ArgumentList
 
 LeftHandSideExpression
   = op:(CallExpression
-  / NewExpression) {
-//		op.left = true;
+  / NewExpression / PointerReference) {
 		return op;
 	}
+
+PointerReference = PointerOperator __ id:Identifier {
+  id.pointer = true;
+  return id;
+}
 
 PostfixExpression
   = argument:LeftHandSideExpression _ operator:PostfixOperator {
@@ -1597,7 +1601,7 @@ VariableStatement
   = varDecl:VariableDecl EOS {return varDecl;}
 
 VariableDecl  
-  = type:Type __ modifier:('*'/'&')? __ declarations:VariableDeclarationList {
+  = type:Type __ modifier:'*'? __ declarations:VariableDeclarationList {
 		  
 			declarations.forEach(n=>{
         //初期化式の型チェック
@@ -1606,14 +1610,7 @@ VariableDecl
 					error("初期値の型が宣言する変数の型と一致しません。");
 				}
 				n.type = type;
-        switch (modifier){
-          case '*':
-            n.pointer = true;
-            break;
-          case '&':
-            n.reference = true;
-            break;
-        }
+        if(modifier) n.pointer = true;
         // スコープに登録する
         scope.define(n);
         // グローバル変数どうか
