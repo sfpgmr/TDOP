@@ -987,6 +987,7 @@ Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 // Tokens
 
+VariableAliasToken  = "alias"
 BoolToken       = "bool"       
 BreakToken      = "break"      !IdentifierPart
 CaseToken       = "case"       !IdentifierPart
@@ -1668,6 +1669,7 @@ Initialiser
 InitialiserNoIn
   = "=" !"=" __  expression:AssignmentExpressionNoIn { return expression; }
 
+VariableAliasDeclaration = VariableAliasToken __ '=' __ Identifier __ EOS
 
 // 型 -------------------------
 
