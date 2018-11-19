@@ -83,19 +83,17 @@
     }
 
     find(nodeName,currentScope = false) {
-      if (!typedef) {
-        let e = this;
-        let node;
-        while (true) {
-          node = e.def.get(nodeName);
-          if (node) {
-            return node;
-          }
-          if(currentScope) return null;
-          e = e.parent;
-          if (!e) {
-            return null;
-          }
+      let e = this;
+      let node;
+      while (true) {
+        node = e.def.get(nodeName);
+        if (node) {
+          return node;
+        }
+        if(currentScope) return null;
+        e = e.parent;
+        if (!e) {
+          return null;
         }
       }
     }
@@ -1600,7 +1598,7 @@ StatementList
 // 変数宣言ステートメント //
 
 VariableStatement
-  = varDecl:VariableDecl EOS {return varDecl;}
+  = varDecl:(VariableDecl / VariableAliasDeclaration) EOS {return varDecl;}
 
 VariableDecl  
   = type:Type __ modifier:'*'? __ declarations:VariableDeclarationList {
@@ -1669,7 +1667,21 @@ Initialiser
 InitialiserNoIn
   = "=" !"=" __  expression:AssignmentExpressionNoIn { return expression; }
 
-VariableAliasDeclaration = VariableAliasToken __ '=' __ Identifier __ EOS
+VariableAliasDeclaration = VariableAliasToken __ idName:IdentifierName __ '=' __ idReference:IdentifierName {
+  const referenceTo = scope.find(idReference.name);
+  if(!referenceTo) error("参照元の変数が見つかりません。");
+
+  const node = {
+    nodeType: "VariableAliasDeclaration",
+    id:idName,
+    reference:referenceTo,
+    type:referenceTo.type,// エイリアスは参照元の型を引き継ぐ
+    scope:scope
+  }
+
+  scope.define(node);// スコープにエイリアスを定義する
+  return node;
+}
 
 // 型 -------------------------
 
@@ -1686,7 +1698,7 @@ CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ ScopedBlockBegin  __ body:CustomTypeDeclBody* __ BlockEnd EOS {
+CustomTypeDeclarationStatement = TypeToken __ typeName:IdentifierName __ ScopedBlockBegin  __ body:CustomTypeDeclBody* __ BlockEnd EOS {
 	
 	if(findType(typeName.name)){
 		error(`型名はすでに定義されています。${typeNmae.name}`);
@@ -1705,6 +1717,8 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:Identifier __ ScopedBlock
 
 CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}
 //CustomTypeDeclBody = VariableStatement
+
+DataMembers "data" __ BlockBegin __ MemberVariableStatement __ BlockEnd;
 
 // 
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {

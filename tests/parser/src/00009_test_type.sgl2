@@ -27,6 +27,25 @@ type vec2<T>{
   i32 operator *(
 };
 
+type vec2<T>{
+  
+  data {
+    i32 a = 1;  
+  };
+
+  method {
+  
+  };
+
+  type ThisType = vec2<T>;
+  T .[2];
+  alias .x = .[0];
+  alias .y = .[1];
+  alias .u = .x;
+  alias .v = .y;
+  i32 operator *(
+};
+
 operator<T> mul (vec2<T> lhs,vec2<T> rhs)
 */
 
@@ -36,7 +55,7 @@ export i32 main (){
   i32 *ptr = 0x1fx ;*/ 
 
   i32 ptr2 = 0x1x;
-  
+  alias c1 = ptr2;//エイリアス
   //*ptr2 = *ptr;
   i32 g = 1;
   g = ptr2[3];

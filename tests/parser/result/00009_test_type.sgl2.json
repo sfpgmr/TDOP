@@ -103,6 +103,77 @@
               "kind": "var"
             },
             {
+              "nodeType": "VariableAliasDeclaration",
+              "id": {
+                "nodeType": "Identifier",
+                "name": "c1",
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                }
+              },
+              "reference": {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "ptr2",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": {
+                  "value": 1,
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "unsigned": false,
+                  "byteSize": 4,
+                  "bitSize": 32,
+                  "integer": true
+                },
+                "type": {
+                  "name": "i32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "innerType": "i32",
+                  "kind": "Native"
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": false,
+                "index": 0
+              },
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              }
+            },
+            {
               "nodeType": "VariableDeclaration",
               "type": {
                 "name": "i32",
