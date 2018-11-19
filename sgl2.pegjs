@@ -1698,7 +1698,7 @@ CustomTypeOrTypeAlias = customType:Identifier &{customType = findType(customType
   return findType(customType.name);
 }
 
-CustomTypeDeclarationStatement = TypeToken __ typeName:IdentifierName __ ScopedBlockBegin  __ body:CustomTypeDeclBody* __ BlockEnd EOS {
+CustomTypeDeclarationStatement = TypeToken  __ typeName:IdentifierName __ templateParams:("<" __ templateParams:TemplateParameters __ ">" {return templateParams;})?__ ScopedBlockBegin  __ body:CustomTypeDeclBody* __ BlockEnd EOS {
 	
 	if(findType(typeName.name)){
 		error(`型名はすでに定義されています。${typeNmae.name}`);
@@ -1706,6 +1706,7 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:IdentifierName __ ScopedB
 
 	const node = {
 		nodeType:'CustomTypeDeclaration',
+    templateParams:templateParams,
 		name:typeName.name,
 		body:body
 	};
@@ -1715,10 +1716,11 @@ CustomTypeDeclarationStatement = TypeToken __ typeName:IdentifierName __ ScopedB
 	return node;
 }
 
-CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}
-//CustomTypeDeclBody = VariableStatement
+TemplateParameters = (id:IdentifierName __ ","? __? {return id;})+ 
 
-DataMembers "data" __ BlockBegin __ MemberVariableStatement __ BlockEnd;
+
+CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}
+
 
 // 
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {

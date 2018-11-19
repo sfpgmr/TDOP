@@ -28,27 +28,15 @@ type vec2<T>{
 };
 
 type vec2<T>{
-  
-  data {
-    i32 a = 1;  
-  };
-
-  method {
-  
-  };
-
-  type ThisType = vec2<T>;
-  T .[2];
-  alias .x = .[0];
-  alias .y = .[1];
-  alias .u = .x;
-  alias .v = .y;
-  i32 operator *(
+  i32 a = 1;  
 };
 
 operator<T> mul (vec2<T> lhs,vec2<T> rhs)
 */
 
+type vec2<T>{
+  i32 a = 1;  
+};
 export i32 main (){
 /*  A b = 1;
   B c = 2;

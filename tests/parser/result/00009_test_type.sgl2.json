@@ -8,6 +8,88 @@
     "nodeType": "Program",
     "body": [
       {
+        "nodeType": "CustomTypeDeclaration",
+        "templateParams": [
+          {
+            "nodeType": "Identifier",
+            "name": "T",
+            "scope": {
+              "def": {}
+            }
+          }
+        ],
+        "name": "vec2",
+        "body": [
+          {
+            "nodeType": "VariableDeclaration",
+            "type": {
+              "name": "i32",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "innerType": "i32",
+              "kind": "Native"
+            },
+            "declarations": [
+              {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "a",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": {
+                  "nodeType": "Literal",
+                  "type": {
+                    "name": "i32",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "innerType": "i32",
+                    "kind": "Native"
+                  },
+                  "value": 1
+                },
+                "type": {
+                  "name": "i32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "innerType": "i32",
+                  "kind": "Native"
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": true,
+                "index": 0
+              }
+            ],
+            "kind": "var"
+          }
+        ]
+      },
+      {
         "nodeType": "FunctionDeclaration",
         "returnType": {
           "name": "i32",
@@ -97,7 +179,7 @@
                     }
                   },
                   "global": false,
-                  "index": 0
+                  "index": 1
                 }
               ],
               "kind": "var"
@@ -164,7 +246,19 @@
                   }
                 },
                 "global": false,
-                "index": 0
+                "index": 1
+              },
+              "type": {
+                "name": "i32",
+                "size": 4,
+                "bitSize": 32,
+                "byteSize": 4,
+                "max": 2147483647,
+                "min": -2147483648,
+                "integer": true,
+                "signed": true,
+                "innerType": "i32",
+                "kind": "Native"
               },
               "scope": {
                 "def": {},
@@ -235,7 +329,7 @@
                     }
                   },
                   "global": false,
-                  "index": 1
+                  "index": 2
                 }
               ],
               "kind": "var"
