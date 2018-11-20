@@ -57,6 +57,7 @@
   }
 
   let scope;
+  let templateTypes;
   
   function createScope() {
       const s = new Scope(scope);
