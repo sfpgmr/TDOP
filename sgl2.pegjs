@@ -57,13 +57,13 @@
   }
 
   let scope;
-  let templateTypes;
   
   function createScope() {
       const s = new Scope(scope);
       scope = s;
       return s;
   }
+
 
   // スコープ管理
   class Scope {
@@ -132,14 +132,24 @@
   function buildVectorType(){
   
   }
+  
   const customTypes = new Map();
   const typeAliases = new Map();
+  let templateTypeScope;
+  
+  // テンプレート型
+  function creatateTemplateTypeScope(){
+    const s = new Scope(templateTypeScope);
+    templateTypeScope = s;
+    return s;
+  }
 
   // 型の検索 
   function findType(name){
     let type = primitiveTypes.get(name);
     !type && (type = customTypes.get(name));
     !type && (type = typeAliases.get(name));
+    !type && (type = templateTypeScope.find(name));
     return type;
   }
 
