@@ -27,15 +27,15 @@ type vec2<T>{
   i32 operator *(
 };
 
-type vec2<T>{
+type vec2<T=i32>{
   i32 a = 1;  
 };
 
 operator<T> mul (vec2<T> lhs,vec2<T> rhs)
 */
 
-type vec2<T>{
-  T a = 1;  
+type vec2<T=i32>{
+  i32 a = 1;  
 };
 export i32 main (){
 /*  A b = 1;

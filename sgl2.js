@@ -966,7 +966,7 @@ function peg$parse(input, options) {
         scope.pop();
       	return node;
       },
-      peg$c418 = function(id) {return id;},
+      peg$c418 = function(id, defaultType) {return {id:id,defaultType:defaultType};},
       peg$c419 = function(body) { return body;},
       peg$c420 = function(aliasName, typeName) {
         if(scopeTop !== scope) { 
@@ -11818,7 +11818,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parseTemplateParameters() {
-    var s0, s1, s2, s3, s4, s5;
+    var s0, s1, s2, s3, s4, s5, s6, s7, s8, s9;
 
     s0 = [];
     s1 = peg$currPos;
@@ -11826,12 +11826,12 @@ function peg$parse(input, options) {
     if (s2 !== peg$FAILED) {
       s3 = peg$parse__();
       if (s3 !== peg$FAILED) {
-        if (input.charCodeAt(peg$currPos) === 44) {
-          s4 = peg$c274;
+        if (input.charCodeAt(peg$currPos) === 61) {
+          s4 = peg$c315;
           peg$currPos++;
         } else {
           s4 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c275); }
+          if (peg$silentFails === 0) { peg$fail(peg$c316); }
         }
         if (s4 === peg$FAILED) {
           s4 = null;
@@ -11842,9 +11842,48 @@ function peg$parse(input, options) {
             s5 = null;
           }
           if (s5 !== peg$FAILED) {
-            peg$savedPos = s1;
-            s2 = peg$c418(s2);
-            s1 = s2;
+            s6 = peg$parseIdentifierName();
+            if (s6 === peg$FAILED) {
+              s6 = null;
+            }
+            if (s6 !== peg$FAILED) {
+              s7 = peg$parse__();
+              if (s7 !== peg$FAILED) {
+                if (input.charCodeAt(peg$currPos) === 44) {
+                  s8 = peg$c274;
+                  peg$currPos++;
+                } else {
+                  s8 = peg$FAILED;
+                  if (peg$silentFails === 0) { peg$fail(peg$c275); }
+                }
+                if (s8 === peg$FAILED) {
+                  s8 = null;
+                }
+                if (s8 !== peg$FAILED) {
+                  s9 = peg$parse__();
+                  if (s9 === peg$FAILED) {
+                    s9 = null;
+                  }
+                  if (s9 !== peg$FAILED) {
+                    peg$savedPos = s1;
+                    s2 = peg$c418(s2, s6);
+                    s1 = s2;
+                  } else {
+                    peg$currPos = s1;
+                    s1 = peg$FAILED;
+                  }
+                } else {
+                  peg$currPos = s1;
+                  s1 = peg$FAILED;
+                }
+              } else {
+                peg$currPos = s1;
+                s1 = peg$FAILED;
+              }
+            } else {
+              peg$currPos = s1;
+              s1 = peg$FAILED;
+            }
           } else {
             peg$currPos = s1;
             s1 = peg$FAILED;
@@ -11869,12 +11908,12 @@ function peg$parse(input, options) {
         if (s2 !== peg$FAILED) {
           s3 = peg$parse__();
           if (s3 !== peg$FAILED) {
-            if (input.charCodeAt(peg$currPos) === 44) {
-              s4 = peg$c274;
+            if (input.charCodeAt(peg$currPos) === 61) {
+              s4 = peg$c315;
               peg$currPos++;
             } else {
               s4 = peg$FAILED;
-              if (peg$silentFails === 0) { peg$fail(peg$c275); }
+              if (peg$silentFails === 0) { peg$fail(peg$c316); }
             }
             if (s4 === peg$FAILED) {
               s4 = null;
@@ -11885,9 +11924,48 @@ function peg$parse(input, options) {
                 s5 = null;
               }
               if (s5 !== peg$FAILED) {
-                peg$savedPos = s1;
-                s2 = peg$c418(s2);
-                s1 = s2;
+                s6 = peg$parseIdentifierName();
+                if (s6 === peg$FAILED) {
+                  s6 = null;
+                }
+                if (s6 !== peg$FAILED) {
+                  s7 = peg$parse__();
+                  if (s7 !== peg$FAILED) {
+                    if (input.charCodeAt(peg$currPos) === 44) {
+                      s8 = peg$c274;
+                      peg$currPos++;
+                    } else {
+                      s8 = peg$FAILED;
+                      if (peg$silentFails === 0) { peg$fail(peg$c275); }
+                    }
+                    if (s8 === peg$FAILED) {
+                      s8 = null;
+                    }
+                    if (s8 !== peg$FAILED) {
+                      s9 = peg$parse__();
+                      if (s9 === peg$FAILED) {
+                        s9 = null;
+                      }
+                      if (s9 !== peg$FAILED) {
+                        peg$savedPos = s1;
+                        s2 = peg$c418(s2, s6);
+                        s1 = s2;
+                      } else {
+                        peg$currPos = s1;
+                        s1 = peg$FAILED;
+                      }
+                    } else {
+                      peg$currPos = s1;
+                      s1 = peg$FAILED;
+                    }
+                  } else {
+                    peg$currPos = s1;
+                    s1 = peg$FAILED;
+                  }
+                } else {
+                  peg$currPos = s1;
+                  s1 = peg$FAILED;
+                }
               } else {
                 peg$currPos = s1;
                 s1 = peg$FAILED;
@@ -14159,6 +14237,7 @@ function peg$parse(input, options) {
         return s;
     }
 
+
     // スコープ管理
     class Scope {
       constructor(s) {
@@ -14226,14 +14305,25 @@ function peg$parse(input, options) {
     function buildVectorType(){
     
     }
+    
     const customTypes = new Map();
     const typeAliases = new Map();
+    let templateTypeScope;
+    createTemplateTypeScope();
+    
+    // テンプレート型
+    function createTemplateTypeScope(){
+      const s = new Scope(templateTypeScope);
+      templateTypeScope = s;
+      return s;
+    }
 
     // 型の検索 
     function findType(name){
       let type = primitiveTypes.get(name);
       !type && (type = customTypes.get(name));
       !type && (type = typeAliases.get(name));
+      !type && (type = templateTypeScope.find(name));
       return type;
     }
 

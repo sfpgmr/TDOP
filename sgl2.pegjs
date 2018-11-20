@@ -136,9 +136,10 @@
   const customTypes = new Map();
   const typeAliases = new Map();
   let templateTypeScope;
+  createTemplateTypeScope();
   
   // テンプレート型
-  function creatateTemplateTypeScope(){
+  function createTemplateTypeScope(){
     const s = new Scope(templateTypeScope);
     templateTypeScope = s;
     return s;
@@ -1727,7 +1728,10 @@ CustomTypeDeclarationStatement = TypeToken  __ typeName:IdentifierName __ templa
 	return node;
 }
 
-TemplateParameters = (id:IdentifierName __ ","? __? {return id;})+ 
+TemplateParameters = (id:IdentifierName __ "="? __? defaultType:IdentifierName? __ ","? __? {
+  const node = {id:id,defaultType:defaultType};
+  templateTypeScope.define(node);
+  return node;})+ 
 
 
 CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}

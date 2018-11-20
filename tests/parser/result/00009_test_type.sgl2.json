@@ -11,10 +11,19 @@
         "nodeType": "CustomTypeDeclaration",
         "templateParams": [
           {
-            "nodeType": "Identifier",
-            "name": "T",
-            "scope": {
-              "def": {}
+            "id": {
+              "nodeType": "Identifier",
+              "name": "T",
+              "scope": {
+                "def": {}
+              }
+            },
+            "defaultType": {
+              "nodeType": "Identifier",
+              "name": "i32",
+              "scope": {
+                "def": {}
+              }
             }
           }
         ],
