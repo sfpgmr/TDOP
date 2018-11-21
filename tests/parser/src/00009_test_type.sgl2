@@ -1,9 +1,9 @@
 
-type vec2<T = i32>{
-  T a;  
-};
-
-export i32 main (){
-  //vec2<f64> a;
-  return 1;
+type vec2<T = f32>{
+  T x,y;
+  alias u = x;
+  alias v = y;
+  T func(){
+    return a;
+  };
 };

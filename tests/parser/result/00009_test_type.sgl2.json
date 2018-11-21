@@ -20,7 +20,7 @@
             },
             "defaultType": {
               "nodeType": "Identifier",
-              "name": "i32",
+              "name": "f32",
               "scope": {
                 "def": {}
               }
@@ -44,7 +44,7 @@
               },
               "defaultType": {
                 "nodeType": "Identifier",
-                "name": "i32",
+                "name": "f32",
                 "scope": {
                   "def": {}
                 }
@@ -58,7 +58,7 @@
                 "nodeType": "VariableDeclarator",
                 "id": {
                   "nodeType": "Identifier",
-                  "name": "a",
+                  "name": "x",
                   "scope": {
                     "def": {},
                     "parent": {
@@ -77,7 +77,7 @@
                   },
                   "defaultType": {
                     "nodeType": "Identifier",
-                    "name": "i32",
+                    "name": "f32",
                     "scope": {
                       "def": {}
                     }
@@ -94,66 +94,274 @@
                 },
                 "global": true,
                 "index": 0
+              },
+              {
+                "nodeType": "VariableDeclarator",
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "y",
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  }
+                },
+                "init": null,
+                "type": {
+                  "id": {
+                    "nodeType": "Identifier",
+                    "name": "T",
+                    "scope": {
+                      "def": {}
+                    }
+                  },
+                  "defaultType": {
+                    "nodeType": "Identifier",
+                    "name": "f32",
+                    "scope": {
+                      "def": {}
+                    }
+                  },
+                  "scope": {
+                    "def": {}
+                  }
+                },
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                },
+                "global": true,
+                "index": 1
               }
             ],
             "kind": "var"
-          }
-        ]
-      },
-      {
-        "nodeType": "FunctionDeclaration",
-        "returnType": {
-          "name": "i32",
-          "size": 4,
-          "bitSize": 32,
-          "byteSize": 4,
-          "max": 2147483647,
-          "min": -2147483648,
-          "integer": true,
-          "signed": true,
-          "innerType": "i32",
-          "kind": "Native"
-        },
-        "id": {
-          "nodeType": "Identifier",
-          "name": "main",
-          "scope": {
-            "def": {}
-          }
-        },
-        "params": [],
-        "body": {
-          "nodeType": "BlockStatement",
-          "body": [
-            {
-              "nodeType": "ReturnStatement",
-              "argument": {
-                "nodeType": "Literal",
-                "type": {
-                  "name": "i32",
-                  "size": 4,
-                  "bitSize": 32,
-                  "byteSize": 4,
-                  "max": 2147483647,
-                  "min": -2147483648,
-                  "integer": true,
-                  "signed": true,
-                  "innerType": "i32",
-                  "kind": "Native"
+          },
+          {
+            "nodeType": "VariableAliasDeclaration",
+            "id": {
+              "nodeType": "Identifier",
+              "name": "u",
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              }
+            },
+            "reference": {
+              "nodeType": "VariableDeclarator",
+              "id": {
+                "nodeType": "Identifier",
+                "name": "x",
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                }
+              },
+              "init": null,
+              "type": {
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "T",
+                  "scope": {
+                    "def": {}
+                  }
                 },
-                "value": 1
+                "defaultType": {
+                  "nodeType": "Identifier",
+                  "name": "f32",
+                  "scope": {
+                    "def": {}
+                  }
+                },
+                "scope": {
+                  "def": {}
+                }
+              },
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              },
+              "global": true,
+              "index": 0
+            },
+            "type": {
+              "id": {
+                "nodeType": "Identifier",
+                "name": "T",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "defaultType": {
+                "nodeType": "Identifier",
+                "name": "f32",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "scope": {
+                "def": {}
+              }
+            },
+            "scope": {
+              "def": {},
+              "parent": {
+                "def": {}
               }
             }
-          ],
-          "scope": {
-            "def": {},
-            "parent": {
-              "def": {}
+          },
+          {
+            "nodeType": "VariableAliasDeclaration",
+            "id": {
+              "nodeType": "Identifier",
+              "name": "v",
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              }
+            },
+            "reference": {
+              "nodeType": "VariableDeclarator",
+              "id": {
+                "nodeType": "Identifier",
+                "name": "y",
+                "scope": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                }
+              },
+              "init": null,
+              "type": {
+                "id": {
+                  "nodeType": "Identifier",
+                  "name": "T",
+                  "scope": {
+                    "def": {}
+                  }
+                },
+                "defaultType": {
+                  "nodeType": "Identifier",
+                  "name": "f32",
+                  "scope": {
+                    "def": {}
+                  }
+                },
+                "scope": {
+                  "def": {}
+                }
+              },
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              },
+              "global": true,
+              "index": 1
+            },
+            "type": {
+              "id": {
+                "nodeType": "Identifier",
+                "name": "T",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "defaultType": {
+                "nodeType": "Identifier",
+                "name": "f32",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "scope": {
+                "def": {}
+              }
+            },
+            "scope": {
+              "def": {},
+              "parent": {
+                "def": {}
+              }
             }
+          },
+          {
+            "nodeType": "FunctionDeclaration",
+            "returnType": {
+              "id": {
+                "nodeType": "Identifier",
+                "name": "T",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "defaultType": {
+                "nodeType": "Identifier",
+                "name": "f32",
+                "scope": {
+                  "def": {}
+                }
+              },
+              "scope": {
+                "def": {}
+              }
+            },
+            "id": {
+              "nodeType": "Identifier",
+              "name": "func",
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {}
+                }
+              }
+            },
+            "params": [],
+            "body": {
+              "nodeType": "BlockStatement",
+              "body": [
+                {
+                  "nodeType": "ReturnStatement",
+                  "argument": {
+                    "nodeType": "Identifier",
+                    "name": "a",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {},
+                        "parent": {
+                          "def": {}
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "scope": {
+                "def": {},
+                "parent": {
+                  "def": {},
+                  "parent": {
+                    "def": {}
+                  }
+                }
+              }
+            },
+            "localVars": []
           }
-        },
-        "localVars": [],
-        "export": true
+        ]
       }
     ]
   }
