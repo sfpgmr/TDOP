@@ -28,7 +28,7 @@ type vec2<T>{
 };
 
 type vec2<T=i32>{
-  i32 a = 1;  
+  T a;  
 };
 
 operator<T> mul (vec2<T> lhs,vec2<T> rhs)

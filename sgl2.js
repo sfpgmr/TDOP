@@ -966,7 +966,10 @@ function peg$parse(input, options) {
         scope.pop();
       	return node;
       },
-      peg$c418 = function(id, defaultType) {return {id:id,defaultType:defaultType};},
+      peg$c418 = function(id, defaultType) {
+        const node = {id:id,defaultType:defaultType};
+        templateTypeScope.define(node);
+        return node;},
       peg$c419 = function(body) { return body;},
       peg$c420 = function(aliasName, typeName) {
         if(scopeTop !== scope) { 
@@ -14250,7 +14253,7 @@ function peg$parse(input, options) {
         const name = node.id.name;
         const t = def.get(name);
         if (t) {
-          error('変数はすでに定義されています。');
+          error(`${name}はすでに定義されています。`);
         }
         def.set(name, node);
         node.scope = this;

@@ -77,7 +77,7 @@
       const name = node.id.name;
       const t = def.get(name);
       if (t) {
-        error('変数はすでに定義されています。');
+        error(`${name}はすでに定義されています。`);
       }
       def.set(name, node);
       node.scope = this;
