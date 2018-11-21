@@ -1,0 +1,72 @@
+/*type A = i32;
+type B = A;
+type C {
+	
+	void func(){
+	};
+
+	i32 a,b;
+	i32 c=1,d;
+	f32 e;
+	i32 func2(){
+		return a;
+	};
+};
+*/
+
+//vec4 a;
+
+/*
+type vec2<T>{
+  type ThisType = vec2<T>;
+  T .[2];
+  alias .x = .[0];
+  alias .y = .[1];
+  alias .u = .x;
+  alias .v = .y;
+  i32 operator *(
+};
+
+type vec2<T=i32>{
+  T a;  
+};
+
+operator<T> mul (vec2<T> lhs,vec2<T> rhs)
+*/
+
+type vec2<T=i32>{
+  i32 a = 1;  
+};
+export i32 main (){
+/*  A b = 1;
+  B c = 2;
+  i32 *ptr = 0x1fx ;*/ 
+
+  i32 ptr2 = 0x1x;
+  alias c1 = ptr2;//エイリアス
+  //*ptr2 = *ptr;
+  i32 g = 1;
+  g = ptr2[3];
+  ptr2[4] = g;
+
+	/*************************
+	for(i32 a = 1; a < 10;++a){
+		b = b + 1;
+	}
+
+	i32 d = 10;
+	
+	while(d > 0){
+		++c;
+	}
+
+  if(d > 10){
+    b = 1;
+  } else {
+    b = 2;
+  }
+
+  return b + c;
+  ********/
+  return 1;
+};
