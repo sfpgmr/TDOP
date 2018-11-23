@@ -129,7 +129,8 @@
     ['string',{name:'string',kind:'Emulation'}]
   ]);
 
-  function buildVectorType(){
+
+  function buildVectorType(type){
   
   }
   
@@ -194,7 +195,11 @@
 			case 'string':
 				return primitiveTypes.get(type);
 			case 'object':
-				if(type.name){
+				switch(type.name){
+          case 'vector':
+          
+          break;
+
 				}
 		}
 		 
@@ -1047,7 +1052,7 @@ TryToken        = "try"        !IdentifierPart
 TypeToken       = "type"       
 TypeofToken     = "typeof"     !IdentifierPart
 VarToken        = "var"        !IdentifierPart
-VectorToken     = "vec"        !IdentifierPart
+VectorToken     = "vec"        
 VoidToken       = "void"       
 WhileToken      = "while"      !IdentifierPart //{createScope();return text();}
 WithToken       = "with"       !IdentifierPart
@@ -1697,7 +1702,7 @@ VariableAliasDeclaration = VariableAliasToken __ idName:IdentifierName __ '=' __
 
 // 型 -------------------------
 
-Type = type:BuiltinType { return primitiveTypes.get(type);} / CustomTypeOrTypeAlias
+Type = type:BuiltinType { return getTypeInfo(type);} / CustomTypeOrTypeAlias
 
 BuiltinType = NativeType / EmulationType
 
@@ -1756,9 +1761,13 @@ TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Ty
 }
 
 // ベクトル
-VectorTypeToken = VectorToken dimension:[234] {return {
+//VectorTypeToken = "vec2";
+VectorTypeToken = VectorToken dimension:[234] "<" __ memberType:Identifier __ ">" 
+{
+  return {
 	name:'vector',
-	dimension:parseInt(dimension)};}
+	dimension:parseInt(dimension)};
+ }
 
 // 行列型
 MatrixTypeToken = MatrixToken coloumn:[234] 'x' row:[234] {
