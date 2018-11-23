@@ -129,8 +129,32 @@
     ['string',{name:'string',kind:'Emulation'}]
   ]);
 
-
+  const vectorCache = new Map();
+  const vectorMembers = [
+    {name:['x','u','r']},
+    {name:['y','v','g']},
+    {name:['z','b']},
+    {name:['w','a']},
+  ];
   function buildVectorType(type){
+    let typeName = type.name + type.dimension;
+    let t = vectorType.get(typeName);
+    if(!t) {
+      t = {
+        name:typeName,
+        dimension:type.dimension,
+        members:((()=>{
+          let m = [];
+          for(let i = 0;i < type.dimension;++i){
+
+            };
+            return m;
+          })()
+        };  
+    }
+
+    
+  
   
   }
   
@@ -1761,13 +1785,13 @@ TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Ty
 }
 
 // ベクトル
-//VectorTypeToken = "vec2";
 VectorTypeToken = VectorToken dimension:[234] "<" __ memberType:Identifier __ ">" 
 {
-  return {
-	name:'vector',
+  return 
+	name:'vec',
+  memberType:memberType,
 	dimension:parseInt(dimension)};
- }
+ 
 
 // 行列型
 MatrixTypeToken = MatrixToken coloumn:[234] 'x' row:[234] {
