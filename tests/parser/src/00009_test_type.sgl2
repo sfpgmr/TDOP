@@ -2,5 +2,8 @@
 export i32 main(){
   vec2 a;
   i32 b;
+  vec2<i32> c;
+  mat2x2 d;
+  mat4x4<i32> e;
   // vec2<i32> b(1,1);
 };

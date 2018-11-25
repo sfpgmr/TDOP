@@ -37,6 +37,8 @@
               "type": {
                 "name": "vec",
                 "dimension": 2,
+                "size": 8,
+                "byteSize": 8,
                 "memberType": {
                   "name": "f32",
                   "size": 4,
@@ -47,31 +49,7 @@
                   "integer": false,
                   "innerType": "f32",
                   "kind": "Native"
-                },
-                "members": [
-                  {
-                    "name": "f32",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 3.402823466e+38,
-                    "min": 1.175494351e-38,
-                    "integer": false,
-                    "innerType": "f32",
-                    "kind": "Native"
-                  },
-                  {
-                    "name": "f32",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 3.402823466e+38,
-                    "min": 1.175494351e-38,
-                    "integer": false,
-                    "innerType": "f32",
-                    "kind": "Native"
-                  }
-                ]
+                }
               },
               "declarations": [
                 {
@@ -90,6 +68,8 @@
                   "type": {
                     "name": "vec",
                     "dimension": 2,
+                    "size": 8,
+                    "byteSize": 8,
                     "memberType": {
                       "name": "f32",
                       "size": 4,
@@ -100,31 +80,7 @@
                       "integer": false,
                       "innerType": "f32",
                       "kind": "Native"
-                    },
-                    "members": [
-                      {
-                        "name": "f32",
-                        "size": 4,
-                        "bitSize": 32,
-                        "byteSize": 4,
-                        "max": 3.402823466e+38,
-                        "min": 1.175494351e-38,
-                        "integer": false,
-                        "innerType": "f32",
-                        "kind": "Native"
-                      },
-                      {
-                        "name": "f32",
-                        "size": 4,
-                        "bitSize": 32,
-                        "byteSize": 4,
-                        "max": 3.402823466e+38,
-                        "min": 1.175494351e-38,
-                        "integer": false,
-                        "innerType": "f32",
-                        "kind": "Native"
-                      }
-                    ]
+                    }
                   },
                   "scope": {
                     "def": {},
@@ -186,6 +142,126 @@
                   },
                   "global": false,
                   "index": 1
+                }
+              ],
+              "kind": "var"
+            },
+            {
+              "nodeType": "VariableDeclaration",
+              "type": {
+                "name": "vec",
+                "dimension": 2,
+                "size": 8,
+                "byteSize": 8,
+                "memberType": {
+                  "name": "i32",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "innerType": "i32",
+                  "kind": "Native"
+                }
+              },
+              "declarations": [
+                {
+                  "nodeType": "VariableDeclarator",
+                  "id": {
+                    "nodeType": "Identifier",
+                    "name": "c",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  },
+                  "init": null,
+                  "type": {
+                    "name": "vec",
+                    "dimension": 2,
+                    "size": 8,
+                    "byteSize": 8,
+                    "memberType": {
+                      "name": "i32",
+                      "size": 4,
+                      "bitSize": 32,
+                      "byteSize": 4,
+                      "max": 2147483647,
+                      "min": -2147483648,
+                      "integer": true,
+                      "signed": true,
+                      "innerType": "i32",
+                      "kind": "Native"
+                    }
+                  },
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  },
+                  "global": false,
+                  "index": 2
+                }
+              ],
+              "kind": "var"
+            },
+            {
+              "nodeType": "VariableDeclaration",
+              "declarations": [
+                {
+                  "nodeType": "VariableDeclarator",
+                  "id": {
+                    "nodeType": "Identifier",
+                    "name": "d",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  },
+                  "init": null,
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  },
+                  "global": false,
+                  "index": 3
+                }
+              ],
+              "kind": "var"
+            },
+            {
+              "nodeType": "VariableDeclaration",
+              "declarations": [
+                {
+                  "nodeType": "VariableDeclarator",
+                  "id": {
+                    "nodeType": "Identifier",
+                    "name": "e",
+                    "scope": {
+                      "def": {},
+                      "parent": {
+                        "def": {}
+                      }
+                    }
+                  },
+                  "init": null,
+                  "scope": {
+                    "def": {},
+                    "parent": {
+                      "def": {}
+                    }
+                  },
+                  "global": false,
+                  "index": 4
                 }
               ],
               "kind": "var"

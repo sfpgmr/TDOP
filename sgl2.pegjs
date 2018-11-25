@@ -143,20 +143,33 @@
       t = {
         name:type.name,
         dimension:type.dimension,
-        memberType:type.memberType,
-        members:(()=>{
-          let m = [];
-          for(let i = 0;i < type.dimension;++i){
-            m.push(type.memberType);
-          };
-          return m;
-        })()
+        size:type.dimension * type.memberType.size,
+        byteSize:type.dimension * type.memberType.size,
+        memberType:type.memberType
       };
       vectorCache.set(typeName,t);
     }
     return t;
   }
-  
+
+  const matrixCache = new Map();
+  function buildMatrixType(type){
+    let typeName = type.name + type.column + 'x' + type.column + '' + type.memberType.name;
+    let t = matrixCache.get(typeName);
+    if(!t){
+      t = {
+        name:type.name,
+        column:type.column,
+        row:type.row,
+        size:type.column * type.row * type.memberType.size,
+        byteSize:type.column * type.row * type.memberType.size,
+        memberType:type.memberType
+      };
+      vectorCache.set(typeName,t);
+    }
+    return t;
+  }
+
   const customTypes = new Map();
   const typeAliases = new Map();
   let templateTypeScope;
@@ -1778,8 +1791,8 @@ TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Ty
 }
 
 // ベクトル //
-VectorTypeToken = VectorToken dimension:[234] memberType:("<" __ id:Identifier __ ">" {
-  let mtype = primitiveTypes.get(id);
+VectorTypeToken = VectorToken dimension:[234] memberType:("<" __ id:IdentifierName __">" {
+  let mtype = primitiveTypes.get(id.name);
   !mtype && error("定義されていない型です．");
   return mtype;
 })?  
@@ -1794,8 +1807,14 @@ VectorTypeToken = VectorToken dimension:[234] memberType:("<" __ id:Identifier _
  
 
 // 行列型
-MatrixTypeToken = MatrixToken coloumn:[234] 'x' row:[234] {
-return {name:'matrix',column:column,row:row};
+MatrixTypeToken = MatrixToken column:[234] 'x' row:[234]  memberType:("<" __ id:IdentifierName __ ">" {
+  let mtype = primitiveTypes.get(id.name);
+  !mtype && error("定義されていない型です．");
+  return mtype;
+})? 
+{  
+  memberType = memberType || primitiveTypes.get('f32');
+  return buildMatrixType({name:'mat',memberType:memberType,column:column,row:row});
 }
 
 EmptyStatement
