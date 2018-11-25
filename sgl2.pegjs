@@ -130,32 +130,31 @@
   ]);
 
   const vectorCache = new Map();
-  const vectorMembers = [
-    {name:['x','u','r']},
-    {name:['y','v','g']},
-    {name:['z','b']},
-    {name:['w','a']},
+  const vectorMemberAccessors = [
+    ['x','y','z','w'],
+    ['r','g','b','a'],
+    ['s','t','p','q']
   ];
+
   function buildVectorType(type){
-    let typeName = type.name + type.dimension;
-    let t = vectorType.get(typeName);
+    let typeName = type.name + type.dimension + '_' + type.memberType.name;
+    let t = vectorCache.get(typeName);
     if(!t) {
       t = {
-        name:typeName,
+        name:type.name,
         dimension:type.dimension,
-        members:((()=>{
+        memberType:type.memberType,
+        members:(()=>{
           let m = [];
           for(let i = 0;i < type.dimension;++i){
-
-            };
-            return m;
-          })()
-        };  
+            m.push(type.memberType);
+          };
+          return m;
+        })()
+      };
+      vectorCache.set(typeName,t);
     }
-
-    
-  
-  
+    return t;
   }
   
   const customTypes = new Map();
@@ -220,14 +219,10 @@
 				return primitiveTypes.get(type);
 			case 'object':
 				switch(type.name){
-          case 'vector':
-          
-          break;
-
+          case 'vec':
+          return type; 
 				}
 		}
-		 
-
 	}
 
   const byteSizeSuffixMap = new Map([
@@ -1762,11 +1757,9 @@ TemplateParameters = (id:IdentifierName __ "="? __? defaultType:IdentifierName? 
   templateTypeScope.define(node);
   return node;})+ 
 
-
 CustomTypeDeclBody = body:(VariableStatement / StandardFunctionDeclaration) __ { return body;}
 
-
-// 
+//  
 TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Type __ EOS {
   if(scopeTop !== scope) { 
     error("エイリアスはグローバルスコープのみ定義が可能です．"); 
@@ -1784,13 +1777,20 @@ TypeAliasDeclStatement = TypeToken __ aliasName:Identifier __ '=' __ typeName:Ty
   return node;
 }
 
-// ベクトル
-VectorTypeToken = VectorToken dimension:[234] "<" __ memberType:Identifier __ ">" 
+// ベクトル //
+VectorTypeToken = VectorToken dimension:[234] memberType:("<" __ id:Identifier __ ">" {
+  let mtype = primitiveTypes.get(id);
+  !mtype && error("定義されていない型です．");
+  return mtype;
+})?  
 {
-  return 
-	name:'vec',
-  memberType:memberType,
-	dimension:parseInt(dimension)};
+  memberType = memberType || primitiveTypes.get('f32');
+  return buildVectorType({ 
+    name:'vec',
+    memberType:memberType,
+    dimension:parseInt(dimension)
+  });
+}
  
 
 // 行列型
@@ -1814,7 +1814,7 @@ IfStatement
     consequent:Statement __
     ElseToken __
     alternate:Statement
-    {
+   { 
       return {
         nodeType: "IfStatement",
         test: test,

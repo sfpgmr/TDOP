@@ -1,5 +1,6 @@
 
 export i32 main(){
   vec2 a;
+  i32 b;
   // vec2<i32> b(1,1);
 };
