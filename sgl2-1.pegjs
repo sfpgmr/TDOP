@@ -1,3 +1,56 @@
+SOURCECHARACTER = .
+
+WHITESPACE "whitespace"
+  = "\t"
+  / "\v"
+  / "\f"
+  / " "
+  / "\u00A0"
+  / "\uFEFF"
+  / ZS
+
+// Separator, Space
+ZS = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
+
+LINETERMINATOR
+  = [\n\r\u2028\u2029]
+
+LINETERMINATORSEQUENCE "end of line"
+  = "\n"
+  / "\r\n"
+  / "\r"
+  / "\u2028"
+  / "\u2029"
+
+COMMENT "comment"
+  = MULTILINECOMMENT
+  / SINGLELINECOMMENT
+
+MULTILINECOMMENT
+  = "/*" (!"*/" SOURCECHARACTER)* "*/"
+
+MULTILINECOMMENTNOLINETERMINATOR
+  = "/*" (!("*/" / LINETERMINATOR) SOURCECHARACTER)* "*/"
+
+SINGLELINECOMMENT
+  = "//" (!LINETERMINATOR SOURCECHARACTER)*
+
+// Skipped
+__
+  = (WHITESPACE / LINETERMINATORSEQUENCE / COMMENT)*
+_
+  = (WHITESPACE / MULTILINECOMMENTNOLINETERMINATOR)*
+
+// End of Statement
+EOS
+  = __ ";" 
+ // _ SINGLELINECOMMENT? LINETERMINATORSEQUENCE
+ // _ &"}" 
+ // __ EOF
+
+EOF  = !.
+
+
 CONST = "const" 
 BOOL = "bool"
 FLOAT = "float"
