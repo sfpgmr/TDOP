@@ -65,7 +65,10 @@ USAMPLER2DARRAY = "usampler2darray"
 STRUCT = "struct"
 VOID = "void"
 WHILE = "while"
-
+// 3.9 Identifiers
+/*
+識別子は、変数名、関数名、構造体名、およびフィールドセレクタに使用されます（フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します）。
+*/
 IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*)
 
 NONDIGIT = [_a-zA-Z]
@@ -73,16 +76,22 @@ NONDIGIT = [_a-zA-Z]
 TYPE_NAME = "type_name"
 
 FLOATING_CONSTANT = 
-	FRACTIONAL_CONSTANT EXPONENT_PART FLOATING_SUFFIX /
-  DIGIT_SEQUENCE EXPONENT_PART FLOATING_SUFFIX
+	FRACTIONAL_CONSTANT EXPONENT_PART? FLOATING_SUFFIX? /
+  DIGIT_SEQUENCE EXPONENT_PART? FLOATING_SUFFIX?
 
 FRACTIONAL_CONSTANT =
 	DIGIT_SEQUENCE DOT DIGIT_SEQUENCE /
 	DOT DIGIT_SEQUENCE /
 	DIGIT_SEQUENCE DOT
 
+FLOATING_SUFFIX = [fF]
+
+SIGN = PLUS / MINUS
+
 DIGIT_SEQUENCE = 
-	$(NONZERO_DIGIT DIGIT+) 
+	$DIGIT+ 
+
+EXPONENT_PART = [eE] SIGN? DIGIT_SEQUENCE
 
 INTEGER_CONSTANT = 
 	DECIMAL_CONSTANT /
@@ -108,8 +117,14 @@ HEXADECIMAL_DIGIT = DIGIT / [a-fA-F]
 DIGIT = '0' / NONZERO_DIGIT
 NONZERO_DIGIT = [1-9]
 
-BOOLCONSTANT = "boolconstant"
+BOOLCONSTANT = TRUE / FALSE
+
+TRUE = "true"
+FALSE = "false"
+
+//フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します
 FIELD_SELECTION = "field_selection"
+
 LEFT_OP = "<<"
 RIGHT_OP = ">>"
 INC_OP = "++"
@@ -146,6 +161,7 @@ BANG = "!"
 DASH = "'"
 TILDE = "~"
 PLUS = "+"
+MINUS = "-"
 STAR = "*"
 SLASH = "/"
 PERCENT = "%"
