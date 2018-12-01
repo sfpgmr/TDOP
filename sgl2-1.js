@@ -7994,13 +7994,53 @@ function peg$parse(input, options) {
   }
 
   function peg$parseTRANSLATION_UNIT() {
-    var s0, s1;
+    var s0, s1, s2, s3, s4;
 
     s0 = [];
-    s1 = peg$parseEXTERNAL_DECLARATION();
+    s1 = peg$currPos;
+    s2 = peg$parse__();
+    if (s2 !== peg$FAILED) {
+      s3 = peg$parseEXTERNAL_DECLARATION();
+      if (s3 !== peg$FAILED) {
+        s4 = peg$parse__();
+        if (s4 !== peg$FAILED) {
+          s2 = [s2, s3, s4];
+          s1 = s2;
+        } else {
+          peg$currPos = s1;
+          s1 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s1;
+        s1 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s1;
+      s1 = peg$FAILED;
+    }
     while (s1 !== peg$FAILED) {
       s0.push(s1);
-      s1 = peg$parseEXTERNAL_DECLARATION();
+      s1 = peg$currPos;
+      s2 = peg$parse__();
+      if (s2 !== peg$FAILED) {
+        s3 = peg$parseEXTERNAL_DECLARATION();
+        if (s3 !== peg$FAILED) {
+          s4 = peg$parse__();
+          if (s4 !== peg$FAILED) {
+            s2 = [s2, s3, s4];
+            s1 = s2;
+          } else {
+            peg$currPos = s1;
+            s1 = peg$FAILED;
+          }
+        } else {
+          peg$currPos = s1;
+          s1 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s1;
+        s1 = peg$FAILED;
+      }
     }
 
     return s0;
@@ -8026,6 +8066,34 @@ function peg$parse(input, options) {
       s2 = peg$parse__();
       if (s2 !== peg$FAILED) {
         s3 = peg$parseCOMPOUND_STATEMENT_NO_NEW_SCOPE();
+        if (s3 !== peg$FAILED) {
+          s1 = [s1, s2, s3];
+          s0 = s1;
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
+  function peg$parseStart() {
+    var s0, s1, s2, s3;
+
+    s0 = peg$currPos;
+    s1 = peg$parse__();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parseTRANSLATION_UNIT();
+      if (s2 !== peg$FAILED) {
+        s3 = peg$parse__();
         if (s3 !== peg$FAILED) {
           s1 = [s1, s2, s3];
           s0 = s1;
