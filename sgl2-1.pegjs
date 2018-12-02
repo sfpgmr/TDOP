@@ -279,7 +279,7 @@ WHILE
 /*
 識別子は、変数名、関数名、構造体名、およびフィールドセレクタに使用されます（フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します）。
 */
-IDENTIFIER = !RESERVED_KEYWORDS $(NONDIGIT (DIGIT / NONDIGIT)*) {
+IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*) {
   return {
     nodeType:'identifier',
     name:text()
