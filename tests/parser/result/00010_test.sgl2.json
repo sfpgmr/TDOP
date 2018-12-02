@@ -1,98 +1,119 @@
 [
-  [],
   [
+    [],
     [
-      [],
       [
         [
           [
+            null,
             [
-              null,
-              [
-                "void",
-                null
-              ]
-            ],
-            [
-              " "
-            ],
-            "a",
-            [],
-            "(",
-            [],
-            [
-              null,
-              "in",
-              [
-                " "
-              ],
-              [
-                [
-                  null,
-                  [
-                    "int",
-                    null
-                  ]
-                ],
-                [
-                  " "
-                ],
-                "vara",
-                null
-              ]
-            ],
-            []
-          ],
-          [],
-          ")"
-        ],
-        [
-          " "
-        ],
-        [
-          "{",
-          [
-            [
-              "\n"
-            ],
-            [
-              [
-                [
-                  [
-                    [
-                      null,
-                      [
-                        "float",
-                        null
-                      ]
-                    ],
-                    [
-                      [
-                        " "
-                      ],
-                      "varb"
-                    ],
-                    null,
-                    null
-                  ],
-                  []
-                ],
-                [],
-                ";"
-              ]
+              "void",
+              null
             ]
           ],
+          [],
+          {
+            "nodeType": "identifier",
+            "name": "a"
+          },
+          [],
+          "(",
+          [],
           [
-            " ",
-            "\n"
+            null,
+            "in",
+            [],
+            [
+              [
+                null,
+                [
+                  "int",
+                  null
+                ]
+              ],
+              [],
+              {
+                "nodeType": "identifier",
+                "name": "vara"
+              },
+              null
+            ]
           ],
-          "}"
-        ]
+          []
+        ],
+        [],
+        ")"
       ],
+      [],
       [
-        "\n"
+        "{",
+        [
+          [],
+          [
+            [
+              [
+                [
+                  [
+                    null,
+                    [
+                      "float",
+                      null
+                    ]
+                  ],
+                  [
+                    [],
+                    {
+                      "nodeType": "identifier",
+                      "name": "varb"
+                    }
+                  ],
+                  null,
+                  null
+                ],
+                []
+              ],
+              [],
+              ";"
+            ]
+          ]
+        ],
+        [],
+        "}"
       ]
+    ],
+    [
+      {
+        "nodeType": "commnet",
+        "text": " aaaa",
+        "location": {
+          "start": {
+            "offset": 36,
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "offset": 43,
+            "line": 4,
+            "column": 8
+          }
+        }
+      },
+      {
+        "nodeType": "commnet",
+        "text": " コメント ",
+        "location": {
+          "start": {
+            "offset": 46,
+            "line": 7,
+            "column": 1
+          },
+          "end": {
+            "offset": 56,
+            "line": 7,
+            "column": 11
+          }
+        }
+      }
     ]
-  ],
-  []
+  ]
 ]
