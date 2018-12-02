@@ -1,1 +1,1 @@
-int varb = 0x10;
+int varb = 0x10 * 10 * 10 + 20 * 20;

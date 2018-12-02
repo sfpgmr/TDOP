@@ -7,113 +7,131 @@
           [
             null,
             [
-              "void",
+              "int",
               null
             ]
           ],
-          [],
-          {
-            "nodeType": "identifier",
-            "name": "a"
-          },
-          [],
-          "(",
-          [],
           [
-            null,
-            "in",
+            [],
+            {
+              "nodeType": "identifier",
+              "name": "varb"
+            }
+          ],
+          null,
+          [
+            [],
+            "=",
             [],
             [
               [
-                null,
-                [
-                  "int",
-                  null
-                ]
-              ],
-              [],
-              {
-                "nodeType": "identifier",
-                "name": "vara"
-              },
-              null
-            ]
-          ],
-          []
-        ],
-        [],
-        ")"
-      ],
-      [],
-      [
-        "{",
-        [
-          [],
-          [
-            [
-              [
                 [
                   [
-                    null,
                     [
-                      "float",
-                      null
-                    ]
+                      [
+                        [
+                          [
+                            [
+                              [
+                                [
+                                  [
+                                    [
+                                      {
+                                        "nodeType": "numericConstant",
+                                        "type": "int",
+                                        "value": 1
+                                      },
+                                      []
+                                    ],
+                                    [
+                                      [
+                                        [],
+                                        "*",
+                                        [],
+                                        [
+                                          {
+                                            "nodeType": "numericConstant",
+                                            "type": "int",
+                                            "value": 10
+                                          },
+                                          []
+                                        ]
+                                      ],
+                                      [
+                                        [],
+                                        "*",
+                                        [],
+                                        [
+                                          {
+                                            "nodeType": "numericConstant",
+                                            "type": "int",
+                                            "value": 10
+                                          },
+                                          []
+                                        ]
+                                      ]
+                                    ]
+                                  ],
+                                  [
+                                    [
+                                      [],
+                                      "+",
+                                      [],
+                                      [
+                                        [
+                                          {
+                                            "nodeType": "numericConstant",
+                                            "type": "int",
+                                            "value": 20
+                                          },
+                                          []
+                                        ],
+                                        [
+                                          [
+                                            [],
+                                            "*",
+                                            [],
+                                            [
+                                              {
+                                                "nodeType": "numericConstant",
+                                                "type": "int",
+                                                "value": 20
+                                              },
+                                              []
+                                            ]
+                                          ]
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                []
+                              ],
+                              []
+                            ],
+                            []
+                          ],
+                          []
+                        ],
+                        []
+                      ],
+                      []
+                    ],
+                    []
                   ],
-                  [
-                    [],
-                    {
-                      "nodeType": "identifier",
-                      "name": "varb"
-                    }
-                  ],
-                  null,
-                  null
+                  []
                 ],
                 []
               ],
-              [],
-              ";"
+              null
             ]
           ]
         ],
-        [],
-        "}"
-      ]
+        []
+      ],
+      [],
+      ";"
     ],
-    [
-      {
-        "nodeType": "commnet",
-        "text": " aaaa",
-        "location": {
-          "start": {
-            "offset": 36,
-            "line": 4,
-            "column": 1
-          },
-          "end": {
-            "offset": 43,
-            "line": 4,
-            "column": 8
-          }
-        }
-      },
-      {
-        "nodeType": "commnet",
-        "text": " コメント ",
-        "location": {
-          "start": {
-            "offset": 46,
-            "line": 7,
-            "column": 1
-          },
-          "end": {
-            "offset": 56,
-            "line": 7,
-            "column": 11
-          }
-        }
-      }
-    ]
+    []
   ]
 ]
