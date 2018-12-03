@@ -524,6 +524,9 @@ function peg$parse(input, options) {
       peg$c306 = "precision",
       peg$c307 = peg$literalExpectation("precision", false),
       peg$c308 = function(exp) {  return exp; },
+      peg$c309 = function(head, tail) {
+        return buildBinaryExpression(head,tail);
+      },
 
       peg$currPos          = 0,
       peg$savedPos         = 0,
@@ -8006,7 +8009,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8113,7 +8117,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8220,7 +8225,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8333,7 +8339,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8440,7 +8447,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8541,7 +8549,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8642,7 +8651,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8743,7 +8753,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8844,7 +8855,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -8945,7 +8957,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -9046,7 +9059,8 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c309(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;

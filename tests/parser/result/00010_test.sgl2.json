@@ -24,105 +24,62 @@
             "=",
             [],
             [
-              [
-                [
-                  [
-                    [
-                      [
-                        [
-                          [
-                            [
-                              [
-                                [
-                                  [
-                                    [
-                                      {
-                                        "nodeType": "numericConstant",
-                                        "type": "int",
-                                        "value": 1
-                                      },
-                                      []
-                                    ],
-                                    [
-                                      [
-                                        [],
-                                        "*",
-                                        [],
-                                        [
-                                          {
-                                            "nodeType": "numericConstant",
-                                            "type": "int",
-                                            "value": 10
-                                          },
-                                          []
-                                        ]
-                                      ],
-                                      [
-                                        [],
-                                        "*",
-                                        [],
-                                        [
-                                          {
-                                            "nodeType": "numericConstant",
-                                            "type": "int",
-                                            "value": 10
-                                          },
-                                          []
-                                        ]
-                                      ]
-                                    ]
-                                  ],
-                                  [
-                                    [
-                                      [],
-                                      "+",
-                                      [],
-                                      [
-                                        [
-                                          {
-                                            "nodeType": "numericConstant",
-                                            "type": "int",
-                                            "value": 20
-                                          },
-                                          []
-                                        ],
-                                        [
-                                          [
-                                            [],
-                                            "*",
-                                            [],
-                                            [
-                                              {
-                                                "nodeType": "numericConstant",
-                                                "type": "int",
-                                                "value": 20
-                                              },
-                                              []
-                                            ]
-                                          ]
-                                        ]
-                                      ]
-                                    ]
-                                  ]
-                                ],
-                                []
-                              ],
-                              []
-                            ],
-                            []
-                          ],
-                          []
-                        ],
-                        []
-                      ],
+              {
+                "nodeType": "BinaryExpression",
+                "operator": "+",
+                "left": {
+                  "nodeType": "BinaryExpression",
+                  "operator": "*",
+                  "left": {
+                    "nodeType": "BinaryExpression",
+                    "operator": "*",
+                    "left": [
+                      {
+                        "nodeType": "numericConstant",
+                        "type": "int",
+                        "value": 1
+                      },
                       []
                     ],
+                    "right": [
+                      {
+                        "nodeType": "numericConstant",
+                        "type": "int",
+                        "value": 10
+                      },
+                      []
+                    ]
+                  },
+                  "right": [
+                    {
+                      "nodeType": "numericConstant",
+                      "type": "int",
+                      "value": 10
+                    },
+                    []
+                  ]
+                },
+                "right": {
+                  "nodeType": "BinaryExpression",
+                  "operator": "*",
+                  "left": [
+                    {
+                      "nodeType": "numericConstant",
+                      "type": "int",
+                      "value": 20
+                    },
                     []
                   ],
-                  []
-                ],
-                []
-              ],
+                  "right": [
+                    {
+                      "nodeType": "numericConstant",
+                      "type": "int",
+                      "value": 20
+                    },
+                    []
+                  ]
+                }
+              },
               null
             ]
           ]
