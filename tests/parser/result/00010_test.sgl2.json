@@ -1,30 +1,26 @@
 [
   [
     [],
-    [
-      [
-        [
-          null,
-          [
-            "int",
-            null
-          ]
-        ],
-        [
-          [],
-          {
-            "nodeType": "identifier",
-            "name": "varb"
-          }
-        ],
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": [
         null,
         [
-          [],
-          "=",
-          [],
-          {
+          "int",
+          null
+        ]
+      ],
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "varb"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
             "nodeType": "BinaryExpression",
-            "operator": "+",
+            "operator": "*",
             "left": {
               "nodeType": "BinaryExpression",
               "operator": "*",
@@ -49,39 +45,43 @@
                 ]
               },
               "right": [
-                {
-                  "nodeType": "numericConstant",
-                  "type": "int",
-                  "value": 10
-                },
+                [
+                  {
+                    "nodeType": "BinaryExpression",
+                    "operator": "+",
+                    "left": [
+                      {
+                        "nodeType": "numericConstant",
+                        "type": "int",
+                        "value": 10
+                      },
+                      []
+                    ],
+                    "right": [
+                      {
+                        "nodeType": "numericConstant",
+                        "type": "int",
+                        "value": 20
+                      },
+                      []
+                    ]
+                  }
+                ],
                 []
               ]
             },
-            "right": {
-              "nodeType": "BinaryExpression",
-              "operator": "*",
-              "left": [
-                {
-                  "nodeType": "numericConstant",
-                  "type": "int",
-                  "value": 20
-                },
-                []
-              ],
-              "right": [
-                {
-                  "nodeType": "numericConstant",
-                  "type": "int",
-                  "value": 20
-                },
-                []
-              ]
-            }
+            "right": [
+              {
+                "nodeType": "numericConstant",
+                "type": "int",
+                "value": 20
+              },
+              []
+            ]
           }
-        ]
-      ],
-      []
-    ],
+        }
+      ]
+    },
     []
   ]
 ]

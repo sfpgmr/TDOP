@@ -554,7 +554,9 @@ ASSIGNMENT_OPERATOR =
  OR_ASSIGN
 
 EXPRESSION = 
- ASSIGNMENT_EXPRESSION  ( __  COMMA __ ASSIGNMENT_EXPRESSION)*
+ head:ASSIGNMENT_EXPRESSION  tail:( __  COMMA __ ASSIGNMENT_EXPRESSION)* {
+  return buildList(head,tail,3);
+ }
 
 CONSTANT_EXPRESSION = 
  CONDITIONAL_EXPRESSION
@@ -590,10 +592,15 @@ PARAMETER_TYPE_SPECIFIER =
  TYPE_SPECIFIER
 
 INIT_DECLARATOR_LIST = 
- SINGLE_DECLARATION ( __ COMMA __ id:IDENTIFIER ( __ LEFT_BRACKET __ (CONSTANT_EXPRESSION __)?  RIGHT_BRACKET)? ( __ EQUAL __ INITIALIZER)?)*
+ head:SINGLE_DECLARATION tail:( __ COMMA __ id:IDENTIFIER array:( __ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION __)?  RIGHT_BRACKET{return {length:extractOptional(length,0)};})? init:( __ EQUAL __ INITIALIZER)?{return {identifier:id,array:!!array,length:array && array.length,initializer:extractOptional(init,3)};})*{
+   head.identifiers.push(...tail);
+   const node = Object.assign({nodeType:"VariableDeclarationList"}
+   ,head);
+   return node;
+ }
 
 SINGLE_DECLARATION = 
- FULLY_SPECIFIED_TYPE ( __ IDENTIFIER )? (__ LEFT_BRACKET (__ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? (__ EQUAL __ INITIALIZER)? / 
+ type:FULLY_SPECIFIED_TYPE id:( __ IDENTIFIER )? array:(__ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION __)?  RIGHT_BRACKET {return {length:extractOptional(length,0)};})? init:(__ EQUAL __ INITIALIZER)? {return {type:type,identifiers:[{identifier:extractOptional(id,1),array:!!array,length:array && array.length,initializer:extractOptional(init,3)}]};}/ 
  INVARIANT __ IDENTIFIER
 // GRAMMAR NOTE =  NO 'ENUM', OR 'TYPEDEF'.
 
