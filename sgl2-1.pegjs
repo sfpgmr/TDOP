@@ -67,6 +67,13 @@
       this.value = value;
     }
   }
+  class PrecisionDeclNode {
+    constructor(precisionQualifier,typeSpecifier){
+      this.nodeType = 'PrecisioniDeclaration';
+      this.precisionQualifier = precisionQualifier;
+      this.typeSpecifier = typeSpecifier;
+    }
+  }
 }
 
 
@@ -441,7 +448,7 @@ UNARY_EXPRESSION =
  POSTFIX_EXPRESSION / 
  INC_OP UNARY_EXPRESSION / 
  DEC_OP UNARY_EXPRESSION / 
- UNARY_OPERATOR __ UNARY_EXPRESSION
+ UNARY_OPERATOR __ UNARY_EXPRESSION 
 
 // Grammar Note =  No traditional style type casts.
 
@@ -555,7 +562,7 @@ CONSTANT_EXPRESSION =
 DECLARATION = 
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
  (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
- (precision:PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON )/ 
+ (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
  TYPE_QUALIFIER (__ IDENTIFIER __ LEFT_BRACE __ STRUCT_DECLARATION_LIST __ RIGHT_BRACE (IDENTIFIER / IDENTIFIER __ LEFT_BRACKET ( __ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
@@ -583,7 +590,7 @@ PARAMETER_TYPE_SPECIFIER =
  TYPE_SPECIFIER
 
 INIT_DECLARATOR_LIST = 
- SINGLE_DECLARATION ( __ COMMA __ IDENTIFIER ( __ LEFT_BRACKET __ (CONSTANT_EXPRESSION __)?  RIGHT_BRACKET)? ( __ EQUAL __ INITIALIZER)?)*
+ SINGLE_DECLARATION ( __ COMMA __ id:IDENTIFIER ( __ LEFT_BRACKET __ (CONSTANT_EXPRESSION __)?  RIGHT_BRACKET)? ( __ EQUAL __ INITIALIZER)?)*
 
 SINGLE_DECLARATION = 
  FULLY_SPECIFIED_TYPE ( __ IDENTIFIER )? (__ LEFT_BRACKET (__ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? (__ EQUAL __ INITIALIZER)? / 
