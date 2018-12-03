@@ -527,6 +527,17 @@ function peg$parse(input, options) {
       peg$c309 = function(head, tail) {
         return buildBinaryExpression(head,tail);
       },
+      peg$c310 = function(test, consequent, alternate) {return {consequent:consequent,alternate:alternate}},
+      peg$c311 = function(test, op) {
+      		return !op ? test : {
+      			nodeType: "ConditionalExpression",
+      			test: test,
+      			consequent: op.consequent,
+      			alternate: op.alternate
+      		};
+       },
+      peg$c312 = function(fp) { return fp;},
+      peg$c313 = function(initDecl) {return initDecl;},
 
       peg$currPos          = 0,
       peg$savedPos         = 0,
@@ -9119,7 +9130,8 @@ function peg$parse(input, options) {
                   if (s9 !== peg$FAILED) {
                     s10 = peg$parseASSIGNMENT_EXPRESSION();
                     if (s10 !== peg$FAILED) {
-                      s3 = [s3, s4, s5, s6, s7, s8, s9, s10];
+                      peg$savedPos = s2;
+                      s3 = peg$c310(s1, s6, s10);
                       s2 = s3;
                     } else {
                       peg$currPos = s2;
@@ -9157,7 +9169,8 @@ function peg$parse(input, options) {
         s2 = null;
       }
       if (s2 !== peg$FAILED) {
-        s1 = [s1, s2];
+        peg$savedPos = s0;
+        s1 = peg$c311(s1, s2);
         s0 = s1;
       } else {
         peg$currPos = s0;
@@ -9417,7 +9430,8 @@ function peg$parse(input, options) {
       if (s2 !== peg$FAILED) {
         s3 = peg$parseSEMICOLON();
         if (s3 !== peg$FAILED) {
-          s1 = [s1, s2, s3];
+          peg$savedPos = s0;
+          s1 = peg$c312(s1);
           s0 = s1;
         } else {
           peg$currPos = s0;
@@ -9439,7 +9453,8 @@ function peg$parse(input, options) {
         if (s2 !== peg$FAILED) {
           s3 = peg$parseSEMICOLON();
           if (s3 !== peg$FAILED) {
-            s1 = [s1, s2, s3];
+            peg$savedPos = s0;
+            s1 = peg$c313(s1);
             s0 = s1;
           } else {
             peg$currPos = s0;

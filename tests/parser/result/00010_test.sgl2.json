@@ -4,90 +4,83 @@
     [
       [
         [
-          [
-            null,
-            [
-              "int",
-              null
-            ]
-          ],
-          [
-            [],
-            {
-              "nodeType": "identifier",
-              "name": "varb"
-            }
-          ],
           null,
           [
-            [],
-            "=",
-            [],
-            [
-              {
-                "nodeType": "BinaryExpression",
-                "operator": "+",
-                "left": {
-                  "nodeType": "BinaryExpression",
-                  "operator": "*",
-                  "left": {
-                    "nodeType": "BinaryExpression",
-                    "operator": "*",
-                    "left": [
-                      {
-                        "nodeType": "numericConstant",
-                        "type": "int",
-                        "value": 1
-                      },
-                      []
-                    ],
-                    "right": [
-                      {
-                        "nodeType": "numericConstant",
-                        "type": "int",
-                        "value": 10
-                      },
-                      []
-                    ]
-                  },
-                  "right": [
-                    {
-                      "nodeType": "numericConstant",
-                      "type": "int",
-                      "value": 10
-                    },
-                    []
-                  ]
-                },
-                "right": {
-                  "nodeType": "BinaryExpression",
-                  "operator": "*",
-                  "left": [
-                    {
-                      "nodeType": "numericConstant",
-                      "type": "int",
-                      "value": 20
-                    },
-                    []
-                  ],
-                  "right": [
-                    {
-                      "nodeType": "numericConstant",
-                      "type": "int",
-                      "value": 20
-                    },
-                    []
-                  ]
-                }
-              },
-              null
-            ]
+            "int",
+            null
           ]
         ],
-        []
+        [
+          [],
+          {
+            "nodeType": "identifier",
+            "name": "varb"
+          }
+        ],
+        null,
+        [
+          [],
+          "=",
+          [],
+          {
+            "nodeType": "BinaryExpression",
+            "operator": "+",
+            "left": {
+              "nodeType": "BinaryExpression",
+              "operator": "*",
+              "left": {
+                "nodeType": "BinaryExpression",
+                "operator": "*",
+                "left": [
+                  {
+                    "nodeType": "numericConstant",
+                    "type": "int",
+                    "value": 1
+                  },
+                  []
+                ],
+                "right": [
+                  {
+                    "nodeType": "numericConstant",
+                    "type": "int",
+                    "value": 10
+                  },
+                  []
+                ]
+              },
+              "right": [
+                {
+                  "nodeType": "numericConstant",
+                  "type": "int",
+                  "value": 10
+                },
+                []
+              ]
+            },
+            "right": {
+              "nodeType": "BinaryExpression",
+              "operator": "*",
+              "left": [
+                {
+                  "nodeType": "numericConstant",
+                  "type": "int",
+                  "value": 20
+                },
+                []
+              ],
+              "right": [
+                {
+                  "nodeType": "numericConstant",
+                  "type": "int",
+                  "value": 20
+                },
+                []
+              ]
+            }
+          }
+        ]
       ],
-      [],
-      ";"
+      []
     ],
     []
   ]

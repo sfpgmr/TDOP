@@ -518,7 +518,15 @@ LOGICAL_OR_EXPRESSION =
 
 
 CONDITIONAL_EXPRESSION = 
- condition:LOGICAL_OR_EXPRESSION op:( __ QUESTION __ ifTrue:EXPRESSION __ COLON __ ifFalse:ASSIGNMENT_EXPRESSION {return {ifTrue:ifTrue,ifFalse:ifFalse}} )?
+ test:LOGICAL_OR_EXPRESSION op:( __ QUESTION __ consequent:EXPRESSION __ COLON __ alternate:ASSIGNMENT_EXPRESSION {return {consequent:consequent,alternate:alternate}} ) ? {
+		return !op ? test : {
+			nodeType: "ConditionalExpression",
+			test: test,
+			consequent: op.consequent,
+			alternate: op.alternate
+		};
+ }
+
 
 
 ASSIGNMENT_EXPRESSION = 
@@ -545,9 +553,9 @@ CONSTANT_EXPRESSION =
  CONDITIONAL_EXPRESSION
 
 DECLARATION = 
- FUNCTION_PROTOTYPE __ SEMICOLON / 
- INIT_DECLARATOR_LIST __ SEMICOLON / 
- PRECISION __ PRECISION_QUALIFIER __ TYPE_SPECIFIER_NO_PREC __ SEMICOLON / 
+ (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
+ (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
+ (precision:PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON )/ 
  TYPE_QUALIFIER (__ IDENTIFIER __ LEFT_BRACE __ STRUCT_DECLARATION_LIST __ RIGHT_BRACE (IDENTIFIER / IDENTIFIER __ LEFT_BRACKET ( __ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
