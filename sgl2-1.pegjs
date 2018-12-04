@@ -55,14 +55,14 @@
   // ノードクラス定義
   class CommentNode {
     constructor(text){
-      this.nodeType = 'commnet';
+      this.nodeType = 'Commnet';
       this.text = text;
       this.location = location();
     }
   }
   class NumericConstantNode {
     constructor(type,value){
-      this.nodeType = 'numericConstant';
+      this.nodeType = 'NumericConstant';
       this.type = type;
       this.value = value;
     }
@@ -74,8 +74,34 @@
       this.typeSpecifier = typeSpecifier;
     }
   }
-}
+  class AssignmentExpressionNode {
+    constructor(left,right){
+      this.nodeType = 'AssignmentExpression';
+      this.left = left;
+      this.right = right;
+    }
+  }
+  class PostfixExpressionNode {
+    constructor(head,tail){
+      this.nodeType = 'PostfixExpression';
+      this.head = head;
+      this.tail = tail;
+    }
+  }
+  class ArrayPointerNode {
+    constructor(index){
+      this.nodeType = 'ArrayPointer';
+      this.index = index;
+    }
+  }
 
+  class FieldSelectorNode {
+    constructor(selector){
+      this.nodeType = 'FieldSelector';
+      this.selector = selector;
+    }
+  }
+}
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
 
@@ -412,12 +438,16 @@ PRIMARY_EXPRESSION =
  LEFT_PAREN __ exp:EXPRESSION __ RIGHT_PAREN {  return exp; }
 
 POSTFIX_EXPRESSION =
- (PRIMARY_EXPRESSION / 
+ head:(PRIMARY_EXPRESSION / 
  (FUNCTION_CALL_GENERIC (__ DOT __ FUNCTION_CALL_GENERIC)?))  
-  ((LEFT_BRACKET __ INTEGER_EXPRESSION __ RIGHT_BRACKET) / 
-  (__ DOT __ FIELD_SELECTION) / 
-  (__ INC_OP) / 
-  (__ DEC_OP))*
+  tail:((LEFT_BRACKET __ index:INTEGER_EXPRESSION __ RIGHT_BRACKET { new ArrayPointerNode(index);}) / 
+  (__ DOT __ selector:FIELD_SELECTION { return new FieldSelectorNode(selector);}) / 
+  (__ INC_OP }) / 
+  (__ DEC_OP))* {
+	
+		return !tail.length ? head : new PostfixExpressionNode(head,tail); 
+
+	}
 
 INTEGER_EXPRESSION = 
  EXPRESSION
@@ -508,19 +538,19 @@ INCLUSIVE_OR_EXPRESSION =
 
 LOGICAL_AND_EXPRESSION = 
  head:INCLUSIVE_OR_EXPRESSION tail:( __ AND_OP __ INCLUSIVE_OR_EXPRESSION)* {
-  return buildBinaryExpression(head,tail);
+  return buildLogicalExpression(head,tail);
 }
 
 
 LOGICAL_XOR_EXPRESSION = 
  head:LOGICAL_AND_EXPRESSION tail:( __ XOR_OP __ LOGICAL_AND_EXPRESSION)* {
-  return buildBinaryExpression(head,tail);
+  return buildLogicalExpression(head,tail);
 }
 
 
 LOGICAL_OR_EXPRESSION = 
  head:LOGICAL_XOR_EXPRESSION tail:( __ OR_OP __ LOGICAL_XOR_EXPRESSION)* {
-  return buildBinaryExpression(head,tail);
+  return buildLogicalExpression(head,tail);
 }
 
 
@@ -538,7 +568,9 @@ CONDITIONAL_EXPRESSION =
 
 ASSIGNMENT_EXPRESSION = 
  CONDITIONAL_EXPRESSION / 
- UNARY_EXPRESSION __ ASSIGNMENT_OPERATOR __ ASSIGNMENT_EXPRESSION
+ left:UNARY_EXPRESSION __ ASSIGNMENT_OPERATOR __ right:ASSIGNMENT_EXPRESSION {
+	 return new AssignmentExpressionNode(left,right);
+ }
 
 ASSIGNMENT_OPERATOR = 
  $(EQUAL / 
@@ -807,8 +839,8 @@ JUMP_STATEMENT =
 
 
 EXTERNAL_DECLARATION = 
- __ (FUNCTION_DEFINITION / 
- DECLARATION) __ 
+ __ decl:(FUNCTION_DEFINITION / 
+ DECLARATION) __ { return decl; }
 
 FUNCTION_DEFINITION = 
  FUNCTION_PROTOTYPE __ COMPOUND_STATEMENT_NO_NEW_SCOPE
