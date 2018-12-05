@@ -51,7 +51,15 @@
   function optionalList(value) {
     return value !== null ? value : [];
   }
-
+function buildPostfixExpression(head,tail){
+  return tail.reduce((result,element)=>{
+      return {
+        nodeType: "PostfixExpression",
+        operator: element.operator,
+        value: element.value
+      };
+  });
+}
   // ノードクラス定義
   class CommentNode {
     constructor(text){
@@ -81,24 +89,24 @@
       this.right = right;
     }
   }
-  class PostfixExpressionNode {
-    constructor(head,tail){
-      this.nodeType = 'PostfixExpression';
-      this.head = head;
-      this.tail = tail;
-    }
-  }
   class ArrayPointerNode {
     constructor(index){
       this.nodeType = 'ArrayPointer';
-      this.index = index;
+      this.operator = "[]";
+      this.value = index;
     }
   }
 
   class FieldSelectorNode {
     constructor(selector){
       this.nodeType = 'FieldSelector';
-      this.selector = selector;
+      this.operator = selector;
+    }
+  }
+  class PostIncDecNode {
+    constructor(operator){
+      this.nodeType = 'PostIncDec';
+      this.operator = operator;
     }
   }
 }
@@ -440,12 +448,12 @@ PRIMARY_EXPRESSION =
 POSTFIX_EXPRESSION =
  head:(PRIMARY_EXPRESSION / 
  (FUNCTION_CALL_GENERIC (__ DOT __ FUNCTION_CALL_GENERIC)?))  
-  tail:((LEFT_BRACKET __ index:INTEGER_EXPRESSION __ RIGHT_BRACKET { new ArrayPointerNode(index);}) / 
+  tail:((LEFT_BRACKET __ index:INTEGER_EXPRESSION __ RIGHT_BRACKET { return new ArrayPointerNode(index);}) / 
   (__ DOT __ selector:FIELD_SELECTION { return new FieldSelectorNode(selector);}) / 
-  (__ INC_OP }) / 
-  (__ DEC_OP))* {
-	
-		return !tail.length ? head : new PostfixExpressionNode(head,tail); 
+  (__ op:INC_OP {return new PostIncDecNode(op);}) / 
+  (__ op:DEC_OP {return new PostIncDecNode(op);}))* {
+	  return !tail.length ? head:buildPostfixExpression(head,tail);
+		// return !tail.length ? head : new PostfixExpressionNode(head,tail); 
 
 	}
 
