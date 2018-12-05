@@ -620,16 +620,22 @@ DECLARATION =
  TYPE_QUALIFIER (__ IDENTIFIER __ LEFT_BRACE __ STRUCT_DECLARATION_LIST __ RIGHT_BRACE (IDENTIFIER / IDENTIFIER __ LEFT_BRACKET ( __ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
- FUNCTION_DECLARATOR __ RIGHT_PAREN
+ FUNCTION_DECLARATOR __ RIGHT_PAREN 
 
 FUNCTION_DECLARATOR = 
  FUNCTION_HEADER 
 
 FUNCTION_HEADER = 
- FULLY_SPECIFIED_TYPE __ IDENTIFIER __ LEFT_PAREN __ PARAMETER_DECLARATION  (__ COMMA __ PARAMETER_DECLARATION)*
+ returnType:FULLY_SPECIFIED_TYPE __ functionName:IDENTIFIER __ LEFT_PAREN __ params:PARAMETER_DECLARATION  paramsTail:(__ COMMA __ PARAMETER_DECLARATION)* {
+   return {
+     returnType:returnType,
+     functionName:functionName,
+     params:buildList(params,paramsTail,3)
+   };
+ }
 
 PARAMETER_DECLARATOR = 
- TYPE_SPECIFIER __ IDENTIFIER (__ LEFT_BRACKET __ CONSTANT_EXPRESSION __ RIGHT_BRACKET)?
+ type:TYPE_SPECIFIER __ id:IDENTIFIER array:(__ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION {return {length:parseInt(length,10)};}) __ RIGHT_BRACKET )?
 
 PARAMETER_DECLARATION = 
  (PARAMETER_TYPE_QUALIFIER __)? PARAMETER_QUALIFIER __ ( PARAMETER_DECLARATOR / PARAMETER_TYPE_SPECIFIER )
@@ -653,7 +659,7 @@ INIT_DECLARATOR_LIST =
 
 SINGLE_DECLARATION = 
  type:FULLY_SPECIFIED_TYPE id:( __ IDENTIFIER )? array:(__ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION __)?  RIGHT_BRACKET {return {length:extractOptional(length,0)};})? init:(__ EQUAL __ INITIALIZER)? {return {type:type,identifiers:[{identifier:extractOptional(id,1),array:!!array,length:array && array.length,initializer:extractOptional(init,3)}]};}/ 
- INVARIANT __ IDENTIFIER
+ (INVARIANT __ id:IDENTIFIER) {id.invariant = true; return id; }
 // GRAMMAR NOTE =  NO 'ENUM', OR 'TYPEDEF'.
 
 FULLY_SPECIFIED_TYPE = 
@@ -661,11 +667,11 @@ FULLY_SPECIFIED_TYPE =
  (typeQualifier:TYPE_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER {typeSpecifier.typeQualifier = typeQualifier; return typeSpecifier;})
 
 INVARIANT_QUALIFIER = 
- INVARIANT
+ $INVARIANT
 
 INTERPOLATION_QUALIFIER = 
- SMOOTH / 
- FLAT
+ $(SMOOTH / 
+ FLAT)
 
 LAYOUT_QUALIFIER = 
  LAYOUT __ LEFT_PAREN __ idList:LAYOUT_QUALIFIER_ID_LIST __ RIGHT_PAREN {
@@ -687,18 +693,18 @@ LAYOUT_QUALIFIER_ID =
  }
 
 PARAMETER_TYPE_QUALIFIER = 
- CONST 
+ $CONST 
 
 TYPE_QUALIFIER = 
- option:(opt:((ivq:INVARIANT_QUALIFIER? __ ipq:INTERPOLATION_QUALIFIER?{return {invariantQualifier:ivq,interpolationQualifier:ipq};}) / LAYOUT_QUALIFIER) __ {return opt;})? node:STORAGE_QUALIFIER {
+ option:(opt:((ivq:INVARIANT_QUALIFIER? __ ipq:INTERPOLATION_QUALIFIER?{return {invariant:!!ivq,interpolation:ipq};}) / LAYOUT_QUALIFIER) __ {return opt;})? node:STORAGE_QUALIFIER {
   return Object.assign(node,option);
  }
 
 
 STORAGE_QUALIFIER = 
- CONST / 
- (CENTROID __)? (IN / OUT) /
- UNIFORM
+ CONST {return {const:true}} / 
+ (centroid:(CENTROID __)? inout:$(IN / OUT) {return {centroid:centroid,inout:inout}}) /
+ UNIFORM {return {uniform:true};}
 
 TYPE_SPECIFIER = 
  precision:(PRECISION_QUALIFIER __ )? node:TYPE_SPECIFIER_NO_PREC {
