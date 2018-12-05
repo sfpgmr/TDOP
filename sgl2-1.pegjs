@@ -646,7 +646,7 @@ SINGLE_DECLARATION =
 
 FULLY_SPECIFIED_TYPE = 
  TYPE_SPECIFIER /
- TYPE_QUALIFIER __ TYPE_SPECIFIER
+ (typeQualifier:TYPE_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER {typeSpecifier.typeQualifier = typeQualifier; return typeSpecifier;})
 
 INVARIANT_QUALIFIER = 
  INVARIANT
@@ -676,7 +676,9 @@ PARAMETER_TYPE_QUALIFIER =
  CONST 
 
 TYPE_QUALIFIER = 
- option:(opt:(ivq:INVARIANT_QUALIFIER? __ ipq:INTERPOLATION_QUALIFIER?{return {invariantQualifier:ivq,interpolationQualifier:ipq};}) / LAYOUT_QUALIFIER __)? STORAGE_QUALIFIER
+ option:(opt:((ivq:INVARIANT_QUALIFIER? __ ipq:INTERPOLATION_QUALIFIER?{return {invariantQualifier:ivq,interpolationQualifier:ipq};}) / LAYOUT_QUALIFIER) __ {return opt;})? node:STORAGE_QUALIFIER {
+  return Object.assign(node,option);
+ }
 
 
 STORAGE_QUALIFIER = 
@@ -686,11 +688,14 @@ STORAGE_QUALIFIER =
 
 TYPE_SPECIFIER = 
  precision:(PRECISION_QUALIFIER __ )? node:TYPE_SPECIFIER_NO_PREC {
-  
+  node.precision = extractOptional(precision,0);
+  return node;
  }
 
 TYPE_SPECIFIER_NO_PREC = 
- TYPE_SPECIFIER_NONARRAY (__ LEFT_BRACKET ( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET)?
+ node:TYPE_SPECIFIER_NONARRAY array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})?{
+  
+ }
 
 TYPE_SPECIFIER_NONARRAY = 
  VOID / 
