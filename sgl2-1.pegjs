@@ -109,6 +109,18 @@ function buildPostfixExpression(head,tail){
       this.operator = operator;
     }
   }
+  class TypeSpecifierNode {
+    constructor(typeName){
+      this.nodeType = 'TypeSpecifier';
+      this.typeName = typeName;
+    }
+  }
+  class LayoutQualifierNode {
+    constructor(idList){
+      this.nodeType = 'LayoutQualifier';
+      this.idList = idList;
+    }
+  }
 }
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
@@ -656,7 +668,9 @@ INTERPOLATION_QUALIFIER =
  FLAT
 
 LAYOUT_QUALIFIER = 
- LAYOUT __ LEFT_PAREN __ LAYOUT_QUALIFIER_ID_LIST __ RIGHT_PAREN
+ LAYOUT __ LEFT_PAREN __ idList:LAYOUT_QUALIFIER_ID_LIST __ RIGHT_PAREN {
+  return new LayoutQualifierNode(idList); 
+ }
 
 LAYOUT_QUALIFIER_ID_LIST = 
  head:LAYOUT_QUALIFIER_ID tail:( __ COMMA __ LAYOUT_QUALIFIER_ID)* {
@@ -694,11 +708,13 @@ TYPE_SPECIFIER =
 
 TYPE_SPECIFIER_NO_PREC = 
  node:TYPE_SPECIFIER_NONARRAY array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})?{
-  
+   array = extractOptional(array,0);
+   if(array){node.array = array;}
+   return node;
  }
 
 TYPE_SPECIFIER_NONARRAY = 
- VOID / 
+ ($(VOID / 
  FLOAT / 
  INT / 
  UINT / 
@@ -741,7 +757,7 @@ TYPE_SPECIFIER_NONARRAY =
  USAMPLER2D / 
  USAMPLER3D / 
  USAMPLERCUBE / 
- USAMPLER2DARRAY / 
+ USAMPLER2DARRAY){return new TypeSpecifierNode(text());})/ 
  STRUCT_SPECIFIER / 
  TYPE_NAME
 
