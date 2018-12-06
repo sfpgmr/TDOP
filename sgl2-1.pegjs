@@ -121,6 +121,30 @@ function buildPostfixExpression(head,tail){
       this.idList = idList;
     }
   }
+	
+  class MethodCallNode {
+    constructor(exp,call){
+      this.nodeType = 'MethodCall';
+      this.expression = exp;
+			this.call = call;
+    }
+  }
+  
+	class FunctionCallNode {
+    constructor(funcId,params){
+      this.nodeType = 'FunctionCall';
+      this.id = funcId;
+			this.params = params;
+    }
+  }
+
+  class UnaryExpressionNode {
+    constructor(operator,expression){
+      this.nodeType = 'UnaryExpression';
+      this.operator = operator;
+			this.params = expression;
+    }
+  }
 }
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
@@ -459,7 +483,7 @@ PRIMARY_EXPRESSION =
 
 POSTFIX_EXPRESSION =
  head:(PRIMARY_EXPRESSION / 
- (FUNCTION_CALL_GENERIC (__ DOT __ FUNCTION_CALL_GENERIC)?))  
+ (call:FUNCTION_CALL_GENERIC method:(__ DOT __ FUNCTION_CALL_GENERIC)?{method = extractOptional(method,3); return method ? new MethodCall(call,method) : call; }))  
   tail:((LEFT_BRACKET __ index:INTEGER_EXPRESSION __ RIGHT_BRACKET { return new ArrayPointerNode(index);}) / 
   (__ DOT __ selector:FIELD_SELECTION { return new FieldSelectorNode(selector);}) / 
   (__ op:INC_OP {return new PostIncDecNode(op);}) / 
@@ -477,13 +501,14 @@ FUNCTION_CALL =
 
 FUNCTION_CALL_OR_METHOD = 
  FUNCTION_CALL_GENERIC / 
- POSTFIX_EXPRESSION __ DOT __ FUNCTION_CALL_GENERIC
+ exp:POSTFIX_EXPRESSION __ DOT __ method:FUNCTION_CALL_GENERIC {
+	return new MethodCall(exp,method);
+ }
 
 FUNCTION_CALL_GENERIC = 
- FUNCTION_CALL_HEADER __ RIGHT_PAREN  
-
-FUNCTION_CALL_HEADER = 
- FUNCTION_IDENTIFIER __ LEFT_PAREN (( __ VOID ) / ( __ ASSIGNMENT_EXPRESSION ( __ COMMA __ ASSIGNMENT_EXPRESSION )*))? 
+ id:FUNCTION_IDENTIFIER __ LEFT_PAREN params:(void:( __ VOID ) { return [void[1]]; } / ( __ head:ASSIGNMENT_EXPRESSION tail:( __ COMMA __ ASSIGNMENT_EXPRESSION )*{return buildList(head,tail,3)}))? __ RIGHT_PAREN {
+ return new FunctionCallNode(id,extractOptional(params,0);
+}
 
 // Grammar Note =  Constructors look like functions, but lexical analysis recognized most of them as
 // keywords. They are now recognized through “type_specifier”.
@@ -496,9 +521,7 @@ FUNCTION_IDENTIFIER =
 
 UNARY_EXPRESSION = 
  POSTFIX_EXPRESSION / 
- INC_OP UNARY_EXPRESSION / 
- DEC_OP UNARY_EXPRESSION / 
- UNARY_OPERATOR __ UNARY_EXPRESSION 
+ (op:(INC_OP/DEC_OP/UNARY_OPERATOR) exp:UNARY_EXPRESSION {return new UnaryExpressionNode(op,exp);}) / 
 
 // Grammar Note =  No traditional style type casts.
 
@@ -617,7 +640,7 @@ DECLARATION =
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
  (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
  (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
- TYPE_QUALIFIER (__ IDENTIFIER __ LEFT_BRACE __ STRUCT_DECLARATION_LIST __ RIGHT_BRACE (IDENTIFIER / IDENTIFIER __ LEFT_BRACKET ( __ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)? )? __ SEMICOLON  
+ typeQualifier:TYPE_QUALIFIER structDeclaration:(__ id:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)})? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
  FUNCTION_DECLARATOR __ RIGHT_PAREN 
