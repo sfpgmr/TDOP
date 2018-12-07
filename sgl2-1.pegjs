@@ -145,6 +145,20 @@ function buildPostfixExpression(head,tail){
 			this.params = expression;
     }
   }
+  class FunctionPrototypeNode {
+    constructor(prototype){
+      this.nodeType = 'FunctionPrototype';
+      this.prototype = prototype;
+    }
+  }
+  class ParameterDeclaratorNode {
+    constructor(type,id,array){
+      this.nodeType = 'ParameterDeclarator';
+      this.type = type;
+      this.id = id;
+      this.array = array;
+    }
+  }
 }
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
@@ -521,7 +535,7 @@ FUNCTION_IDENTIFIER =
 
 UNARY_EXPRESSION = 
  POSTFIX_EXPRESSION / 
- (op:(INC_OP/DEC_OP/UNARY_OPERATOR) exp:UNARY_EXPRESSION {return new UnaryExpressionNode(op,exp);}) / 
+ (op:(INC_OP/DEC_OP/UNARY_OPERATOR) exp:UNARY_EXPRESSION {return new UnaryExpressionNode(op,exp);})  
 
 // Grammar Note =  No traditional style type casts.
 
@@ -643,7 +657,7 @@ DECLARATION =
  typeQualifier:TYPE_QUALIFIER structDeclaration:(__ id:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)})? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
- FUNCTION_DECLARATOR __ RIGHT_PAREN 
+ prototype:FUNCTION_DECLARATOR __ RIGHT_PAREN {return new FunctionPrototypeNode(prototype);}
 
 FUNCTION_DECLARATOR = 
  FUNCTION_HEADER 
@@ -658,10 +672,10 @@ FUNCTION_HEADER =
  }
 
 PARAMETER_DECLARATOR = 
- type:TYPE_SPECIFIER __ id:IDENTIFIER array:(__ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION {return {length:parseInt(length,10)};}) __ RIGHT_BRACKET )?
+ type:TYPE_SPECIFIER __ id:IDENTIFIER array:(__ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION {return {length:parseInt(length,10)};}) __ RIGHT_BRACKET )? {return new ParameterDeclaratorNode(type,id,array);}
 
 PARAMETER_DECLARATION = 
- (PARAMETER_TYPE_QUALIFIER __)? PARAMETER_QUALIFIER __ ( PARAMETER_DECLARATOR / PARAMETER_TYPE_SPECIFIER )
+ (typeQualifier:PARAMETER_TYPE_QUALIFIER __)? qualifier:PARAMETER_QUALIFIER __ declOrSpec:( PARAMETER_DECLARATOR / PARAMETER_TYPE_SPECIFIER )
 
 PARAMETER_QUALIFIER = 
  /* EMPTY */
