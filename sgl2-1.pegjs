@@ -61,158 +61,244 @@ function buildPostfixExpression(head,tail){
   });
 }
   // ノードクラス定義
-  class CommentNode {
+  class ASTBaseNode{
+    constructor(){
+      this.location = location();
+    }
+  }
+  class CommentNode extends ASTBaseNode {
     constructor(text){
+      super();
       this.nodeType = 'Commnet';
       this.text = text;
       this.location = location();
     }
   }
-  class NumericConstantNode {
+  class NumericConstantNode extends ASTBaseNode  {
     constructor(type,value){
+      super();
       this.nodeType = 'NumericConstant';
       this.type = type;
       this.value = value;
     }
   }
-  class PrecisionDeclNode {
+  class PrecisionDeclNode  extends ASTBaseNode {
     constructor(precisionQualifier,typeSpecifier){
+      super();
       this.nodeType = 'PrecisioniDeclaration';
       this.precisionQualifier = precisionQualifier;
       this.typeSpecifier = typeSpecifier;
     }
   }
-  class AssignmentExpressionNode {
+  class AssignmentExpressionNode  extends ASTBaseNode {
     constructor(left,right){
+      super();
       this.nodeType = 'AssignmentExpression';
       this.left = left;
       this.right = right;
     }
   }
-  class ArrayPointerNode {
+  class ArrayPointerNode extends ASTBaseNode  {
     constructor(index){
+      super();
       this.nodeType = 'ArrayPointer';
       this.operator = "[]";
       this.value = index;
     }
   }
 
-  class FieldSelectorNode {
+  class FieldSelectorNode extends ASTBaseNode  {
     constructor(selector){
+      super();
       this.nodeType = 'FieldSelector';
       this.operator = selector;
     }
   }
-  class PostIncDecNode {
+  class PostIncDecNode extends ASTBaseNode  {
     constructor(operator){
+      super();
       this.nodeType = 'PostIncDec';
       this.operator = operator;
     }
   }
-  class TypeSpecifierNode {
+  class TypeSpecifierNode extends ASTBaseNode  {
     constructor(typeName){
+      super();
       this.nodeType = 'TypeSpecifier';
       this.typeName = typeName;
     }
   }
-  class LayoutQualifierNode {
+  class LayoutQualifierNode extends ASTBaseNode  {
     constructor(idList){
+      super();
       this.nodeType = 'LayoutQualifier';
       this.idList = idList;
     }
   }
 	
-  class MethodCallNode {
+  class MethodCallNode extends ASTBaseNode  {
     constructor(exp,call){
+      super();
       this.nodeType = 'MethodCall';
       this.expression = exp;
 			this.call = call;
     }
   }
   
-	class FunctionCallNode {
+	class FunctionCallNode extends ASTBaseNode  {
     constructor(funcId,params){
+      super();
       this.nodeType = 'FunctionCall';
       this.id = funcId;
 			this.params = params;
     }
   }
 
-  class UnaryExpressionNode {
+  class UnaryExpressionNode extends ASTBaseNode  {
     constructor(operator,expression){
+      super();
       this.nodeType = 'UnaryExpression';
       this.operator = operator;
 			this.params = expression;
     }
   }
-  class FunctionPrototypeNode {
+  class FunctionPrototypeNode extends ASTBaseNode  {
     constructor(prototype){
+      super();
       this.nodeType = 'FunctionPrototype';
       this.prototype = prototype;
     }
   }
-  class ParameterDeclaratorNode {
+  class ParameterDeclaratorNode extends ASTBaseNode  {
     constructor(type,id,array){
+      super();
       this.nodeType = 'ParameterDeclarator';
       this.type = type;
       this.id = id;
       this.array = array;
     }
   }
-  class ParameterDeclarationNode {
+  class ParameterDeclarationNode extends ASTBaseNode  {
     constructor(typeQualifier,qualifier,declOrSpec){
+      super();
       this.nodeType = 'ParameterDeclaration';
       this.typeQualifier = typeQuaifier;
       this.qualifier = qualifier;
       this.declOrSpec = declOrSpec;
     }
   }
-  class ScopeBlockNode {
+  class ScopeBlockNode extends ASTBaseNode  {
     constructor(statements){
+      super();
       this.nodeType = 'ScopeBlock';
       this.statements = statements;
     }
   }
-  class NoScopeBlockNode {
+  class NoScopeBlockNode extends ASTBaseNode  {
     constructor(statements){
+      super();
       this.nodeType = 'NoScopeBlock';
       this.statements = statements;
     }
   }
-  class ExpressionNode {
+  class ExpressionNode extends ASTBaseNode  {
     constructor(expression){
+      super();
       this.nodeType = 'Expression';
       this.expression = expression;
     }
   }
-  class SelectionStatementNode {
+  class SelectionStatementNode extends ASTBaseNode  {
     constructor(test,then,else_){
+      super();
       this.nodeType = 'SelectionStatement';
       this.test = test;
       this.then = then;
       this.else_ = else_;
     }
   }
-  class VariableDeclarationNode {
+  class VariableDeclarationNode extends ASTBaseNode  {
     constructor(type,id,init){
+      super();
       this.nodeType = 'VariableDeclaration';
       this.type = type;
       this.id = id;
       this.init = init;
     }
   }
-  class SwitchStatementNode {
+  class SwitchStatementNode extends ASTBaseNode  {
     constructor(condition,switchStatements){
+      super();
       this.nodeType = 'SwitchStatement';
       this.condition = condition;
       this.caseStatements = caseStatements;
     }
   }
-  class CaseStatementNode {
+  class CaseStatementNode extends ASTBaseNode  {
     constructor(condition,statements){
+      super();
       this.nodeType = 'CaseStatement';
       this.condition = condition;
       this.statements = statements;
+    }
+  }
+  class WhileStatementNode extends ASTBaseNode  {
+    constructor(condition,statements){
+      super();
+      this.nodeType = 'WhileStatement';
+      this.condition = condition;
+      this.statements = statements;
+    }
+  }
+  class DoWhileStatementNode extends ASTBaseNode  {
+    constructor(condition,statements){
+      super();
+      this.nodeType = 'DoWhileStatement';
+      this.condition = condition;
+      this.statements = statements;
+    }
+  }
+  class ForStatementNode extends ASTBaseNode  {
+    constructor(init,test,update,statements){
+      super();
+      this.nodeType = 'ForStatement';
+      this.init = init;
+      this.test = test;
+      this.update = update;
+      this.statements = statements;
+    }
+  }
+  class ContinueStatementNode extends ASTBaseNode  {
+    constructor(){
+      super();
+      this.nodeType = 'ContinueStatement';
+    }
+  }
+  class BreakStatementNode extends ASTBaseNode  {
+    constructor(){
+      super();
+      this.nodeType = 'BreakStatement';
+    }
+  }
+  class ReturnStatementNode extends ASTBaseNode  {
+    constructor(expression){
+      super();
+      this.expression = expression;
+      this.nodeType = 'ReturnStatement';
+    }
+  }
+  class DiscardStatementNode extends ASTBaseNode  {
+    constructor(){
+      super();
+      this.nodeType = 'DiscardStatement';
+    }
+  }
+  class FunctionDefinitionNode extends ASTBaseNode  {
+    constructor(functionPrototype,statement){
+      super();
+      this.nodeType = 'FunctionDefinition';
+      this.functionPrototype = functionPrototype;
+      this.statement = statement;
     }
   }
 }
@@ -959,9 +1045,9 @@ CASE_LABEL =
  d:DEFAULT __ COLON {return d;}
 
 ITERATION_STATEMENT = 
- WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE / 
- DO __ STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ EXPRESSION __ RIGHT_PAREN __ SEMICOLON / 
- FOR __ LEFT_PAREN __ FOR_INIT_STATEMENT __ FOR_REST_STATEMENT __ RIGHT_PAREN __ STATEMENT_NO_NEW_SCOPE
+ WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new WhileStatementNode(condition,statements);}/ 
+ DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ SEMICOLON {return new DoWhileStatement(condition,statement);} / 
+ FOR __ LEFT_PAREN __ init:FOR_INIT_STATEMENT __ rest:FOR_REST_STATEMENT __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new ForStatementNode(init,rest.condtion,rest.update,statement);}
 
 FOR_INIT_STATEMENT = 
  EXPRESSION_STATEMENT / 
@@ -972,23 +1058,22 @@ CONDITIONOPT =
  /* EMPTY */
 
 FOR_REST_STATEMENT = 
- CONDITIONOPT __ SEMICOLON (__ EXPRESSION)?
+ condition:CONDITIONOPT __ SEMICOLON update:(__ EXPRESSION)? {return {condition:condition,update:extractOptional(update,1)};}
 
 JUMP_STATEMENT = 
- CONTINUE __ SEMICOLON / 
- BREAK __ SEMICOLON / 
- RETURN __ SEMICOLON / 
- RETURN __ EXPRESSION __ SEMICOLON / 
- DISCARD __ SEMICOLON // FRAGMENT SHADER ONLY.
+ __ CONTINUE __ SEMICOLON {return new ContinueStatementNode();}/ 
+ __ BREAK __ SEMICOLON {return new BreakStatementNode();}/ 
+ __ RETURN expression:(__ EXPRESSION)? __ SEMICOLON {return new ReturnStatementNode(extractOptional(expression,1));}/ 
+ __ DISCARD __ SEMICOLON {return new DiscardStatement();}// FRAGMENT SHADER ONLY.
 // GRAMMAR NOTE =  NO 'GOTO'. GOTOS ARE NOT SUPPORTED.
 
 
 EXTERNAL_DECLARATION = 
- __ decl:(FUNCTION_DEFINITION / 
- DECLARATION) __ { return decl; }
+ __ declaration:(FUNCTION_DEFINITION / DECLARATION) __ { return declaration; }
 
 FUNCTION_DEFINITION = 
- FUNCTION_PROTOTYPE __ COMPOUND_STATEMENT_NO_NEW_SCOPE
+ functionPrototype:FUNCTION_PROTOTYPE __ statement:COMPOUND_STATEMENT_NO_NEW_SCOPE {return new FunctionDefinitionNode(functionPrototype,statement);}
+
 
 
 /* IN GENERAL THE ABOVE GRAMMAR DESCRIBES A SUPER SET OF THE GLSL ES LANGUAGE. CERTAIN CONSTRUCTS THAT ARE

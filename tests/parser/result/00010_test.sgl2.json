@@ -1,6 +1,23 @@
 [
   {
     "nodeType": "VariableDeclarationList",
+    "type": {
+      "location": {
+        "start": {
+          "offset": 0,
+          "line": 1,
+          "column": 1
+        },
+        "end": {
+          "offset": 3,
+          "line": 1,
+          "column": 4
+        }
+      },
+      "nodeType": "TypeSpecifier",
+      "typeName": "int",
+      "precision": null
+    },
     "identifiers": [
       {
         "identifier": {
@@ -10,11 +27,217 @@
         "array": false,
         "length": null,
         "initializer": {
+          "location": {
+            "start": {
+              "offset": 8,
+              "line": 1,
+              "column": 9
+            },
+            "end": {
+              "offset": 10,
+              "line": 1,
+              "column": 11
+            }
+          },
           "nodeType": "NumericConstant",
           "type": "int",
           "value": 10
         }
       }
     ]
+  },
+  {
+    "location": {
+      "start": {
+        "offset": 12,
+        "line": 2,
+        "column": 1
+      },
+      "end": {
+        "offset": 54,
+        "line": 5,
+        "column": 2
+      }
+    },
+    "nodeType": "FunctionDefinition",
+    "functionPrototype": {
+      "location": {
+        "start": {
+          "offset": 12,
+          "line": 2,
+          "column": 1
+        },
+        "end": {
+          "offset": 30,
+          "line": 2,
+          "column": 19
+        }
+      },
+      "nodeType": "FunctionPrototype",
+      "prototype": {
+        "returnType": {
+          "location": {
+            "start": {
+              "offset": 12,
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "offset": 15,
+              "line": 2,
+              "column": 4
+            }
+          },
+          "nodeType": "TypeSpecifier",
+          "typeName": "int",
+          "precision": null
+        },
+        "functionName": {
+          "nodeType": "identifier",
+          "name": "func"
+        },
+        "params": [
+          {
+            "location": {
+              "start": {
+                "offset": 21,
+                "line": 2,
+                "column": 10
+              },
+              "end": {
+                "offset": 29,
+                "line": 2,
+                "column": 18
+              }
+            },
+            "nodeType": "ParameterDeclarator",
+            "type": null,
+            "id": "in",
+            "array": {
+              "location": {
+                "start": {
+                  "offset": 24,
+                  "line": 2,
+                  "column": 13
+                },
+                "end": {
+                  "offset": 29,
+                  "line": 2,
+                  "column": 18
+                }
+              },
+              "nodeType": "ParameterDeclarator",
+              "type": {
+                "location": {
+                  "start": {
+                    "offset": 24,
+                    "line": 2,
+                    "column": 13
+                  },
+                  "end": {
+                    "offset": 27,
+                    "line": 2,
+                    "column": 16
+                  }
+                },
+                "nodeType": "TypeSpecifier",
+                "typeName": "int",
+                "precision": null
+              },
+              "id": {
+                "nodeType": "identifier",
+                "name": "b"
+              },
+              "array": null
+            }
+          }
+        ]
+      }
+    },
+    "statement": {
+      "location": {
+        "start": {
+          "offset": 30,
+          "line": 2,
+          "column": 19
+        },
+        "end": {
+          "offset": 54,
+          "line": 5,
+          "column": 2
+        }
+      },
+      "nodeType": "NoScopeBlock",
+      "statements": [
+        {
+          "nodeType": "VariableDeclarationList",
+          "type": {
+            "location": {
+              "start": {
+                "offset": 32,
+                "line": 3,
+                "column": 1
+              },
+              "end": {
+                "offset": 35,
+                "line": 3,
+                "column": 4
+              }
+            },
+            "nodeType": "TypeSpecifier",
+            "typeName": "int",
+            "precision": null
+          },
+          "identifiers": [
+            {
+              "identifier": {
+                "nodeType": "identifier",
+                "name": "a"
+              },
+              "array": false,
+              "length": null,
+              "initializer": {
+                "location": {
+                  "start": {
+                    "offset": 40,
+                    "line": 3,
+                    "column": 9
+                  },
+                  "end": {
+                    "offset": 41,
+                    "line": 3,
+                    "column": 10
+                  }
+                },
+                "nodeType": "NumericConstant",
+                "type": "float",
+                "value": 3
+              }
+            }
+          ]
+        },
+        {
+          "location": {
+            "start": {
+              "offset": 43,
+              "line": 4,
+              "column": 1
+            },
+            "end": {
+              "offset": 52,
+              "line": 4,
+              "column": 10
+            }
+          },
+          "expression": [
+            {
+              "nodeType": "identifier",
+              "name": "a"
+            }
+          ],
+          "nodeType": "ReturnStatement"
+        }
+      ]
+    }
   }
 ]
