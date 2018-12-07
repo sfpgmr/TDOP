@@ -159,6 +159,14 @@ function buildPostfixExpression(head,tail){
       this.array = array;
     }
   }
+  class ParameterDeclarationNode {
+    constructor(typeQualifier,qualifier,declOrSpec){
+      this.nodeType = 'ParameterDeclaration';
+      this.typeQualifier = typeQuaifier;
+      this.qualifier = qualifier;
+      this.declOrSpec = declOrSpec;
+    }
+  }
 }
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
@@ -520,8 +528,8 @@ FUNCTION_CALL_OR_METHOD =
  }
 
 FUNCTION_CALL_GENERIC = 
- id:FUNCTION_IDENTIFIER __ LEFT_PAREN params:(void:( __ VOID ) { return [void[1]]; } / ( __ head:ASSIGNMENT_EXPRESSION tail:( __ COMMA __ ASSIGNMENT_EXPRESSION )*{return buildList(head,tail,3)}))? __ RIGHT_PAREN {
- return new FunctionCallNode(id,extractOptional(params,0);
+ id:FUNCTION_IDENTIFIER __ LEFT_PAREN params:(void_:( __ VOID ) { return [void_[1]]; } / ( __ head:ASSIGNMENT_EXPRESSION tail:( __ COMMA __ ASSIGNMENT_EXPRESSION )* {return buildList(head,tail,3);}))? __ RIGHT_PAREN {
+ return new FunctionCallNode(id,extractOptional(params,0));
 }
 
 // Grammar Note =  Constructors look like functions, but lexical analysis recognized most of them as
@@ -654,7 +662,7 @@ DECLARATION =
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
  (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
  (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
- typeQualifier:TYPE_QUALIFIER structDeclaration:(__ id:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)})? )? __ SEMICOLON  
+ typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
  prototype:FUNCTION_DECLARATOR __ RIGHT_PAREN {return new FunctionPrototypeNode(prototype);}
@@ -675,7 +683,9 @@ PARAMETER_DECLARATOR =
  type:TYPE_SPECIFIER __ id:IDENTIFIER array:(__ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION {return {length:parseInt(length,10)};}) __ RIGHT_BRACKET )? {return new ParameterDeclaratorNode(type,id,array);}
 
 PARAMETER_DECLARATION = 
- (typeQualifier:PARAMETER_TYPE_QUALIFIER __)? qualifier:PARAMETER_QUALIFIER __ declOrSpec:( PARAMETER_DECLARATOR / PARAMETER_TYPE_SPECIFIER )
+ typeQualifier:(PARAMETER_TYPE_QUALIFIER __)? qualifier:PARAMETER_QUALIFIER __ declOrSpec:( PARAMETER_DECLARATOR / PARAMETER_TYPE_SPECIFIER ) {
+ return new ParameterDeclaratorNode(extractOptional(typeQualifier,0),qualifier,declOrSpec);
+}
 
 PARAMETER_QUALIFIER = 
  /* EMPTY */
