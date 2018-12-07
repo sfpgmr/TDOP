@@ -167,6 +167,54 @@ function buildPostfixExpression(head,tail){
       this.declOrSpec = declOrSpec;
     }
   }
+  class ScopeBlockNode {
+    constructor(statements){
+      this.nodeType = 'ScopeBlock';
+      this.statements = statements;
+    }
+  }
+  class NoScopeBlockNode {
+    constructor(statements){
+      this.nodeType = 'NoScopeBlock';
+      this.statements = statements;
+    }
+  }
+  class ExpressionNode {
+    constructor(expression){
+      this.nodeType = 'Expression';
+      this.expression = expression;
+    }
+  }
+  class SelectionStatementNode {
+    constructor(test,then,else_){
+      this.nodeType = 'SelectionStatement';
+      this.test = test;
+      this.then = then;
+      this.else_ = else_;
+    }
+  }
+  class VariableDeclarationNode {
+    constructor(type,id,init){
+      this.nodeType = 'VariableDeclaration';
+      this.type = type;
+      this.id = id;
+      this.init = init;
+    }
+  }
+  class SwitchStatementNode {
+    constructor(condition,switchStatements){
+      this.nodeType = 'SwitchStatement';
+      this.condition = condition;
+      this.caseStatements = caseStatements;
+    }
+  }
+  class CaseStatementNode {
+    constructor(condition,statements){
+      this.nodeType = 'CaseStatement';
+      this.condition = condition;
+      this.statements = statements;
+    }
+  }
 }
 
 TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
@@ -841,8 +889,8 @@ DECLARATION_STATEMENT =
  DECLARATION
 
 STATEMENT = 
- COMPOUND_STATEMENT_WITH_SCOPE / 
- SIMPLE_STATEMENT 
+ __ statement:(COMPOUND_STATEMENT_WITH_SCOPE / 
+ SIMPLE_STATEMENT) __ {return statement; }
 
 STATEMENT_NO_NEW_SCOPE = 
  COMPOUND_STATEMENT_NO_NEW_SCOPE / 
@@ -864,39 +912,54 @@ SIMPLE_STATEMENT =
  JUMP_STATEMENT
 
 COMPOUND_STATEMENT_WITH_SCOPE = 
- LEFT_BRACE ( __ STATEMENT_LIST)? __ RIGHT_BRACE
+ LEFT_BRACE statementList:( __ STATEMENT_LIST __ )? __ RIGHT_BRACE {
+		return new ScopeBlockNode(extractOptional(statementList,1));
+ }
 
 COMPOUND_STATEMENT_NO_NEW_SCOPE = 
- LEFT_BRACE (__ STATEMENT_LIST)? __ RIGHT_BRACE
+ LEFT_BRACE statementList:(__ STATEMENT_LIST __)? __ RIGHT_BRACE {
+	 return new NoScopeBlockNode(extractOptional(statementList,1));
+ }
 
 STATEMENT_LIST = 
- STATEMENT*
+statementList:( __ STATEMENT __ )* {return extractList(statementList,1);} 
 
 EXPRESSION_STATEMENT = 
- (EXPRESSION __)? SEMICOLON
+ expression:(__ EXPRESSION __)? SEMICOLON { return new ExpressionNode(extractOptional(expression,1)); }
 
 SELECTION_STATEMENT = 
- IF __ LEFT_PAREN __ EXPRESSION __ RIGHT_PAREN __ SELECTION_REST_STATEMENT
+ IF __ LEFT_PAREN __ test:EXPRESSION __ RIGHT_PAREN __ statement:SELECTION_REST_STATEMENT __ {
+	 return new SelectionStatement(test,stament.then,statement["else"]);
+ }
 
 SELECTION_REST_STATEMENT = 
- STATEMENT_WITH_SCOPE ( __ ELSE __ STATEMENT_WITH_SCOPE )?  
+ then:STATEMENT_WITH_SCOPE else_:( __ ELSE __ STATEMENT_WITH_SCOPE )? {
+	 return {then:then,"else":extractOptional(else_,3)};
+ }
 
 CONDITION = 
  EXPRESSION / 
- FULLY_SPECIFIED_TYPE __ IDENTIFIER __ EQUAL __ INITIALIZER
+ type:FULLY_SPECIFIED_TYPE __ id:IDENTIFIER __ EQUAL __ init:INITIALIZER {
+	 return new VariableDeclarationNode(type,id,init);
+ }
 
 SWITCH_STATEMENT = 
-SWITCH __ LEFT_PAREN __ EXPRESSION __ RIGHT_PAREN __ LEFT_BRACE __ SWITCH_STATEMENT_LIST __ RIGHT_BRACE
+SWITCH __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ LEFT_BRACE __ caseStatements:SWITCH_STATEMENT_LIST __ RIGHT_BRACE {
+	return new SwitchStatement(condition,caseStatements);	
+}
 
 SWITCH_STATEMENT_LIST = 
- STATEMENT_LIST
+ caseStatements:(__ CASE_STATEMENT __)* {return extractList(caseStatements,1);}
+
+CASE_STATEMENT =
+	 caseLabel:CASE_LABEL __ statement:STATEMENT_LIST {return new CaseStatementNode(caseLabel,statement);}
 
 CASE_LABEL = 
- CASE __ EXPRESSION __ COLON / 
- DEFAULT __ COLON
+ CASE __ condition:EXPRESSION __ COLON {return condition; }/ 
+ d:DEFAULT __ COLON {return d;}
 
 ITERATION_STATEMENT = 
- WHILE __ LEFT_PAREN __ CONDITION __ RIGHT_PAREN __ STATEMENT_NO_NEW_SCOPE / 
+ WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE / 
  DO __ STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ EXPRESSION __ RIGHT_PAREN __ SEMICOLON / 
  FOR __ LEFT_PAREN __ FOR_INIT_STATEMENT __ FOR_REST_STATEMENT __ RIGHT_PAREN __ STATEMENT_NO_NEW_SCOPE
 
