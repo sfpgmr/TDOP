@@ -999,7 +999,7 @@ STRUCT_DECLARATOR_LIST =
 
 STRUCT_DECLARATOR = 
  id:IDENTIFIER array:( __ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {
- 	return !array ? id : (id.array = array
+ 	return !array ? id : (id.array = array,id) 
  }
 
 
