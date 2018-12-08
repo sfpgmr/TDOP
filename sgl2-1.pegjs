@@ -1054,7 +1054,7 @@ SELECTION_STATEMENT =
  }
 
 SELECTION_REST_STATEMENT = 
- then:STATEMENT_WITH_SCOPE else_:( __ ELSE __ STATEMENT_WITH_SCOPE )? {
+ __ then:STATEMENT_WITH_SCOPE else_:( __ ELSE __ STATEMENT_WITH_SCOPE )? {
 	 return {then:then,"else":extractOptional(else_,3)};
  }
 
