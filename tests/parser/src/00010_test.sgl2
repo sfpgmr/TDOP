@@ -1,5 +1,5 @@
 int a = 10;
 int func(in int b){
 int a = 3;
-return a;
+return a+b;
 }

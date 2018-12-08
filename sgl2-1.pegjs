@@ -63,7 +63,7 @@ function buildPostfixExpression(head,tail){
   // ノードクラス定義
   class ASTBaseNode{
     constructor(){
-      this.location = location();
+      //this.location = location();
     }
   }
   class CommentNode extends ASTBaseNode {
@@ -142,6 +142,13 @@ function buildPostfixExpression(head,tail){
       this.nodeType = 'MethodCall';
       this.expression = exp;
 			this.call = call;
+    }
+  }
+  class ProgramNode extends ASTBaseNode  {
+    constructor(program){
+      super();
+      this.nodeType = 'Program';
+			this.program = program;
     }
   }
   
@@ -303,7 +310,7 @@ function buildPostfixExpression(head,tail){
   }
 }
 
-TRANSLATION_UNIT = EXTERNAL_DECLARATION* 
+TRANSLATION_UNIT = program:EXTERNAL_DECLARATION*{return new ProgramNode(program);} 
 
 SOURCECHARACTER = .
 
