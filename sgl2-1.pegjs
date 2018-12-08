@@ -294,18 +294,39 @@ function buildPostfixExpression(head,tail){
       this.nodeType = 'ReturnStatement';
     }
   }
+
   class DiscardStatementNode extends ASTBaseNode  {
     constructor(){
       super();
       this.nodeType = 'DiscardStatement';
     }
   }
+
   class FunctionDefinitionNode extends ASTBaseNode  {
     constructor(functionPrototype,statement){
       super();
       this.nodeType = 'FunctionDefinition';
       this.functionPrototype = functionPrototype;
       this.statement = statement;
+    }
+  }
+
+  class StructSpecifierNode extends ASTBaseNode  {
+    constructor(id,structDeclarationList){
+      super();
+      this.nodeType = 'StructSpecifier';
+      this.id = id;
+      this.structDeclarationList = structDeclarationList;
+    }
+  }
+
+  class StructDeclarationNode extends ASTBaseNode  {
+    constructor(typeQuaifier,typeSpecifier,structDeclarationList){
+      super();
+      this.nodeType = 'StructDeclaration';
+			this.typeQualifier = typeQualifier;
+			this.typeSpecifier = typeSpecifier;
+			this.structDeclarationList = structDeclarationList;
     }
   }
 }
@@ -713,7 +734,7 @@ SHIFT_EXPRESSION =
 
 
 RELATIONAL_EXPRESSION = 
- head:SHIFT_EXPRESSION  tail:( __ (LEFT_ANGLE / LE_OP / GE_OP) __ SHIFT_EXPRESSION)* {
+ head:SHIFT_EXPRESSION  tail:( __ (RIGHT_ANGLE / LEFT_ANGLE / LE_OP / GE_OP) __ SHIFT_EXPRESSION)* {
   return buildBinaryExpression(head,tail);
 }
 
@@ -961,19 +982,26 @@ PRECISION_QUALIFIER =
  LOW_PRECISION
 
 STRUCT_SPECIFIER = 
- STRUCT ( __ IDENTIFIER)? __ LEFT_BRACE __ STRUCT_DECLARATION_LIST __ RIGHT_BRACE  
+ STRUCT id:( __ IDENTIFIER)? __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE {
+	 return new StructSpecifierNode(id,structDeclarations);
+ }
 
 STRUCT_DECLARATION_LIST = 
- STRUCT_DECLARATION ( __ STRUCT_DECLARATION)*
+ head:STRUCT_DECLARATION tail:( __ STRUCT_DECLARATION)* {return buildList(head,tail,1);}
 
 STRUCT_DECLARATION = 
- TYPE_QUALIFIER? __ TYPE_SPECIFIER __ STRUCT_DECLARATOR_LIST __ SEMICOLON
+ typeQualifier:TYPE_QUALIFIER? __ typeSpecifier:TYPE_SPECIFIER __ structDeclarationList:STRUCT_DECLARATOR_LIST __ SEMICOLON {
+	return new StructDeclarationNode(typeQualifier,typeSpecifier,structDeclarationList);
+ }
 
 STRUCT_DECLARATOR_LIST = 
- STRUCT_DECLARATOR ( __ COMMA __ STRUCT_DECLARATOR )*
+ head:STRUCT_DECLARATOR tail:( __ COMMA __ STRUCT_DECLARATOR )* {return buildList(head,tail,3);}
 
 STRUCT_DECLARATOR = 
- IDENTIFIER ( __ LEFT_BRACKET (__ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET)?
+ id:IDENTIFIER array:( __ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION)? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {
+ 	return !array ? id : (id.array = array
+ }
+
 
 INITIALIZER = 
  ASSIGNMENT_EXPRESSION

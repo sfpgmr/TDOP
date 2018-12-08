@@ -1,5 +1,10 @@
 int a = 10;
 int func(in int b){
-int a = 3;
-return a+b;
+	int a = 3;
+	if(a > 1){
+		b = 2;
+	} else {
+		b = 3;
+	}
+	return a + b;
 }

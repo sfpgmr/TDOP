@@ -8360,11 +8360,14 @@ function peg$parse(input, options) {
       s3 = peg$currPos;
       s4 = peg$parse__();
       if (s4 !== peg$FAILED) {
-        s5 = peg$parseLEFT_ANGLE();
+        s5 = peg$parseRIGHT_ANGLE();
         if (s5 === peg$FAILED) {
-          s5 = peg$parseLE_OP();
+          s5 = peg$parseLEFT_ANGLE();
           if (s5 === peg$FAILED) {
-            s5 = peg$parseGE_OP();
+            s5 = peg$parseLE_OP();
+            if (s5 === peg$FAILED) {
+              s5 = peg$parseGE_OP();
+            }
           }
         }
         if (s5 !== peg$FAILED) {
@@ -8395,11 +8398,14 @@ function peg$parse(input, options) {
         s3 = peg$currPos;
         s4 = peg$parse__();
         if (s4 !== peg$FAILED) {
-          s5 = peg$parseLEFT_ANGLE();
+          s5 = peg$parseRIGHT_ANGLE();
           if (s5 === peg$FAILED) {
-            s5 = peg$parseLE_OP();
+            s5 = peg$parseLEFT_ANGLE();
             if (s5 === peg$FAILED) {
-              s5 = peg$parseGE_OP();
+              s5 = peg$parseLE_OP();
+              if (s5 === peg$FAILED) {
+                s5 = peg$parseGE_OP();
+              }
             }
           }
           if (s5 !== peg$FAILED) {
