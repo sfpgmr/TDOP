@@ -51,15 +51,17 @@
   function optionalList(value) {
     return value !== null ? value : [];
   }
-function buildPostfixExpression(head,tail){
-  return tail.reduce((result,element)=>{
-      return {
-        nodeType: "PostfixExpression",
-        operator: element.operator,
-        value: element.value
-      };
-  });
-}
+
+  function buildPostfixExpression(head,tail){
+    return tail.reduce((result,element)=>{
+        return {
+          nodeType: "PostfixExpression",
+          operator: element.operator,
+          left: result
+        };
+    },head);
+  }
+
   // ノードクラス定義
   class ASTBaseNode{
     constructor(){
@@ -91,9 +93,10 @@ function buildPostfixExpression(head,tail){
     }
   }
   class AssignmentExpressionNode  extends ASTBaseNode {
-    constructor(left,right){
+    constructor(operator,left,right){
       super();
       this.nodeType = 'AssignmentExpression';
+      this.operator = operator;
       this.left = left;
       this.right = right;
     }
@@ -669,12 +672,17 @@ POSTFIX_EXPRESSION =
  head:(PRIMARY_EXPRESSION / 
  (call:FUNCTION_CALL_GENERIC method:(__ DOT __ FUNCTION_CALL_GENERIC)?{method = extractOptional(method,3); return method ? new MethodCall(call,method) : call; }))  
   tail:((LEFT_BRACKET __ index:INTEGER_EXPRESSION __ RIGHT_BRACKET { return new ArrayPointerNode(index);}) / 
-  (__ DOT __ selector:FIELD_SELECTION { return new FieldSelectorNode(selector);}) / 
-  (__ op:INC_OP {return new PostIncDecNode(op);}) / 
-  (__ op:DEC_OP {return new PostIncDecNode(op);}))* {
-	  return !tail.length ? head:buildPostfixExpression(head,tail);
+  (__ DOT __ selector:FIELD_SELECTION { return new FieldSelectorNode(selector);}))* postIncDec:(__ op:(INC_OP/DEC_OP) {return new PostIncDecNode(op);})? 
+  {
+    postIncDec = extractOptional(postIncDec,0);
+    let exp = !tail.length ? head:buildPostfixExpression(head,tail);
+    if(postIncDec){
+      postIncDec.left = exp;
+      return postIncDec;
+    } else {
+      return exp;
+    }
 		// return !tail.length ? head : new PostfixExpressionNode(head,tail); 
-
 	}
 
 INTEGER_EXPRESSION = 
@@ -794,8 +802,8 @@ CONDITIONAL_EXPRESSION =
 
 
 ASSIGNMENT_EXPRESSION = 
- left:UNARY_EXPRESSION __ ASSIGNMENT_OPERATOR __ right:ASSIGNMENT_EXPRESSION {
-	 return new AssignmentExpressionNode(left,right);
+ left:UNARY_EXPRESSION __ operator:ASSIGNMENT_OPERATOR __ right:ASSIGNMENT_EXPRESSION {
+	 return new AssignmentExpressionNode(operator,left,right);
  } / CONDITIONAL_EXPRESSION  
 
 ASSIGNMENT_OPERATOR = 
@@ -1079,7 +1087,7 @@ CASE_LABEL =
  d:DEFAULT __ COLON {return d;}
 
 ITERATION_STATEMENT = 
- WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new WhileStatementNode(condition,statements);}/ 
+ WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new WhileStatementNode(condition,statement);}/ 
  DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ SEMICOLON {return new DoWhileStatement(condition,statement);} / 
  FOR __ LEFT_PAREN __ init:FOR_INIT_STATEMENT __ rest:FOR_REST_STATEMENT __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new ForStatementNode(init,rest.condtion,rest.update,statement);}
 

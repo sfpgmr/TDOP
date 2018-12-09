@@ -2,6 +2,8 @@ int func(in int a){
   int c = 0;
   for(int i = a;i < 10;++i){
     ++c;
+    c++;
+    c += 10;
   }
   return c;
 }
