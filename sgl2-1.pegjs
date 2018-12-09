@@ -1032,12 +1032,12 @@ STATEMENT_WITH_SCOPE =
 
 SIMPLE_STATEMENT = 
  DECLARATION_STATEMENT / 
+ JUMP_STATEMENT /
  EXPRESSION_STATEMENT / 
  SELECTION_STATEMENT / 
  SWITCH_STATEMENT / 
- //CASE_LABEL / 
  ITERATION_STATEMENT / 
- JUMP_STATEMENT
+ CASE_LABEL  
 
 COMPOUND_STATEMENT_WITH_SCOPE = 
  LEFT_BRACE statementList:( __ STATEMENT_LIST __ )? __ RIGHT_BRACE {
@@ -1088,7 +1088,7 @@ CASE_LABEL =
 
 ITERATION_STATEMENT = 
  WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new WhileStatementNode(condition,statement);}/ 
- DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ SEMICOLON {return new DoWhileStatement(condition,statement);} / 
+ DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ SEMICOLON {return new DoWhileStatementNode(condition,statement);} / 
  FOR __ LEFT_PAREN __ init:FOR_INIT_STATEMENT __ rest:FOR_REST_STATEMENT __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new ForStatementNode(init,rest.condtion,rest.update,statement);}
 
 FOR_INIT_STATEMENT = 

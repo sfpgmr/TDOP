@@ -1,0 +1,137 @@
+{
+  "nodeType": "Program",
+  "program": [
+    {
+      "nodeType": "FunctionDefinition",
+      "functionPrototype": {
+        "nodeType": "FunctionPrototype",
+        "prototype": {
+          "returnType": {
+            "nodeType": "TypeSpecifier",
+            "typeName": "int",
+            "precision": null
+          },
+          "functionName": {
+            "nodeType": "identifier",
+            "name": "func"
+          },
+          "params": [
+            {
+              "nodeType": "ParameterDeclarator",
+              "type": null,
+              "id": "in",
+              "array": {
+                "nodeType": "ParameterDeclarator",
+                "type": {
+                  "nodeType": "TypeSpecifier",
+                  "typeName": "int",
+                  "precision": null
+                },
+                "id": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                },
+                "array": null
+              }
+            }
+          ]
+        }
+      },
+      "statement": {
+        "nodeType": "NoScopeBlock",
+        "statements": [
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "nodeType": "TypeSpecifier",
+              "typeName": "int",
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "array": false,
+                "length": null,
+                "initializer": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                }
+              }
+            ]
+          },
+          {
+            "nodeType": "DoWhileStatement",
+            "condition": [
+              {
+                "nodeType": "BinaryExpression",
+                "operator": "<",
+                "left": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "right": {
+                  "nodeType": "NumericConstant",
+                  "type": "int",
+                  "value": 10
+                }
+              }
+            ],
+            "statements": {
+              "nodeType": "NoScopeBlock",
+              "statements": [
+                {
+                  "nodeType": "Expression",
+                  "expression": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "c"
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "SelectionStatement",
+                  "test": [
+                    {
+                      "nodeType": "BinaryExpression",
+                      "operator": ">",
+                      "left": {
+                        "nodeType": "identifier",
+                        "name": "a"
+                      },
+                      "right": {
+                        "nodeType": "NumericConstant",
+                        "type": "int",
+                        "value": 10
+                      }
+                    }
+                  ],
+                  "then": {
+                    "nodeType": "NoScopeBlock",
+                    "statements": [
+                      {
+                        "nodeType": "BreakStatement"
+                      }
+                    ]
+                  },
+                  "else_": null
+                }
+              ]
+            }
+          },
+          {
+            "expression": [
+              {
+                "nodeType": "identifier",
+                "name": "c"
+              }
+            ],
+            "nodeType": "ReturnStatement"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+int func(in int a){
+  int c = a;
+  do {
+    c++;
+    if(a > 10){
+      break;
+    }
+  } while(c < 10);
+  return c;
+}
+

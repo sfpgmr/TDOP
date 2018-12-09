@@ -1,0 +1,19 @@
+struct S {
+
+int sa;
+int sb;
+
+};
+
+int func(in int a){
+  S s;
+  int c = a;
+  do {
+    c++;
+    if(a > 10){
+      break;
+    }
+  } while(c < 10);
+  return c;
+}
+
