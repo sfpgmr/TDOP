@@ -2,29 +2,6 @@
   "nodeType": "Program",
   "program": [
     {
-      "nodeType": "VariableDeclarationList",
-      "type": {
-        "nodeType": "TypeSpecifier",
-        "typeName": "int",
-        "precision": null
-      },
-      "identifiers": [
-        {
-          "identifier": {
-            "nodeType": "identifier",
-            "name": "a"
-          },
-          "array": false,
-          "length": null,
-          "initializer": {
-            "nodeType": "NumericConstant",
-            "type": "int",
-            "value": 10
-          }
-        }
-      ]
-    },
-    {
       "nodeType": "FunctionDefinition",
       "functionPrototype": {
         "nodeType": "FunctionPrototype",
@@ -85,6 +62,76 @@
                 }
               }
             ]
+          },
+          {
+            "nodeType": "SelectionStatement",
+            "test": [
+              {
+                "nodeType": "BinaryExpression",
+                "operator": ">",
+                "left": {
+                  "nodeType": "identifier",
+                  "name": "b"
+                },
+                "right": {
+                  "nodeType": "NumericConstant",
+                  "type": "float",
+                  "value": 1
+                }
+              }
+            ],
+            "then": {
+              "nodeType": "NoScopeBlock",
+              "statements": [
+                {
+                  "nodeType": "Expression",
+                  "expression": [
+                    {
+                      "nodeType": "AssignmentExpression",
+                      "left": {
+                        "nodeType": "identifier",
+                        "name": "a"
+                      },
+                      "right": {
+                        "nodeType": "BinaryExpression",
+                        "operator": "+",
+                        "left": {
+                          "nodeType": "NumericConstant",
+                          "type": "float",
+                          "value": 2
+                        },
+                        "right": {
+                          "nodeType": "identifier",
+                          "name": "b"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "else_": {
+              "nodeType": "NoScopeBlock",
+              "statements": [
+                {
+                  "nodeType": "Expression",
+                  "expression": [
+                    {
+                      "nodeType": "AssignmentExpression",
+                      "left": {
+                        "nodeType": "identifier",
+                        "name": "a"
+                      },
+                      "right": {
+                        "nodeType": "NumericConstant",
+                        "type": "float",
+                        "value": 3
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
           },
           {
             "expression": [

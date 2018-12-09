@@ -234,7 +234,7 @@ function buildPostfixExpression(head,tail){
     }
   }
   class SwitchStatementNode extends ASTBaseNode  {
-    constructor(condition,switchStatements){
+    constructor(condition,caseStatements){
       super();
       this.nodeType = 'SwitchStatement';
       this.condition = condition;
@@ -794,10 +794,9 @@ CONDITIONAL_EXPRESSION =
 
 
 ASSIGNMENT_EXPRESSION = 
- CONDITIONAL_EXPRESSION / 
  left:UNARY_EXPRESSION __ ASSIGNMENT_OPERATOR __ right:ASSIGNMENT_EXPRESSION {
 	 return new AssignmentExpressionNode(left,right);
- }
+ } / CONDITIONAL_EXPRESSION  
 
 ASSIGNMENT_OPERATOR = 
  $(EQUAL / 
@@ -1028,7 +1027,7 @@ SIMPLE_STATEMENT =
  EXPRESSION_STATEMENT / 
  SELECTION_STATEMENT / 
  SWITCH_STATEMENT / 
- CASE_LABEL / 
+ //CASE_LABEL / 
  ITERATION_STATEMENT / 
  JUMP_STATEMENT
 
@@ -1050,7 +1049,7 @@ EXPRESSION_STATEMENT =
 
 SELECTION_STATEMENT = 
  IF __ LEFT_PAREN __ test:EXPRESSION __ RIGHT_PAREN __ statement:SELECTION_REST_STATEMENT __ {
-	 return new SelectionStatement(test,stament.then,statement["else"]);
+	 return new SelectionStatementNode(test,statement.then,statement["else"]);
  }
 
 SELECTION_REST_STATEMENT = 
@@ -1066,7 +1065,7 @@ CONDITION =
 
 SWITCH_STATEMENT = 
 SWITCH __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ LEFT_BRACE __ caseStatements:SWITCH_STATEMENT_LIST __ RIGHT_BRACE {
-	return new SwitchStatement(condition,caseStatements);	
+	return new SwitchStatementNode(condition,caseStatements);	
 }
 
 SWITCH_STATEMENT_LIST = 
