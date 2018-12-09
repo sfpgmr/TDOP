@@ -1,0 +1,132 @@
+{
+  "nodeType": "Program",
+  "program": [
+    {
+      "nodeType": "FunctionDefinition",
+      "functionPrototype": {
+        "nodeType": "FunctionPrototype",
+        "prototype": {
+          "returnType": {
+            "nodeType": "TypeSpecifier",
+            "typeName": "int",
+            "precision": null
+          },
+          "functionName": {
+            "nodeType": "identifier",
+            "name": "func"
+          },
+          "params": [
+            {
+              "nodeType": "ParameterDeclarator",
+              "type": null,
+              "id": "in",
+              "array": {
+                "nodeType": "ParameterDeclarator",
+                "type": {
+                  "nodeType": "TypeSpecifier",
+                  "typeName": "int",
+                  "precision": null
+                },
+                "id": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                },
+                "array": null
+              }
+            }
+          ]
+        }
+      },
+      "statement": {
+        "nodeType": "NoScopeBlock",
+        "statements": [
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "nodeType": "TypeSpecifier",
+              "typeName": "int",
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "array": false,
+                "length": null,
+                "initializer": {
+                  "nodeType": "NumericConstant",
+                  "type": "float",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "nodeType": "ForStatement",
+            "init": {
+              "nodeType": "VariableDeclarationList",
+              "type": {
+                "nodeType": "TypeSpecifier",
+                "typeName": "int",
+                "precision": null
+              },
+              "identifiers": [
+                {
+                  "identifier": {
+                    "nodeType": "identifier",
+                    "name": "i"
+                  },
+                  "array": false,
+                  "length": null,
+                  "initializer": {
+                    "nodeType": "identifier",
+                    "name": "a"
+                  }
+                }
+              ]
+            },
+            "update": [
+              {
+                "nodeType": "UnaryExpression",
+                "operator": "++",
+                "params": {
+                  "nodeType": "identifier",
+                  "name": "i"
+                }
+              }
+            ],
+            "statements": {
+              "nodeType": "NoScopeBlock",
+              "statements": [
+                {
+                  "nodeType": "Expression",
+                  "expression": [
+                    {
+                      "nodeType": "UnaryExpression",
+                      "operator": "++",
+                      "params": {
+                        "nodeType": "identifier",
+                        "name": "c"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "expression": [
+              {
+                "nodeType": "identifier",
+                "name": "c"
+              }
+            ],
+            "nodeType": "ReturnStatement"
+          }
+        ]
+      }
+    }
+  ]
+}

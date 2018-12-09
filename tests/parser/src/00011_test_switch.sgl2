@@ -1,0 +1,17 @@
+int func(in int a){
+  int c;
+  switch (a) {
+    case 1:
+      c = 1;
+      break;
+    case 2:
+      c = 2;
+      break;
+    default:
+      c = 3;
+      break;
+  }
+
+	return c;
+}
+

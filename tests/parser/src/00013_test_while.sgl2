@@ -1,0 +1,10 @@
+int func(in int a){
+  int c = a;
+
+  while(c < 10){
+    ++c;
+  }
+  
+  return c;
+}
+
