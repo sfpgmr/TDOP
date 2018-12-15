@@ -324,7 +324,7 @@
   }
 
   class StructDeclarationNode extends ASTBaseNode  {
-    constructor(typeQuaifier,typeSpecifier,structDeclarationList){
+    constructor(typeQualifier,typeSpecifier,structDeclarationList){
       super();
       this.nodeType = 'StructDeclaration';
 			this.typeQualifier = typeQualifier;
@@ -332,6 +332,30 @@
 			this.structDeclarationList = structDeclarationList;
     }
   }
+
+
+  const typeDefs = [
+    {name:'void',size:4,bitSize:32,byteSize:4,max:0,min:0,integer:false,signed:false,wasmType:'i32',kind:'Native'},
+    {name:'float',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,signed:true,wasmType:'f32',kind:'Native'},
+    {name:'int',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,wasmType:'i32',kind:'Native'},
+    {name:'uint',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,wasmType:'i32',kind:'Native'},
+    {name:'bool',size:4,bitSize:32,byteSize:4,max:1,min:0,integer:false,signed:true,wasmType:'i32',kind:'Native'},
+    {name:'vec2',memberType:'float',memberCount:2,size:8,byteSize:8,integer:false,signed:true,kind:'vector'},
+    {name:'vec3',memberType:'float',memberCount:3,size:12,byteSize:12,integer:false,signed:true,kind:'vector'},
+    {name:'vec4',memberType:'float',memberCount:4,size:16,byteSize:16,integer:false,signed:true,kind:'vector'},
+    {name:'bvec2',memberType:'bool',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
+    {name:'bvec3',memberType:'bool',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
+    {name:'bvec4',memberType:'bool',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
+    {name:'ivec2',memberType:'int',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
+    {name:'ivec3',memberType:'int',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
+    {name:'ivec4',memberType:'int',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
+    {name:'uvec2',memberType:'uint',memberCount:2,size:8,byteSize:8,integer:true,signed:false,kind:'vector'},
+    {name:'uvec3',memberType:'uint',memberCount:3,size:12,byteSize:12,integer:true,signed:false,kind:'vector'},
+    {name:'uvec4',memberType:'uint',memberCount:4,size:16,byteSize:16,integer:true,signed:false,kind:'vector'},
+
+  ];
+  const typeDefsMap = new Map(typeDefs.map(t=>[t.name,t]));
+
 }
 
 TRANSLATION_UNIT = program:EXTERNAL_DECLARATION*{return new ProgramNode(program);} 
@@ -404,73 +428,73 @@ EOS
 EOF  = !.
 
 
-CONST = "const" 
-BOOL = "bool"
-FLOAT = "float"
-INT = "int"
-UINT = "uint"
-BREAK = "break"
-CONTINUE = "continue"
-DO = "do"
-ELSE = "else"
-FOR = "for"
-IF = "if"
-DISCARD = "discard"
-RETURN = "return"
-SWITCH = "switch"
-CASE = "case"
-DEFAULT = "default"
-BVEC2 = "bvec2"
-BVEC3 = "bvec3"
-BVEC4 = "bvec4"
-IVEC2 = "ivec2"
-IVEC3 = "ivec3"
-IVEC4 = "ivec4"
-UVEC2 = "uvec2"
-UVEC3 = "uvec3"
-UVEC4 = "uvec4"
-VEC2 = "vec2"
-VEC3 = "vec3"
-VEC4 = "vec4"
-MAT2 = "mat2"
-MAT3 = "mat3"
-MAT4 = "mat4"
-CENTROID = "centroid"
-IN = "in"
-OUT = "out"
-INOUT = "inout"
-UNIFORM = "uniform"
-FLAT = "flat"
-SMOOTH = "smooth"
-LAYOUT = "layout"
-MAT2X2 = "mat2x2"
-MAT2X3 = "mat2x3"
-MAT2X4 = "mat2x4"
-MAT3X2 = "mat3x2"
-MAT3X3 = "mat3x3"
-MAT3X4 = "mat3x4"
-MAT4X2 = "mat4x2"
-MAT4X3 = "mat4x3"
-MAT4X4 = "mat4x4"
-SAMPLER2D = "sampler2d"
-SAMPLER3D = "sampler3d"
-SAMPLERCUBE = "samplercube"
-SAMPLER2DSHADOW = "sampler2dshadow"
-SAMPLERCUBESHADOW = "samplercubeshadow"
-SAMPLER2DARRAY = "sampler2darray"
-SAMPLER2DARRAYSHADOW = "sampler2darrayshadow"
-ISAMPLER2D = "isampler2d"
-ISAMPLER3D = "isampler3d"
-ISAMPLERCUBE = "isamplercube"
-ISAMPLER2DARRAY = "isampler2darray"
-USAMPLER2D = "usampler2d"
-USAMPLER3D = "usampler3d"
-USAMPLERCUBE = "usamplercube"
-USAMPLER2DARRAY = "usampler2darray"
+CONST = "const" !IDENTIFIER
+BOOL = "bool" !IDENTIFIER
+FLOAT = "float" !IDENTIFIER
+INT = "int" !IDENTIFIER
+UINT = "uint" !IDENTIFIER
+BREAK = "break" !IDENTIFIER
+CONTINUE = "continue" !IDENTIFIER
+DO = "do" !IDENTIFIER
+ELSE = "else" !IDENTIFIER
+FOR = "for" !IDENTIFIER
+IF = "if" !IDENTIFIER
+DISCARD = "discard" !IDENTIFIER
+RETURN = "return" !IDENTIFIER
+SWITCH = "switch" !IDENTIFIER
+CASE = "case" !IDENTIFIER
+DEFAULT = "default" !IDENTIFIER
+BVEC2 = "bvec2" !IDENTIFIER
+BVEC3 = "bvec3" !IDENTIFIER
+BVEC4 = "bvec4" !IDENTIFIER
+IVEC2 = "ivec2" !IDENTIFIER
+IVEC3 = "ivec3" !IDENTIFIER
+IVEC4 = "ivec4" !IDENTIFIER
+UVEC2 = "uvec2" !IDENTIFIER
+UVEC3 = "uvec3" !IDENTIFIER
+UVEC4 = "uvec4" !IDENTIFIER
+VEC2 = "vec2" !IDENTIFIER
+VEC3 = "vec3" !IDENTIFIER
+VEC4 = "vec4" !IDENTIFIER
+MAT2 = "mat2" !IDENTIFIER
+MAT3 = "mat3" !IDENTIFIER
+MAT4 = "mat4" !IDENTIFIER
+CENTROID = "centroid" !IDENTIFIER
+IN = "in" !IDENTIFIER
+OUT = "out" !IDENTIFIER
+INOUT = "inout" !IDENTIFIER
+UNIFORM = "uniform" !IDENTIFIER
+FLAT = "flat" !IDENTIFIER
+SMOOTH = "smooth" !IDENTIFIER
+LAYOUT = "layout" !IDENTIFIER
+MAT2X2 = "mat2x2" !IDENTIFIER
+MAT2X3 = "mat2x3" !IDENTIFIER
+MAT2X4 = "mat2x4" !IDENTIFIER
+MAT3X2 = "mat3x2" !IDENTIFIER
+MAT3X3 = "mat3x3" !IDENTIFIER
+MAT3X4 = "mat3x4" !IDENTIFIER
+MAT4X2 = "mat4x2" !IDENTIFIER
+MAT4X3 = "mat4x3" !IDENTIFIER
+MAT4X4 = "mat4x4" !IDENTIFIER
+SAMPLER2D = "sampler2d" !IDENTIFIER
+SAMPLER3D = "sampler3d" !IDENTIFIER
+SAMPLERCUBE = "samplercube" !IDENTIFIER
+SAMPLER2DSHADOW = "sampler2dshadow" !IDENTIFIER
+SAMPLERCUBESHADOW = "samplercubeshadow" !IDENTIFIER
+SAMPLER2DARRAY = "sampler2darray" !IDENTIFIER
+SAMPLER2DARRAYSHADOW = "sampler2darrayshadow" !IDENTIFIER
+ISAMPLER2D = "isampler2d" !IDENTIFIER
+ISAMPLER3D = "isampler3d" !IDENTIFIER
+ISAMPLERCUBE = "isamplercube" !IDENTIFIER
+ISAMPLER2DARRAY = "isampler2darray" !IDENTIFIER
+USAMPLER2D = "usampler2d" !IDENTIFIER
+USAMPLER3D = "usampler3d" !IDENTIFIER
+USAMPLERCUBE = "usamplercube" !IDENTIFIER
+USAMPLER2DARRAY = "usampler2darray" !IDENTIFIER
 
-STRUCT = "struct"
-VOID = "void"
-WHILE = "while"
+STRUCT = "struct" !IDENTIFIER
+VOID = "void" !IDENTIFIER
+WHILE = "while" !IDENTIFIER
 
 RESERVED_KEYWORDS = 
 CONST / 
@@ -552,7 +576,9 @@ IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*) {
 
 NONDIGIT = [_a-zA-Z]
 
-TYPE_NAME = "type_name"
+TYPE_NAME = id:IDENTIFIER {
+
+}
 
 FLOATING_CONSTANT = 
 	f:FRACTIONAL_CONSTANT e:EXPONENT_PART? FLOATING_SUFFIX? {return new NumericConstantNode('float',parseFloat(f + (e || '')));} /
@@ -989,7 +1015,7 @@ PRECISION_QUALIFIER =
  LOW_PRECISION
 
 STRUCT_SPECIFIER = 
- STRUCT id:( __ IDENTIFIER)? __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE {
+ STRUCT id:( __ IDENTIFIER)? __ LEFT_BRACE __ structDeclarations:STRUCT_DECLARATION_LIST __ RIGHT_BRACE {
 	 return new StructSpecifierNode(id,structDeclarations);
  }
 
