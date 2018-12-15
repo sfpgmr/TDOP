@@ -1,0 +1,216 @@
+{
+  "nodeType": "Program",
+  "program": [
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "nodeType": "StructSpecifier",
+        "id": {
+          "nodeType": "identifier",
+          "name": "S"
+        },
+        "structDeclarationList": [
+          {
+            "nodeType": "StructDeclaration",
+            "typeQualifier": null,
+            "typeSpecifier": {
+              "nodeType": "TypeSpecifier",
+              "typeName": "int",
+              "precision": null
+            },
+            "structDeclarationList": [
+              {
+                "nodeType": "identifier",
+                "name": "sa"
+              }
+            ]
+          },
+          {
+            "nodeType": "StructDeclaration",
+            "typeQualifier": null,
+            "typeSpecifier": {
+              "nodeType": "TypeSpecifier",
+              "typeName": "int",
+              "precision": null
+            },
+            "structDeclarationList": [
+              {
+                "nodeType": "identifier",
+                "name": "sb"
+              }
+            ]
+          }
+        ],
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": null,
+          "array": false,
+          "length": null,
+          "initializer": null
+        }
+      ]
+    },
+    {
+      "nodeType": "FunctionDefinition",
+      "functionPrototype": {
+        "nodeType": "FunctionPrototype",
+        "prototype": {
+          "returnType": {
+            "nodeType": "TypeSpecifier",
+            "typeName": "int",
+            "precision": null
+          },
+          "functionName": {
+            "nodeType": "identifier",
+            "name": "func"
+          },
+          "params": [
+            {
+              "nodeType": "ParameterDeclarator",
+              "type": null,
+              "id": [
+                "in",
+                null
+              ],
+              "array": {
+                "nodeType": "ParameterDeclarator",
+                "type": {
+                  "nodeType": "TypeSpecifier",
+                  "typeName": "int",
+                  "precision": null
+                },
+                "id": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                },
+                "array": null
+              }
+            }
+          ]
+        }
+      },
+      "statement": {
+        "nodeType": "NoScopeBlock",
+        "statements": [
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "nodeType": "TypeSpecifier",
+              "typeName": "int",
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "array": false,
+                "length": null,
+                "initializer": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                }
+              }
+            ]
+          },
+          {
+            "nodeType": "DoWhileStatement",
+            "condition": [
+              {
+                "nodeType": "BinaryExpression",
+                "operator": "<",
+                "left": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "right": {
+                  "nodeType": "NumericConstant",
+                  "type": "int",
+                  "value": 10
+                }
+              }
+            ],
+            "statements": {
+              "nodeType": "ScopeBlock",
+              "statements": {
+                "nodeType": "NoScopeBlock",
+                "statements": [
+                  {
+                    "nodeType": "Expression",
+                    "expression": [
+                      {
+                        "nodeType": "identifier",
+                        "name": "c"
+                      }
+                    ]
+                  },
+                  {
+                    "nodeType": "SelectionStatement",
+                    "test": [
+                      {
+                        "nodeType": "BinaryExpression",
+                        "operator": ">",
+                        "left": {
+                          "nodeType": "identifier",
+                          "name": "a"
+                        },
+                        "right": {
+                          "nodeType": "NumericConstant",
+                          "type": "int",
+                          "value": 10
+                        }
+                      }
+                    ],
+                    "then": {
+                      "nodeType": "ScopeBlock",
+                      "statements": {
+                        "nodeType": "NoScopeBlock",
+                        "statements": [
+                          {
+                            "nodeType": "VariableDeclarationList",
+                            "type": {
+                              "precision": null
+                            },
+                            "identifiers": [
+                              {
+                                "identifier": null,
+                                "array": false,
+                                "length": null,
+                                "initializer": null
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "else_": null
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "c"
+                },
+                "array": false,
+                "length": null,
+                "initializer": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
