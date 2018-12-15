@@ -831,7 +831,7 @@ DECLARATION =
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
  (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
  (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
- typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? __ SEMICOLON  
+ typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE __ varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? __ SEMICOLON  
 
 FUNCTION_PROTOTYPE = 
  prototype:FUNCTION_DECLARATOR __ RIGHT_PAREN {return new FunctionPrototypeNode(prototype);}
@@ -919,7 +919,7 @@ TYPE_QUALIFIER =
 
 STORAGE_QUALIFIER = 
  CONST {return {const:true}} / 
- (centroid:(CENTROID __)? inout:$(IN / OUT) {return {centroid:centroid,inout:inout}}) /
+ (centroid:(CENTROID __)? inout:$(IN / OUT) __ {return {centroid:centroid,inout:inout}}) /
  UNIFORM {return {uniform:true};}
 
 TYPE_SPECIFIER = 
