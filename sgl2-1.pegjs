@@ -352,9 +352,50 @@
     {name:'uvec2',memberType:'uint',memberCount:2,size:8,byteSize:8,integer:true,signed:false,kind:'vector'},
     {name:'uvec3',memberType:'uint',memberCount:3,size:12,byteSize:12,integer:true,signed:false,kind:'vector'},
     {name:'uvec4',memberType:'uint',memberCount:4,size:16,byteSize:16,integer:true,signed:false,kind:'vector'},
-
+    {name:'mat2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
+    {name:'mat3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
+    {name:'mat4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
+    {name:'mat2x2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
+    {name:'mat2x3',memberType:'float',rowSize:2,columnSize:3,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {name:'mat2x4',memberType:'float',rowSize:2,columnSize:4,size:32,byteSize:32,integer:false,signed:true,kind:'mat'},
+    {name:'mat3x2',memberType:'float',rowSize:3,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {name:'mat3x3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
+    {name:'mat3x4',memberType:'float',rowSize:3,columnSize:4,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
+    {name:'mat4x2',memberType:'float',rowSize:4,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {name:'mat4x3',memberType:'float',rowSize:4,columnSize:3,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
+    {name:'mat4x4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
+    {name:'sampler2d',kind:'Opaque'},
+    {name:'sampler3d',kind:'Opaque'},
+    {name:'samplercube',kind:'Opaque'},
+    {name:'sampler2dshadow',kind:'Opaque'},
+    {name:'samplercubeshadow',kind:'Opaque'},
+    {name:'sampler2darray',kind:'Opaque'},
+    {name:'sampler2darrayshadow',kind:'Opaque'},
+    {name:'isampler2d',kind:'Opaque'},
+    {name:'isampler3d',kind:'Opaque'},
+    {name:'isamplercube',kind:'Opaque'},
+    {name:'isampler2darray',kind:'Opaque'},
+    {name:'usampler2d',kind:'Opaque'},
+    {name:'usampler3d',kind:'Opaque'},
+    {name:'usamplercube',kind:'Opaque'},
+    {name:'usampler2darray',kind:'Opaque'}
   ];
+
   const typeDefsMap = new Map(typeDefs.map(t=>[t.name,t]));
+  
+  // 型を検索する
+  function findType(typeName){
+    return typeDefsMap.get(typeName);
+  }
+  
+  // 型を定義する
+  function declareType(type){
+    if(!findType(type.name)){
+      typeDefsMap.set(type.name,type);
+    } else {
+      error('型名はすでに登録されています。');
+    }
+  }
 
 }
 
@@ -426,7 +467,6 @@ EOS
  // __ EOF
 
 EOF  = !.
-
 
 CONST = "const" !IDENTIFIER
 BOOL = "bool" !IDENTIFIER
@@ -563,6 +603,7 @@ USAMPLER2DARRAY /
 STRUCT /
 VOID /
 WHILE 
+
 // 3.9 Identifiers
 /*
 識別子は、変数名、関数名、構造体名、およびフィールドセレクタに使用されます（フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します）。
@@ -577,7 +618,7 @@ IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*) {
 NONDIGIT = [_a-zA-Z]
 
 TYPE_NAME = id:IDENTIFIER {
-
+  return {};
 }
 
 FLOATING_CONSTANT = 
@@ -633,57 +674,58 @@ FALSE = "false"
 //フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します
 FIELD_SELECTION = "field_selection"
 
-LEFT_OP = "<<"
-RIGHT_OP = ">>"
-INC_OP = "++"
-DEC_OP = "--"
-LE_OP = "<="
-GE_OP = ">="
-EQ_OP = "=="
-NE_OP = "!="
-AND_OP = "&&"
-OR_OP = "||"
-XOR_OP = "^^"
-MUL_ASSIGN = "*="
-DIV_ASSIGN = "/="
-ADD_ASSIGN = "+="
-MOD_ASSIGN = "%="
-LEFT_ASSIGN = "<<="
-RIGHT_ASSIGN = ">>="
-AND_ASSIGN = "&="
-XOR_ASSIGN = "^="
-OR_ASSIGN = "|="
-SUB_ASSIGN = "-="
-LEFT_PAREN = "("
-RIGHT_PAREN = ")"
-LEFT_BRACKET = "["
-RIGHT_BRACKET = "]"
-LEFT_BRACE = "{"
-RIGHT_BRACE = "}"
-DOT = "."
-COMMA = ","
-COLON = ":"
-EQUAL = "="
-SEMICOLON = ";"
-BANG = "!"
-DASH = "'"
-TILDE = "~"
-PLUS = "+"
-MINUS = "-"
-STAR = "*"
-SLASH = "/"
-PERCENT = "%"
-LEFT_ANGLE = "<"
-RIGHT_ANGLE = ">"
-VERTICAL_BAR = "_"
-CARET = "^"
-AMPERSAND = "&"
-QUESTION = "?"
-INVARIANT = "invariant"
-HIGH_PRECISION = "highp"
-MEDIUM_PRECISION = "mediump"
-LOW_PRECISION = "lowp"
-PRECISION = "precision"
+LEFT_OP = "<<" 
+RIGHT_OP = ">>" 
+INC_OP = "++" 
+DEC_OP = "--" 
+LE_OP = "<=" 
+GE_OP = ">=" 
+EQ_OP = "==" 
+NE_OP = "!=" 
+AND_OP = "&&" 
+OR_OP = "||" 
+XOR_OP = "^^" 
+MUL_ASSIGN = "*=" 
+DIV_ASSIGN = "/=" 
+ADD_ASSIGN = "+=" 
+MOD_ASSIGN = "%=" 
+LEFT_ASSIGN = "<<=" 
+RIGHT_ASSIGN = ">>=" 
+AND_ASSIGN = "&=" 
+XOR_ASSIGN = "^=" 
+OR_ASSIGN = "|=" 
+SUB_ASSIGN = "-=" 
+LEFT_PAREN = "(" 
+RIGHT_PAREN = ")" 
+LEFT_BRACKET = "[" 
+RIGHT_BRACKET = "]" 
+LEFT_BRACE = "{" 
+RIGHT_BRACE = "}" 
+DOT = "." 
+COMMA = "," 
+COLON = ":" 
+EQUAL = "=" 
+SEMICOLON = ";" 
+BANG = "!" 
+DASH = "'" 
+TILDE = "~" 
+PLUS = "+" 
+MINUS = "-" 
+STAR = "*" 
+SLASH = "/" 
+PERCENT = "%" 
+LEFT_ANGLE = "<" 
+RIGHT_ANGLE = ">" 
+VERTICAL_BAR = "_" 
+CARET = "^" 
+AMPERSAND = "&" 
+QUESTION = "?" 
+
+INVARIANT = "invariant" !IDENTIFIER
+HIGH_PRECISION = "highp" !IDENTIFIER
+MEDIUM_PRECISION = "mediump" !IDENTIFIER
+LOW_PRECISION = "lowp" !IDENTIFIER
+PRECISION = "precision" !IDENTIFIER
 
 VARIABLE_IDENTIFIER = IDENTIFIER
 
@@ -1016,7 +1058,7 @@ PRECISION_QUALIFIER =
 
 STRUCT_SPECIFIER = 
  STRUCT id:( __ IDENTIFIER)? __ LEFT_BRACE __ structDeclarations:STRUCT_DECLARATION_LIST __ RIGHT_BRACE {
-	 return new StructSpecifierNode(id,structDeclarations);
+	 return new StructSpecifierNode(extractOptional(id,1),structDeclarations);
  }
 
 STRUCT_DECLARATION_LIST = 
