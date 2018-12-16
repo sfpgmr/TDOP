@@ -9,13 +9,22 @@
           "nodeType": "identifier",
           "name": "S"
         },
+        "typeName": "S",
         "structDeclarationList": [
           {
             "nodeType": "StructDeclaration",
             "typeQualifier": null,
             "typeSpecifier": {
-              "nodeType": "TypeSpecifier",
-              "typeName": "int",
+              "name": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "structDeclarationList": [
@@ -29,8 +38,16 @@
             "nodeType": "StructDeclaration",
             "typeQualifier": null,
             "typeSpecifier": {
-              "nodeType": "TypeSpecifier",
-              "typeName": "int",
+              "name": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "structDeclarationList": [
@@ -43,14 +60,7 @@
         ],
         "precision": null
       },
-      "identifiers": [
-        {
-          "identifier": null,
-          "array": false,
-          "length": null,
-          "initializer": null
-        }
-      ]
+      "identifiers": []
     },
     {
       "nodeType": "FunctionDefinition",
@@ -58,8 +68,16 @@
         "nodeType": "FunctionPrototype",
         "prototype": {
           "returnType": {
-            "nodeType": "TypeSpecifier",
-            "typeName": "int",
+            "name": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
             "precision": null
           },
           "functionName": {
@@ -77,8 +95,16 @@
               "array": {
                 "nodeType": "ParameterDeclarator",
                 "type": {
-                  "nodeType": "TypeSpecifier",
-                  "typeName": "int",
+                  "name": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
                   "precision": null
                 },
                 "id": {
@@ -97,8 +123,33 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
-              "nodeType": "TypeSpecifier",
-              "typeName": "int",
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "s"
+                },
+                "array": false,
+                "length": null,
+                "initializer": null
+              }
+            ]
+          },
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "name": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "identifiers": [
@@ -170,18 +221,7 @@
                         "nodeType": "NoScopeBlock",
                         "statements": [
                           {
-                            "nodeType": "VariableDeclarationList",
-                            "type": {
-                              "precision": null
-                            },
-                            "identifiers": [
-                              {
-                                "identifier": null,
-                                "array": false,
-                                "length": null,
-                                "initializer": null
-                              }
-                            ]
+                            "nodeType": "BreakStatement"
                           }
                         ]
                       }
@@ -193,21 +233,13 @@
             }
           },
           {
-            "nodeType": "VariableDeclarationList",
-            "type": {
-              "precision": null
-            },
-            "identifiers": [
+            "expression": [
               {
-                "identifier": {
-                  "nodeType": "identifier",
-                  "name": "c"
-                },
-                "array": false,
-                "length": null,
-                "initializer": null
+                "nodeType": "identifier",
+                "name": "c"
               }
-            ]
+            ],
+            "nodeType": "ReturnStatement"
           }
         ]
       }

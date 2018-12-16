@@ -387,7 +387,7 @@ function peg$parse(input, options) {
       peg$c177 = /^[_a-zA-Z]/,
       peg$c178 = peg$classExpectation(["_", ["a", "z"], ["A", "Z"]], false, false),
       peg$c179 = function(id) {
-        return {};
+        return findType(id.name) || {};
       },
       peg$c180 = function(f, e) {return new NumericConstantNode('float',parseFloat(f + (e || '')));},
       peg$c181 = function(f, e) {return new NumericConstantNode('float',parseFloat(f + (e||'')));},
@@ -572,7 +572,12 @@ function peg$parse(input, options) {
         return buildList(head,tail,3);
        },
       peg$c325 = function(fp) { return fp;},
-      peg$c326 = function(initDecl) {return initDecl;},
+      peg$c326 = function(initDecl) {
+         if(initDecl.nodeType == 'StructSpecifier'){
+           declareType(initDecl);
+         }
+         return initDecl;
+         },
       peg$c327 = function(precisionQualifier, typeSpecifier) { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); },
       peg$c328 = function(typeQualifier, idStruct, structDeclarationList, id, length) {return {length:extractOptional(length,1)};},
       peg$c329 = function(typeQualifier, idStruct, structDeclarationList, id, array) {return {id:id,array:extractOptional(array,0)};},
@@ -590,7 +595,7 @@ function peg$parse(input, options) {
        return new ParameterDeclaratorNode(extractOptional(typeQualifier,0),qualifier,declOrSpec);
       },
       peg$c335 = function(head, id, length) {return {length:extractOptional(length,0)};},
-      peg$c336 = function(head, id, array, init) {return {identifier:id,array:!!array,length:array && array.length,initializer:extractOptional(init,3)};},
+      peg$c336 = function(head, id, array, init) { return {identifier:id,array:!!array,length:array && array.length,initializer:extractOptional(init,3)};},
       peg$c337 = function(head, tail) {
          head.identifiers.push(...tail);
          const node = Object.assign({nodeType:"VariableDeclarationList"}
@@ -598,7 +603,15 @@ function peg$parse(input, options) {
          return node;
        },
       peg$c338 = function(type, id, length) {return {length:extractOptional(length,0)};},
-      peg$c339 = function(type, id, array, init) {return {type:type,identifiers:[{identifier:extractOptional(id,1),array:!!array,length:array && array.length,initializer:extractOptional(init,3)}]};},
+      peg$c339 = function(type, id, array, init) {
+          let idopt = extractOptional(id,1);
+          if(idopt){
+            idopt = [{identifier:idopt,array:!!array,length:array && array.length,initializer:extractOptional(init,3)}] 
+          } else {
+            idopt = [];
+          }
+          return {type:type,identifiers:idopt};
+        },
       peg$c340 = function() {id.invariant = true; return id; },
       peg$c341 = function(typeQualifier, typeSpecifier) {typeSpecifier.typeQualifier = typeQualifier; return typeSpecifier;},
       peg$c342 = function(idList) {
@@ -632,7 +645,7 @@ function peg$parse(input, options) {
          if(array){node.array = array;}
          return node;
        },
-      peg$c354 = function() {return new TypeSpecifierNode(text());},
+      peg$c354 = function() {return findType(text())},
       peg$c355 = function(id, structDeclarations) {
       	 return new StructSpecifierNode(extractOptional(id,1),structDeclarations);
        },
@@ -5889,7 +5902,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parseIDENTIFIER() {
-    var s0, s1, s2, s3, s4, s5,
+    var s0, s1, s2, s3, s4, s5, s6,
         startPos = peg$currPos;
 
     peg$tracer.trace({
@@ -5900,42 +5913,60 @@ function peg$parse(input, options) {
 
     s0 = peg$currPos;
     s1 = peg$currPos;
-    s2 = peg$currPos;
-    s3 = peg$parseNONDIGIT();
-    if (s3 !== peg$FAILED) {
-      s4 = [];
-      s5 = peg$parseDIGIT();
-      if (s5 === peg$FAILED) {
-        s5 = peg$parseNONDIGIT();
-      }
-      while (s5 !== peg$FAILED) {
-        s4.push(s5);
-        s5 = peg$parseDIGIT();
-        if (s5 === peg$FAILED) {
-          s5 = peg$parseNONDIGIT();
-        }
-      }
-      if (s4 !== peg$FAILED) {
-        s3 = [s3, s4];
-        s2 = s3;
-      } else {
-        peg$currPos = s2;
-        s2 = peg$FAILED;
-      }
+    peg$silentFails++;
+    s2 = peg$parseRESERVED_KEYWORDS();
+    peg$silentFails--;
+    if (s2 === peg$FAILED) {
+      s1 = void 0;
     } else {
-      peg$currPos = s2;
-      s2 = peg$FAILED;
-    }
-    if (s2 !== peg$FAILED) {
-      s1 = input.substring(s1, peg$currPos);
-    } else {
-      s1 = s2;
+      peg$currPos = s1;
+      s1 = peg$FAILED;
     }
     if (s1 !== peg$FAILED) {
-      peg$savedPos = s0;
-      s1 = peg$c176();
+      s2 = peg$currPos;
+      s3 = peg$currPos;
+      s4 = peg$parseNONDIGIT();
+      if (s4 !== peg$FAILED) {
+        s5 = [];
+        s6 = peg$parseDIGIT();
+        if (s6 === peg$FAILED) {
+          s6 = peg$parseNONDIGIT();
+        }
+        while (s6 !== peg$FAILED) {
+          s5.push(s6);
+          s6 = peg$parseDIGIT();
+          if (s6 === peg$FAILED) {
+            s6 = peg$parseNONDIGIT();
+          }
+        }
+        if (s5 !== peg$FAILED) {
+          s4 = [s4, s5];
+          s3 = s4;
+        } else {
+          peg$currPos = s3;
+          s3 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s3;
+        s3 = peg$FAILED;
+      }
+      if (s3 !== peg$FAILED) {
+        s2 = input.substring(s2, peg$currPos);
+      } else {
+        s2 = s3;
+      }
+      if (s2 !== peg$FAILED) {
+        peg$savedPos = s0;
+        s1 = peg$c176();
+        s0 = s1;
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
     }
-    s0 = s1;
 
     if (s0 !== peg$FAILED) {
       peg$tracer.trace({
@@ -15733,6 +15764,7 @@ function peg$parse(input, options) {
         super();
         this.nodeType = 'StructSpecifier';
         this.id = id;
+        this.typeName = id.name;
         this.structDeclarationList = structDeclarationList;
       }
     }
@@ -15804,8 +15836,8 @@ function peg$parse(input, options) {
     
     // 型を定義する
     function declareType(type){
-      if(!findType(type.name)){
-        typeDefsMap.set(type.name,type);
+      if(!findType(type.typeName)){
+        typeDefsMap.set(type.typeName,type);
       } else {
         error('型名はすでに登録されています。');
       }

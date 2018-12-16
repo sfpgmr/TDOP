@@ -319,6 +319,7 @@
       super();
       this.nodeType = 'StructSpecifier';
       this.id = id;
+      this.typeName = id.name;
       this.structDeclarationList = structDeclarationList;
     }
   }
@@ -390,8 +391,8 @@
   
   // 型を定義する
   function declareType(type){
-    if(!findType(type.name)){
-      typeDefsMap.set(type.name,type);
+    if(!findType(type.typeName)){
+      typeDefsMap.set(type.typeName,type);
     } else {
       error('型名はすでに登録されています。');
     }
@@ -608,7 +609,7 @@ WHILE
 /*
 識別子は、変数名、関数名、構造体名、およびフィールドセレクタに使用されます（フィールドセレクタは、5.5節「ベクトルコンポーネント」および5.6「マトリックスコンポーネント」で説明されているように、構造フィールドに似たベクトルと行列の要素を選択します）。
 */
-IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*) {
+IDENTIFIER = !RESERVED_KEYWORDS $(NONDIGIT (DIGIT / NONDIGIT)*) {
   return {
     nodeType:'identifier',
     name:text()
@@ -618,7 +619,7 @@ IDENTIFIER = $(NONDIGIT (DIGIT / NONDIGIT)*) {
 NONDIGIT = [_a-zA-Z]
 
 TYPE_NAME = id:IDENTIFIER {
-  return {};
+  return findType(id.name) || {};
 }
 
 FLOATING_CONSTANT = 
@@ -897,7 +898,12 @@ CONSTANT_EXPRESSION =
 
 DECLARATION = 
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
- (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {return initDecl;}) / 
+ (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {
+   if(initDecl.nodeType == 'StructSpecifier'){
+     declareType(initDecl);
+   }
+   return initDecl;
+   }) / 
  (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
  typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE __ varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? __ SEMICOLON  
 
@@ -934,7 +940,7 @@ PARAMETER_TYPE_SPECIFIER =
  TYPE_SPECIFIER
 
 INIT_DECLARATOR_LIST = 
- head:SINGLE_DECLARATION tail:( __ COMMA __ id:IDENTIFIER array:( __ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION __)?  RIGHT_BRACKET{return {length:extractOptional(length,0)};})? init:( __ EQUAL __ INITIALIZER)?{return {identifier:id,array:!!array,length:array && array.length,initializer:extractOptional(init,3)};})*{
+ head:SINGLE_DECLARATION tail:( __ COMMA __ id:IDENTIFIER array:( __ LEFT_BRACKET __ length:(CONSTANT_EXPRESSION __)?  RIGHT_BRACKET {return {length:extractOptional(length,0)};})? init:( __ EQUAL __ INITIALIZER)?{ return {identifier:id,array:!!array,length:array && array.length,initializer:extractOptional(init,3)};})*{
    head.identifiers.push(...tail);
    const node = Object.assign({nodeType:"VariableDeclarationList"}
    ,head);
@@ -942,8 +948,18 @@ INIT_DECLARATOR_LIST =
  }
 
 SINGLE_DECLARATION = 
- type:FULLY_SPECIFIED_TYPE id:( __ IDENTIFIER )? array:(__ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION __)?  RIGHT_BRACKET {return {length:extractOptional(length,0)};})? init:(__ EQUAL __ INITIALIZER)? {return {type:type,identifiers:[{identifier:extractOptional(id,1),array:!!array,length:array && array.length,initializer:extractOptional(init,3)}]};}/ 
- (INVARIANT __ id:IDENTIFIER) {id.invariant = true; return id; }
+  type:FULLY_SPECIFIED_TYPE id:( __ IDENTIFIER )? 
+  array:(__ LEFT_BRACKET length:(__ CONSTANT_EXPRESSION __)?  RIGHT_BRACKET {return {length:extractOptional(length,0)};})? 
+  init:(__ EQUAL __ INITIALIZER)? {
+    let idopt = extractOptional(id,1);
+    if(idopt){
+      idopt = [{identifier:idopt,array:!!array,length:array && array.length,initializer:extractOptional(init,3)}] 
+    } else {
+      idopt = [];
+    }
+    return {type:type,identifiers:idopt};
+  } 
+  / (INVARIANT __ id:IDENTIFIER) {id.invariant = true; return id; }
 // GRAMMAR NOTE =  NO 'ENUM', OR 'TYPEDEF'.
 
 FULLY_SPECIFIED_TYPE = 
@@ -1047,7 +1063,7 @@ TYPE_SPECIFIER_NONARRAY =
  USAMPLER2D / 
  USAMPLER3D / 
  USAMPLERCUBE / 
- USAMPLER2DARRAY){return new TypeSpecifierNode(text());})/ 
+ USAMPLER2DARRAY){return findType(text())}) / 
  STRUCT_SPECIFIER / 
  TYPE_NAME
 

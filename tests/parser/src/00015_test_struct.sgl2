@@ -4,7 +4,7 @@ int sb;
 };
 
 int func(in int a){
-//  S s;
+  S s;
   int c = a;
   do {
     c++;
