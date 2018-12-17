@@ -15,7 +15,7 @@
             "nodeType": "StructDeclaration",
             "typeQualifier": null,
             "typeSpecifier": {
-              "name": "int",
+              "typeName": "int",
               "size": 4,
               "bitSize": 32,
               "byteSize": 4,
@@ -38,7 +38,7 @@
             "nodeType": "StructDeclaration",
             "typeQualifier": null,
             "typeSpecifier": {
-              "name": "int",
+              "typeName": "int",
               "size": 4,
               "bitSize": 32,
               "byteSize": 4,
@@ -68,7 +68,7 @@
         "nodeType": "FunctionPrototype",
         "prototype": {
           "returnType": {
-            "name": "int",
+            "typeName": "int",
             "size": 4,
             "bitSize": 32,
             "byteSize": 4,
@@ -95,7 +95,7 @@
               "array": {
                 "nodeType": "ParameterDeclarator",
                 "type": {
-                  "name": "int",
+                  "typeName": "int",
                   "size": 4,
                   "bitSize": 32,
                   "byteSize": 4,
@@ -140,7 +140,7 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
-              "name": "int",
+              "typeName": "int",
               "size": 4,
               "bitSize": 32,
               "byteSize": 4,

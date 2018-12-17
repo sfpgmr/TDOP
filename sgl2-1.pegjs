@@ -333,56 +333,63 @@
 			this.structDeclarationList = structDeclarationList;
     }
   }
+  class StructTypeNode extends ASTBaseNode {
+    constructor(id,structSpecifierNode){
+      super();
+      Object.assign(this,structSpecifierNode);
+      this.nodeType = 'StructType';
+    }
+  }
 
 
   const typeDefs = [
-    {name:'void',size:4,bitSize:32,byteSize:4,max:0,min:0,integer:false,signed:false,wasmType:'i32',kind:'Native'},
-    {name:'float',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,signed:true,wasmType:'f32',kind:'Native'},
-    {name:'int',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,wasmType:'i32',kind:'Native'},
-    {name:'uint',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,wasmType:'i32',kind:'Native'},
-    {name:'bool',size:4,bitSize:32,byteSize:4,max:1,min:0,integer:false,signed:true,wasmType:'i32',kind:'Native'},
-    {name:'vec2',memberType:'float',memberCount:2,size:8,byteSize:8,integer:false,signed:true,kind:'vector'},
-    {name:'vec3',memberType:'float',memberCount:3,size:12,byteSize:12,integer:false,signed:true,kind:'vector'},
-    {name:'vec4',memberType:'float',memberCount:4,size:16,byteSize:16,integer:false,signed:true,kind:'vector'},
-    {name:'bvec2',memberType:'bool',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
-    {name:'bvec3',memberType:'bool',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
-    {name:'bvec4',memberType:'bool',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
-    {name:'ivec2',memberType:'int',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
-    {name:'ivec3',memberType:'int',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
-    {name:'ivec4',memberType:'int',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
-    {name:'uvec2',memberType:'uint',memberCount:2,size:8,byteSize:8,integer:true,signed:false,kind:'vector'},
-    {name:'uvec3',memberType:'uint',memberCount:3,size:12,byteSize:12,integer:true,signed:false,kind:'vector'},
-    {name:'uvec4',memberType:'uint',memberCount:4,size:16,byteSize:16,integer:true,signed:false,kind:'vector'},
-    {name:'mat2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
-    {name:'mat3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
-    {name:'mat4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
-    {name:'mat2x2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
-    {name:'mat2x3',memberType:'float',rowSize:2,columnSize:3,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
-    {name:'mat2x4',memberType:'float',rowSize:2,columnSize:4,size:32,byteSize:32,integer:false,signed:true,kind:'mat'},
-    {name:'mat3x2',memberType:'float',rowSize:3,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
-    {name:'mat3x3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
-    {name:'mat3x4',memberType:'float',rowSize:3,columnSize:4,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
-    {name:'mat4x2',memberType:'float',rowSize:4,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
-    {name:'mat4x3',memberType:'float',rowSize:4,columnSize:3,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
-    {name:'mat4x4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
-    {name:'sampler2d',kind:'Opaque'},
-    {name:'sampler3d',kind:'Opaque'},
-    {name:'samplercube',kind:'Opaque'},
-    {name:'sampler2dshadow',kind:'Opaque'},
-    {name:'samplercubeshadow',kind:'Opaque'},
-    {name:'sampler2darray',kind:'Opaque'},
-    {name:'sampler2darrayshadow',kind:'Opaque'},
-    {name:'isampler2d',kind:'Opaque'},
-    {name:'isampler3d',kind:'Opaque'},
-    {name:'isamplercube',kind:'Opaque'},
-    {name:'isampler2darray',kind:'Opaque'},
-    {name:'usampler2d',kind:'Opaque'},
-    {name:'usampler3d',kind:'Opaque'},
-    {name:'usamplercube',kind:'Opaque'},
-    {name:'usampler2darray',kind:'Opaque'}
+    {typeName:'void',size:4,bitSize:32,byteSize:4,max:0,min:0,integer:false,signed:false,wasmType:'i32',kind:'Native'},
+    {typeName:'float',size:4,bitSize:32,byteSize:4,max:3.402823466e+38,min:1.175494351e-38,integer:false,signed:true,wasmType:'f32',kind:'Native'},
+    {typeName:'int',size:4,bitSize:32,byteSize:4,max:0x7fffffff,min:-0x80000000,integer:true,signed:true,wasmType:'i32',kind:'Native'},
+    {typeName:'uint',size:4,bitSize:32,byteSize:4,max:0xffffffff,min:0,integer:true,signed:false,wasmType:'i32',kind:'Native'},
+    {typeName:'bool',size:4,bitSize:32,byteSize:4,max:1,min:0,integer:false,signed:true,wasmType:'i32',kind:'Native'},
+    {typeName:'vec2',memberType:'float',memberCount:2,size:8,byteSize:8,integer:false,signed:true,kind:'vector'},
+    {typeName:'vec3',memberType:'float',memberCount:3,size:12,byteSize:12,integer:false,signed:true,kind:'vector'},
+    {typeName:'vec4',memberType:'float',memberCount:4,size:16,byteSize:16,integer:false,signed:true,kind:'vector'},
+    {typeName:'bvec2',memberType:'bool',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
+    {typeName:'bvec3',memberType:'bool',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
+    {typeName:'bvec4',memberType:'bool',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
+    {typeName:'ivec2',memberType:'int',memberCount:2,size:8,byteSize:8,integer:true,signed:true,kind:'vector'},
+    {typeName:'ivec3',memberType:'int',memberCount:3,size:12,byteSize:12,integer:true,signed:true,kind:'vector'},
+    {typeName:'ivec4',memberType:'int',memberCount:4,size:16,byteSize:16,integer:true,signed:true,kind:'vector'},
+    {typeName:'uvec2',memberType:'uint',memberCount:2,size:8,byteSize:8,integer:true,signed:false,kind:'vector'},
+    {typeName:'uvec3',memberType:'uint',memberCount:3,size:12,byteSize:12,integer:true,signed:false,kind:'vector'},
+    {typeName:'uvec4',memberType:'uint',memberCount:4,size:16,byteSize:16,integer:true,signed:false,kind:'vector'},
+    {typeName:'mat2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat2x2',memberType:'float',rowSize:2,columnSize:2,size:16,byteSize:16,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat2x3',memberType:'float',rowSize:2,columnSize:3,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat2x4',memberType:'float',rowSize:2,columnSize:4,size:32,byteSize:32,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat3x2',memberType:'float',rowSize:3,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat3x3',memberType:'float',rowSize:3,columnSize:3,size:36,byteSize:36,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat3x4',memberType:'float',rowSize:3,columnSize:4,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat4x2',memberType:'float',rowSize:4,columnSize:2,size:24,byteSize:24,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat4x3',memberType:'float',rowSize:4,columnSize:3,size:48,byteSize:48,integer:false,signed:true,kind:'mat'},
+    {typeName:'mat4x4',memberType:'float',rowSize:4,columnSize:4,size:64,byteSize:64,integer:false,signed:true,kind:'mat'},
+    {typeName:'sampler2d',kind:'Opaque'},
+    {typeName:'sampler3d',kind:'Opaque'},
+    {typeName:'samplercube',kind:'Opaque'},
+    {typeName:'sampler2dshadow',kind:'Opaque'},
+    {typeName:'samplercubeshadow',kind:'Opaque'},
+    {typeName:'sampler2darray',kind:'Opaque'},
+    {typeName:'sampler2darrayshadow',kind:'Opaque'},
+    {typeName:'isampler2d',kind:'Opaque'},
+    {typeName:'isampler3d',kind:'Opaque'},
+    {typeName:'isamplercube',kind:'Opaque'},
+    {typeName:'isampler2darray',kind:'Opaque'},
+    {typeName:'usampler2d',kind:'Opaque'},
+    {typeName:'usampler3d',kind:'Opaque'},
+    {typeName:'usamplercube',kind:'Opaque'},
+    {typeName:'usampler2darray',kind:'Opaque'}
   ];
 
-  const typeDefsMap = new Map(typeDefs.map(t=>[t.name,t]));
+  const typeDefsMap = new Map(typeDefs.map(t=>[t.typeName,t]));
   
   // 型を検索する
   function findType(typeName){
@@ -392,6 +399,9 @@
   // 型を定義する
   function declareType(type){
     if(!findType(type.typeName)){
+      if(type.nodeType == 'StructSpecifier'){
+        type = new StructTypeNode(type);
+      }
       typeDefsMap.set(type.typeName,type);
     } else {
       error('型名はすでに登録されています。');
@@ -899,8 +909,8 @@ CONSTANT_EXPRESSION =
 DECLARATION = 
  (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
  (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {
-   if(initDecl.nodeType == 'StructSpecifier'){
-     declareType(initDecl);
+   if(initDecl.type.nodeType == 'StructSpecifier'){
+     declareType(initDecl.type);
    }
    return initDecl;
    }) / 
