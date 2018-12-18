@@ -3,8 +3,15 @@ int sa;
 int sb;
 };
 
+struct S1 {
+  S s1a;
+  int s1b;
+  float s1c;
+};
+
 int func(in int a){
   S s;
+  S1 s1;
   int c = a;
   do {
     c++;

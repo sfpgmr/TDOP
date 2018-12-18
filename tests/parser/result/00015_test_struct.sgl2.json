@@ -63,6 +63,134 @@
       "identifiers": []
     },
     {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "nodeType": "StructSpecifier",
+        "id": {
+          "nodeType": "identifier",
+          "name": "S1"
+        },
+        "typeName": "S1",
+        "structDeclarationList": [
+          {
+            "nodeType": "StructDeclaration",
+            "typeQualifier": null,
+            "typeSpecifier": {
+              "nodeType": "StructType",
+              "id": {
+                "nodeType": "identifier",
+                "name": "S"
+              },
+              "typeName": "S",
+              "structDeclarationList": [
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "int",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "wasmType": "i32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "sa"
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "int",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "wasmType": "i32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "sb"
+                    }
+                  ]
+                }
+              ],
+              "precision": null
+            },
+            "structDeclarationList": [
+              {
+                "nodeType": "identifier",
+                "name": "s1a"
+              }
+            ]
+          },
+          {
+            "nodeType": "StructDeclaration",
+            "typeQualifier": null,
+            "typeSpecifier": {
+              "typeName": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
+              "precision": null
+            },
+            "structDeclarationList": [
+              {
+                "nodeType": "identifier",
+                "name": "s1b"
+              }
+            ]
+          },
+          {
+            "nodeType": "StructDeclaration",
+            "typeQualifier": null,
+            "typeSpecifier": {
+              "typeName": "float",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 3.402823466e+38,
+              "min": 1.175494351e-38,
+              "integer": false,
+              "signed": true,
+              "wasmType": "f32",
+              "kind": "Native",
+              "precision": null
+            },
+            "structDeclarationList": [
+              {
+                "nodeType": "identifier",
+                "name": "s1c"
+              }
+            ]
+          }
+        ],
+        "precision": null
+      },
+      "identifiers": []
+    },
+    {
       "nodeType": "FunctionDefinition",
       "functionPrototype": {
         "nodeType": "FunctionPrototype",
@@ -173,6 +301,144 @@
                     {
                       "nodeType": "identifier",
                       "name": "sb"
+                    }
+                  ]
+                }
+              ],
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "s"
+                },
+                "array": false,
+                "length": null,
+                "initializer": null
+              }
+            ]
+          },
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "nodeType": "StructType",
+              "id": {
+                "nodeType": "identifier",
+                "name": "S1"
+              },
+              "typeName": "S1",
+              "structDeclarationList": [
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "nodeType": "StructType",
+                    "id": {
+                      "nodeType": "identifier",
+                      "name": "S"
+                    },
+                    "typeName": "S",
+                    "structDeclarationList": [
+                      {
+                        "nodeType": "StructDeclaration",
+                        "typeQualifier": null,
+                        "typeSpecifier": {
+                          "typeName": "int",
+                          "size": 4,
+                          "bitSize": 32,
+                          "byteSize": 4,
+                          "max": 2147483647,
+                          "min": -2147483648,
+                          "integer": true,
+                          "signed": true,
+                          "wasmType": "i32",
+                          "kind": "Native",
+                          "precision": null
+                        },
+                        "structDeclarationList": [
+                          {
+                            "nodeType": "identifier",
+                            "name": "sa"
+                          }
+                        ]
+                      },
+                      {
+                        "nodeType": "StructDeclaration",
+                        "typeQualifier": null,
+                        "typeSpecifier": {
+                          "typeName": "int",
+                          "size": 4,
+                          "bitSize": 32,
+                          "byteSize": 4,
+                          "max": 2147483647,
+                          "min": -2147483648,
+                          "integer": true,
+                          "signed": true,
+                          "wasmType": "i32",
+                          "kind": "Native",
+                          "precision": null
+                        },
+                        "structDeclarationList": [
+                          {
+                            "nodeType": "identifier",
+                            "name": "sb"
+                          }
+                        ]
+                      }
+                    ],
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "s1a"
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "int",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "wasmType": "i32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "s1b"
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "float",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 3.402823466e+38,
+                    "min": 1.175494351e-38,
+                    "integer": false,
+                    "signed": true,
+                    "wasmType": "f32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "s1c"
                     }
                   ]
                 }
