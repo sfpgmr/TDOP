@@ -123,6 +123,60 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
+              "nodeType": "StructType",
+              "id": {
+                "nodeType": "identifier",
+                "name": "S"
+              },
+              "typeName": "S",
+              "structDeclarationList": [
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "int",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "wasmType": "i32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "sa"
+                    }
+                  ]
+                },
+                {
+                  "nodeType": "StructDeclaration",
+                  "typeQualifier": null,
+                  "typeSpecifier": {
+                    "typeName": "int",
+                    "size": 4,
+                    "bitSize": 32,
+                    "byteSize": 4,
+                    "max": 2147483647,
+                    "min": -2147483648,
+                    "integer": true,
+                    "signed": true,
+                    "wasmType": "i32",
+                    "kind": "Native",
+                    "precision": null
+                  },
+                  "structDeclarationList": [
+                    {
+                      "nodeType": "identifier",
+                      "name": "sb"
+                    }
+                  ]
+                }
+              ],
               "precision": null
             },
             "identifiers": [

@@ -10818,7 +10818,7 @@ function peg$parse(input, options) {
       }
     }
     class StructTypeNode extends ASTBaseNode {
-      constructor(id,structSpecifierNode){
+      constructor(structSpecifierNode){
         super();
         Object.assign(this,structSpecifierNode);
         this.nodeType = 'StructType';
