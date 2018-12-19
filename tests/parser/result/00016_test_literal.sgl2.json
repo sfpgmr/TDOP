@@ -1,0 +1,191 @@
+{
+  "nodeType": "Program",
+  "program": [
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "int",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 2147483647,
+        "min": -2147483648,
+        "integer": true,
+        "signed": true,
+        "wasmType": "i32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "a"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "int",
+            "value": 1
+          }
+        }
+      ]
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "float",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 3.402823466e+38,
+        "min": 1.175494351e-38,
+        "integer": false,
+        "signed": true,
+        "wasmType": "f32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "b"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "float",
+            "value": 1
+          }
+        }
+      ]
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "float",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 3.402823466e+38,
+        "min": 1.175494351e-38,
+        "integer": false,
+        "signed": true,
+        "wasmType": "f32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "c"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "float",
+            "value": 1
+          }
+        }
+      ]
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "int",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 2147483647,
+        "min": -2147483648,
+        "integer": true,
+        "signed": true,
+        "wasmType": "i32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "d"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "float",
+            "value": 1
+          }
+        }
+      ]
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "int",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 2147483647,
+        "min": -2147483648,
+        "integer": true,
+        "signed": true,
+        "wasmType": "i32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "e"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "int",
+            "value": 12
+          }
+        }
+      ]
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "uint",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 4294967295,
+        "min": 0,
+        "integer": true,
+        "signed": false,
+        "wasmType": "i32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "f"
+          },
+          "array": false,
+          "length": null,
+          "initializer": {
+            "nodeType": "NumericConstant",
+            "type": "uint",
+            "value": 12
+          }
+        }
+      ]
+    }
+  ]
+}

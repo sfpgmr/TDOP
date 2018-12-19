@@ -7,8 +7,16 @@
         "nodeType": "FunctionPrototype",
         "prototype": {
           "returnType": {
-            "nodeType": "TypeSpecifier",
             "typeName": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
             "precision": null
           },
           "functionName": {
@@ -19,12 +27,23 @@
             {
               "nodeType": "ParameterDeclarator",
               "type": null,
-              "id": "in",
+              "id": [
+                "in",
+                null
+              ],
               "array": {
                 "nodeType": "ParameterDeclarator",
                 "type": {
-                  "nodeType": "TypeSpecifier",
                   "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
                   "precision": null
                 },
                 "id": {
@@ -43,8 +62,16 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
-              "nodeType": "TypeSpecifier",
               "typeName": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "identifiers": [
@@ -79,100 +106,45 @@
                 ],
                 "statements": [
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "AssignmentExpression",
-                        "left": {
-                          "nodeType": "identifier",
-                          "name": "c"
-                        },
-                        "right": {
-                          "nodeType": "NumericConstant",
-                          "type": "float",
-                          "value": 1
-                        }
-                      }
-                    ]
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "precision": null
+                    },
+                    "identifiers": []
                   },
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "identifier",
-                        "name": "break"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "nodeType": "CaseStatement",
-                "condition": [
+                    "nodeType": "BreakStatement"
+                  },
+                  [
+                    {
+                      "nodeType": "NumericConstant",
+                      "type": "float",
+                      "value": 2
+                    }
+                  ],
                   {
-                    "nodeType": "NumericConstant",
-                    "type": "float",
-                    "value": 2
-                  }
-                ],
-                "statements": [
-                  {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "AssignmentExpression",
-                        "left": {
-                          "nodeType": "identifier",
-                          "name": "c"
-                        },
-                        "right": {
-                          "nodeType": "NumericConstant",
-                          "type": "float",
-                          "value": 2
-                        }
-                      }
-                    ]
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "precision": null
+                    },
+                    "identifiers": []
                   },
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "identifier",
-                        "name": "break"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "nodeType": "CaseStatement",
-                "condition": "default",
-                "statements": [
+                    "nodeType": "BreakStatement"
+                  },
+                  [
+                    "default",
+                    null
+                  ],
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "AssignmentExpression",
-                        "left": {
-                          "nodeType": "identifier",
-                          "name": "c"
-                        },
-                        "right": {
-                          "nodeType": "NumericConstant",
-                          "type": "float",
-                          "value": 3
-                        }
-                      }
-                    ]
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "precision": null
+                    },
+                    "identifiers": []
                   },
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "identifier",
-                        "name": "break"
-                      }
-                    ]
+                    "nodeType": "BreakStatement"
                   }
                 ]
               }

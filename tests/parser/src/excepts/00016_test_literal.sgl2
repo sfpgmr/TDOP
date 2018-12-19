@@ -1,0 +1,6 @@
+int a = 0x1000;
+float b = 1.;
+float c = 1.0f;
+int d = 1;
+int e = 12;
+uint f = 12u;

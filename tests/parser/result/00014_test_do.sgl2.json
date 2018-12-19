@@ -7,8 +7,16 @@
         "nodeType": "FunctionPrototype",
         "prototype": {
           "returnType": {
-            "nodeType": "TypeSpecifier",
             "typeName": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
             "precision": null
           },
           "functionName": {
@@ -19,12 +27,23 @@
             {
               "nodeType": "ParameterDeclarator",
               "type": null,
-              "id": "in",
+              "id": [
+                "in",
+                null
+              ],
               "array": {
                 "nodeType": "ParameterDeclarator",
                 "type": {
-                  "nodeType": "TypeSpecifier",
                   "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
                   "precision": null
                 },
                 "id": {
@@ -43,8 +62,16 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
-              "nodeType": "TypeSpecifier",
               "typeName": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "identifiers": [
@@ -80,45 +107,51 @@
               }
             ],
             "statements": {
-              "nodeType": "NoScopeBlock",
-              "statements": [
-                {
-                  "nodeType": "Expression",
-                  "expression": [
-                    {
-                      "nodeType": "identifier",
-                      "name": "c"
-                    }
-                  ]
-                },
-                {
-                  "nodeType": "SelectionStatement",
-                  "test": [
-                    {
-                      "nodeType": "BinaryExpression",
-                      "operator": ">",
-                      "left": {
-                        "nodeType": "identifier",
-                        "name": "a"
-                      },
-                      "right": {
-                        "nodeType": "NumericConstant",
-                        "type": "int",
-                        "value": 10
-                      }
-                    }
-                  ],
-                  "then": {
-                    "nodeType": "NoScopeBlock",
-                    "statements": [
+              "nodeType": "ScopeBlock",
+              "statements": {
+                "nodeType": "NoScopeBlock",
+                "statements": [
+                  {
+                    "nodeType": "Expression",
+                    "expression": [
                       {
-                        "nodeType": "BreakStatement"
+                        "nodeType": "identifier",
+                        "name": "c"
                       }
                     ]
                   },
-                  "else_": null
-                }
-              ]
+                  {
+                    "nodeType": "SelectionStatement",
+                    "test": [
+                      {
+                        "nodeType": "BinaryExpression",
+                        "operator": ">",
+                        "left": {
+                          "nodeType": "identifier",
+                          "name": "a"
+                        },
+                        "right": {
+                          "nodeType": "NumericConstant",
+                          "type": "int",
+                          "value": 10
+                        }
+                      }
+                    ],
+                    "then": {
+                      "nodeType": "ScopeBlock",
+                      "statements": {
+                        "nodeType": "NoScopeBlock",
+                        "statements": [
+                          {
+                            "nodeType": "BreakStatement"
+                          }
+                        ]
+                      }
+                    },
+                    "else_": null
+                  }
+                ]
+              }
             }
           },
           {

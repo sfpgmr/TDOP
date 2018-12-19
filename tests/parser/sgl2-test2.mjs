@@ -22,7 +22,7 @@ try {
   const parser = peg.generate(pegSrc, {
     format: 'commonjs',
     output: 'source',
-    trace:false
+    trace:true
   });
   const testDir = './tests/parser/src/'; 
   await fs.promises.writeFile('./sgl2-1.js', parser, 'utf8');
@@ -44,7 +44,7 @@ try {
     console.log(`***** ${file}をパースします。*****`);
     const ast =  JSON.stringify(sgl2.parse(testSrc,{ binaryen:binaryen,module: wasmModule,lib:lib }),null,2);
     await fs.promises.writeFile('./tests/parser/result/' + file + '.json',ast,'utf8');
-    console.log(ast);
+    //console.log(ast);
   }
 } catch (e) {
     console.log(e,e.stack);

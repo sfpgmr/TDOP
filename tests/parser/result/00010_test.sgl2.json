@@ -7,8 +7,16 @@
         "nodeType": "FunctionPrototype",
         "prototype": {
           "returnType": {
-            "nodeType": "TypeSpecifier",
             "typeName": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
             "precision": null
           },
           "functionName": {
@@ -19,12 +27,23 @@
             {
               "nodeType": "ParameterDeclarator",
               "type": null,
-              "id": "in",
+              "id": [
+                "in",
+                null
+              ],
               "array": {
                 "nodeType": "ParameterDeclarator",
                 "type": {
-                  "nodeType": "TypeSpecifier",
                   "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
                   "precision": null
                 },
                 "id": {
@@ -43,8 +62,16 @@
           {
             "nodeType": "VariableDeclarationList",
             "type": {
-              "nodeType": "TypeSpecifier",
               "typeName": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
               "precision": null
             },
             "identifiers": [
@@ -81,56 +108,34 @@
               }
             ],
             "then": {
-              "nodeType": "NoScopeBlock",
-              "statements": [
-                {
-                  "nodeType": "Expression",
-                  "expression": [
-                    {
-                      "nodeType": "AssignmentExpression",
-                      "left": {
-                        "nodeType": "identifier",
-                        "name": "a"
-                      },
-                      "right": {
-                        "nodeType": "BinaryExpression",
-                        "operator": "+",
-                        "left": {
-                          "nodeType": "NumericConstant",
-                          "type": "float",
-                          "value": 2
-                        },
-                        "right": {
-                          "nodeType": "identifier",
-                          "name": "b"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
+              "nodeType": "ScopeBlock",
+              "statements": {
+                "nodeType": "NoScopeBlock",
+                "statements": [
+                  {
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "precision": null
+                    },
+                    "identifiers": []
+                  }
+                ]
+              }
             },
             "else_": {
-              "nodeType": "NoScopeBlock",
-              "statements": [
-                {
-                  "nodeType": "Expression",
-                  "expression": [
-                    {
-                      "nodeType": "AssignmentExpression",
-                      "left": {
-                        "nodeType": "identifier",
-                        "name": "a"
-                      },
-                      "right": {
-                        "nodeType": "NumericConstant",
-                        "type": "float",
-                        "value": 3
-                      }
-                    }
-                  ]
-                }
-              ]
+              "nodeType": "ScopeBlock",
+              "statements": {
+                "nodeType": "NoScopeBlock",
+                "statements": [
+                  {
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "precision": null
+                    },
+                    "identifiers": []
+                  }
+                ]
+              }
             }
           },
           {
