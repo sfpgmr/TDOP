@@ -1,0 +1,141 @@
+{
+  "nodeType": "Program",
+  "program": [
+    {
+      "nodeType": "FunctionDefinition",
+      "functionPrototype": {
+        "nodeType": "FunctionPrototype",
+        "prototype": {
+          "returnType": {
+            "typeName": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
+            "precision": null
+          },
+          "functionName": {
+            "nodeType": "identifier",
+            "name": "func"
+          },
+          "params": [
+            {
+              "nodeType": "ParameterDeclarator",
+              "type": null,
+              "id": [
+                "in",
+                null
+              ],
+              "array": {
+                "nodeType": "ParameterDeclarator",
+                "type": {
+                  "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
+                  "precision": null
+                },
+                "id": {
+                  "nodeType": "identifier",
+                  "name": "a"
+                },
+                "array": null
+              }
+            }
+          ]
+        }
+      },
+      "statement": {
+        "nodeType": "NoScopeBlock",
+        "statements": [
+          {
+            "nodeType": "VariableDeclarationList",
+            "type": {
+              "typeName": "int",
+              "size": 4,
+              "bitSize": 32,
+              "byteSize": 4,
+              "max": 2147483647,
+              "min": -2147483648,
+              "integer": true,
+              "signed": true,
+              "wasmType": "i32",
+              "kind": "Native",
+              "precision": null
+            },
+            "identifiers": [
+              {
+                "identifier": {
+                  "nodeType": "identifier",
+                  "name": "b"
+                },
+                "array": false,
+                "length": null,
+                "initializer": {
+                  "nodeType": "NumericConstant",
+                  "type": "float",
+                  "value": 2
+                }
+              }
+            ]
+          },
+          {
+            "nodeType": "ScopeBlock",
+            "statements": [
+              {
+                "nodeType": "VariableDeclarationList",
+                "type": {
+                  "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
+                  "precision": null
+                },
+                "identifiers": [
+                  {
+                    "identifier": {
+                      "nodeType": "identifier",
+                      "name": "a"
+                    },
+                    "array": false,
+                    "length": null,
+                    "initializer": {
+                      "nodeType": "identifier",
+                      "name": "a"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "expression": [
+              {
+                "nodeType": "identifier",
+                "name": "b"
+              }
+            ],
+            "nodeType": "ReturnStatement"
+          }
+        ]
+      }
+    }
+  ]
+}

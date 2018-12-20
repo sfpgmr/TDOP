@@ -4,4 +4,4 @@ int func(in int a){
     int a = a;
   }
   return b;
-};
+}
