@@ -94,36 +94,45 @@
             "nodeType": "ScopeBlock",
             "statements": [
               {
-                "nodeType": "VariableDeclarationList",
-                "type": {
-                  "typeName": "int",
-                  "size": 4,
-                  "bitSize": 32,
-                  "byteSize": 4,
-                  "max": 2147483647,
-                  "min": -2147483648,
-                  "integer": true,
-                  "signed": true,
-                  "wasmType": "i32",
-                  "kind": "Native",
-                  "precision": null
-                },
-                "identifiers": [
+                "nodeType": "ScopeBlock",
+                "statements": [
                   {
-                    "identifier": {
-                      "nodeType": "identifier",
-                      "name": "a"
+                    "nodeType": "VariableDeclarationList",
+                    "type": {
+                      "typeName": "int",
+                      "size": 4,
+                      "bitSize": 32,
+                      "byteSize": 4,
+                      "max": 2147483647,
+                      "min": -2147483648,
+                      "integer": true,
+                      "signed": true,
+                      "wasmType": "i32",
+                      "kind": "Native",
+                      "precision": null
                     },
-                    "array": false,
-                    "length": null,
-                    "initializer": {
-                      "nodeType": "identifier",
-                      "name": "a"
-                    }
+                    "identifiers": [
+                      {
+                        "identifier": {
+                          "nodeType": "identifier",
+                          "name": "a"
+                        },
+                        "array": false,
+                        "length": null,
+                        "initializer": {
+                          "nodeType": "identifier",
+                          "name": "a"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+          },
+          {
+            "nodeType": "Expression",
+            "expression": null
           },
           {
             "expression": [

@@ -13908,6 +13908,9 @@ function peg$parse(input, options) {
               s0 = peg$parseITERATION_STATEMENT();
               if (s0 === peg$FAILED) {
                 s0 = peg$parseCASE_LABEL();
+                if (s0 === peg$FAILED) {
+                  s0 = peg$parseSEMICOLON();
+                }
               }
             }
           }

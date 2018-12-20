@@ -1,7 +1,7 @@
 int func(in int a){
   int b = 2;
   {
-    int a = a;
-  }
+    {int a = a;}
+  };
   return b;
 }
