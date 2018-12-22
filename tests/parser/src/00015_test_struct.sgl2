@@ -1,5 +1,5 @@
 struct S {
-int sa;
+vec3 sa;
 int sb;
 };
 
@@ -8,6 +8,7 @@ struct S1 {
   int s1b;
   float s1c;
 };
+
 
 int func(in int a){
   S s;
@@ -19,6 +20,13 @@ int func(in int a){
       break;
     }
   } while(c < 10);
+  ;;;
   return c;
 }
 
+int c,d
+
+;
+int funcb(in int b){
+  return b * b;
+};

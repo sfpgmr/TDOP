@@ -410,7 +410,7 @@
 
 }
 
-TRANSLATION_UNIT = program:EXTERNAL_DECLARATION*{return new ProgramNode(program);} 
+TRANSLATION_UNIT = program:EXTERNAL_DECLARATION*{return new ProgramNode(program.filter(n=>n));} 
 
 SOURCECHARACTER = .
 
@@ -472,8 +472,8 @@ _
 
 // End of Statement
 EOS
-  = __ ";" 
- // _ SINGLELINECOMMENT? LINETERMINATORSEQUENCE
+  = __ ";" {return null;}
+   // _ SINGLELINECOMMENT? LINETERMINATORSEQUENCE
  // _ &"}" 
  // __ EOF
 
@@ -907,15 +907,15 @@ CONSTANT_EXPRESSION =
  CONDITIONAL_EXPRESSION
 
 DECLARATION = 
- (fp:FUNCTION_PROTOTYPE __ SEMICOLON { return fp;}) / 
- (initDecl:INIT_DECLARATOR_LIST __ SEMICOLON {
+ (fp:FUNCTION_PROTOTYPE EOS { return fp;}) / 
+ (initDecl:INIT_DECLARATOR_LIST EOS {
    if(initDecl.type.nodeType == 'StructSpecifier'){
      declareType(initDecl.type);
    }
    return initDecl;
    }) / 
- (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC __ SEMICOLON { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
- typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE __ varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? __ SEMICOLON  
+ (PRECISION __ precisionQualifier:PRECISION_QUALIFIER __ typeSpecifier:TYPE_SPECIFIER_NO_PREC EOS { return new PrecisioniDeclaration(precisionQualifier,typeSpecifier); })/ 
+ typeQualifier:TYPE_QUALIFIER structDeclaration:(__ idStruct:IDENTIFIER __ LEFT_BRACE __ structDeclarationList:STRUCT_DECLARATION_LIST __ RIGHT_BRACE __ varDecl:(id:IDENTIFIER  array:(__ LEFT_BRACKET length:( __ CONSTANT_EXPRESSION )? __ RIGHT_BRACKET {return {length:extractOptional(length,1)};})? {return {id:id,array:extractOptional(array,0)};})? )? EOS  
 
 FUNCTION_PROTOTYPE = 
  prototype:FUNCTION_DECLARATOR __ RIGHT_PAREN {return new FunctionPrototypeNode(prototype);}
@@ -1091,7 +1091,7 @@ STRUCT_DECLARATION_LIST =
  head:STRUCT_DECLARATION tail:( __ STRUCT_DECLARATION)* {return buildList(head,tail,1);}
 
 STRUCT_DECLARATION = 
- typeQualifier:TYPE_QUALIFIER? __ typeSpecifier:TYPE_SPECIFIER __ structDeclarationList:STRUCT_DECLARATOR_LIST __ SEMICOLON {
+ typeQualifier:TYPE_QUALIFIER? __ typeSpecifier:TYPE_SPECIFIER __ structDeclarationList:STRUCT_DECLARATOR_LIST EOS {
 	return new StructDeclarationNode(typeQualifier,typeSpecifier,structDeclarationList);
  }
 
@@ -1143,10 +1143,13 @@ COMPOUND_STATEMENT_NO_NEW_SCOPE =
  }
 
 STATEMENT_LIST = 
-statementList:( __ STATEMENT __ )* {return extractList(statementList,1);} 
+statementList:( __ STATEMENT __ )* {return extractList(statementList,1).filter(n=>n);} 
 
 EXPRESSION_STATEMENT = 
- expression:(__ EXPRESSION __)? SEMICOLON { return new ExpressionNode(extractOptional(expression,1)); }
+ expression:(__ EXPRESSION __)? SEMICOLON { 
+  let node = extractOptional(expression,1);
+  return node ? new ExpressionNode() : null;
+ }
 
 SELECTION_STATEMENT = 
  IF __ LEFT_PAREN __ test:EXPRESSION __ RIGHT_PAREN __ statement:SELECTION_REST_STATEMENT __ {
@@ -1181,7 +1184,7 @@ CASE_LABEL =
 
 ITERATION_STATEMENT = 
  WHILE __ LEFT_PAREN __ condition:CONDITION __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new WhileStatementNode(condition,statement);}/ 
- DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN __ SEMICOLON {return new DoWhileStatementNode(condition,statement);} / 
+ DO __ statement:STATEMENT_WITH_SCOPE __ WHILE __ LEFT_PAREN __ condition:EXPRESSION __ RIGHT_PAREN EOS {return new DoWhileStatementNode(condition,statement);} / 
  FOR __ LEFT_PAREN __ init:FOR_INIT_STATEMENT __ rest:FOR_REST_STATEMENT __ RIGHT_PAREN __ statement:STATEMENT_NO_NEW_SCOPE {return new ForStatementNode(init,rest.condtion,rest.update,statement);}
 
 FOR_INIT_STATEMENT = 
@@ -1193,18 +1196,18 @@ CONDITIONOPT =
  /* EMPTY */
 
 FOR_REST_STATEMENT = 
- condition:CONDITIONOPT __ SEMICOLON update:(__ EXPRESSION)? {return {condition:condition,update:extractOptional(update,1)};}
+ condition:CONDITIONOPT EOS update:(__ EXPRESSION)? {return {condition:condition,update:extractOptional(update,1)};}
 
 JUMP_STATEMENT = 
- __ CONTINUE __ SEMICOLON {return new ContinueStatementNode();}/ 
- __ BREAK __ SEMICOLON {return new BreakStatementNode();}/ 
- __ RETURN expression:(__ EXPRESSION)? __ SEMICOLON {return new ReturnStatementNode(extractOptional(expression,1));}/ 
- __ DISCARD __ SEMICOLON {return new DiscardStatement();}// FRAGMENT SHADER ONLY.
+ __ CONTINUE EOS {return new ContinueStatementNode();}/ 
+ __ BREAK EOS {return new BreakStatementNode();}/ 
+ __ RETURN expression:(__ EXPRESSION)? EOS {return new ReturnStatementNode(extractOptional(expression,1));}/ 
+ __ DISCARD EOS {return new DiscardStatement();}// FRAGMENT SHADER ONLY.
 // GRAMMAR NOTE =  NO 'GOTO'. GOTOS ARE NOT SUPPORTED.
 
 
 EXTERNAL_DECLARATION = 
- __ declaration:(FUNCTION_DEFINITION / DECLARATION) __ { return declaration; }
+ __ declaration:(FUNCTION_DEFINITION / DECLARATION / EOS) __ { return declaration; }
 
 FUNCTION_DEFINITION = 
  functionPrototype:FUNCTION_PROTOTYPE __ statement:COMPOUND_STATEMENT_NO_NEW_SCOPE {return new FunctionDefinitionNode(functionPrototype,statement);}

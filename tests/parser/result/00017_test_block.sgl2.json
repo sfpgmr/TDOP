@@ -131,10 +131,6 @@
             ]
           },
           {
-            "nodeType": "Expression",
-            "expression": null
-          },
-          {
             "expression": [
               {
                 "nodeType": "identifier",

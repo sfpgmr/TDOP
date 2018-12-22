@@ -15,16 +15,14 @@
             "nodeType": "StructDeclaration",
             "typeQualifier": null,
             "typeSpecifier": {
-              "typeName": "int",
-              "size": 4,
-              "bitSize": 32,
-              "byteSize": 4,
-              "max": 2147483647,
-              "min": -2147483648,
-              "integer": true,
+              "typeName": "vec3",
+              "memberType": "float",
+              "memberCount": 3,
+              "size": 12,
+              "byteSize": 12,
+              "integer": false,
               "signed": true,
-              "wasmType": "i32",
-              "kind": "Native",
+              "kind": "vector",
               "precision": null
             },
             "structDeclarationList": [
@@ -36,18 +34,13 @@
           },
           {
             "nodeType": "StructDeclaration",
-            "typeQualifier": null,
+            "typeQualifier": {
+              "centroid": null,
+              "inout": "in",
+              "invariant": false,
+              "interpolation": null
+            },
             "typeSpecifier": {
-              "typeName": "int",
-              "size": 4,
-              "bitSize": 32,
-              "byteSize": 4,
-              "max": 2147483647,
-              "min": -2147483648,
-              "integer": true,
-              "signed": true,
-              "wasmType": "i32",
-              "kind": "Native",
               "precision": null
             },
             "structDeclarationList": [
@@ -87,16 +80,14 @@
                   "nodeType": "StructDeclaration",
                   "typeQualifier": null,
                   "typeSpecifier": {
-                    "typeName": "int",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
+                    "typeName": "vec3",
+                    "memberType": "float",
+                    "memberCount": 3,
+                    "size": 12,
+                    "byteSize": 12,
+                    "integer": false,
                     "signed": true,
-                    "wasmType": "i32",
-                    "kind": "Native",
+                    "kind": "vector",
                     "precision": null
                   },
                   "structDeclarationList": [
@@ -108,18 +99,13 @@
                 },
                 {
                   "nodeType": "StructDeclaration",
-                  "typeQualifier": null,
+                  "typeQualifier": {
+                    "centroid": null,
+                    "inout": "in",
+                    "invariant": false,
+                    "interpolation": null
+                  },
                   "typeSpecifier": {
-                    "typeName": "int",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
-                    "signed": true,
-                    "wasmType": "i32",
-                    "kind": "Native",
                     "precision": null
                   },
                   "structDeclarationList": [
@@ -141,18 +127,13 @@
           },
           {
             "nodeType": "StructDeclaration",
-            "typeQualifier": null,
+            "typeQualifier": {
+              "centroid": null,
+              "inout": "in",
+              "invariant": false,
+              "interpolation": null
+            },
             "typeSpecifier": {
-              "typeName": "int",
-              "size": 4,
-              "bitSize": 32,
-              "byteSize": 4,
-              "max": 2147483647,
-              "min": -2147483648,
-              "integer": true,
-              "signed": true,
-              "wasmType": "i32",
-              "kind": "Native",
               "precision": null
             },
             "structDeclarationList": [
@@ -262,16 +243,14 @@
                   "nodeType": "StructDeclaration",
                   "typeQualifier": null,
                   "typeSpecifier": {
-                    "typeName": "int",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
+                    "typeName": "vec3",
+                    "memberType": "float",
+                    "memberCount": 3,
+                    "size": 12,
+                    "byteSize": 12,
+                    "integer": false,
                     "signed": true,
-                    "wasmType": "i32",
-                    "kind": "Native",
+                    "kind": "vector",
                     "precision": null
                   },
                   "structDeclarationList": [
@@ -283,18 +262,13 @@
                 },
                 {
                   "nodeType": "StructDeclaration",
-                  "typeQualifier": null,
+                  "typeQualifier": {
+                    "centroid": null,
+                    "inout": "in",
+                    "invariant": false,
+                    "interpolation": null
+                  },
                   "typeSpecifier": {
-                    "typeName": "int",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
-                    "signed": true,
-                    "wasmType": "i32",
-                    "kind": "Native",
                     "precision": null
                   },
                   "structDeclarationList": [
@@ -344,16 +318,14 @@
                         "nodeType": "StructDeclaration",
                         "typeQualifier": null,
                         "typeSpecifier": {
-                          "typeName": "int",
-                          "size": 4,
-                          "bitSize": 32,
-                          "byteSize": 4,
-                          "max": 2147483647,
-                          "min": -2147483648,
-                          "integer": true,
+                          "typeName": "vec3",
+                          "memberType": "float",
+                          "memberCount": 3,
+                          "size": 12,
+                          "byteSize": 12,
+                          "integer": false,
                           "signed": true,
-                          "wasmType": "i32",
-                          "kind": "Native",
+                          "kind": "vector",
                           "precision": null
                         },
                         "structDeclarationList": [
@@ -365,18 +337,13 @@
                       },
                       {
                         "nodeType": "StructDeclaration",
-                        "typeQualifier": null,
+                        "typeQualifier": {
+                          "centroid": null,
+                          "inout": "in",
+                          "invariant": false,
+                          "interpolation": null
+                        },
                         "typeSpecifier": {
-                          "typeName": "int",
-                          "size": 4,
-                          "bitSize": 32,
-                          "byteSize": 4,
-                          "max": 2147483647,
-                          "min": -2147483648,
-                          "integer": true,
-                          "signed": true,
-                          "wasmType": "i32",
-                          "kind": "Native",
                           "precision": null
                         },
                         "structDeclarationList": [
@@ -398,18 +365,13 @@
                 },
                 {
                   "nodeType": "StructDeclaration",
-                  "typeQualifier": null,
+                  "typeQualifier": {
+                    "centroid": null,
+                    "inout": "in",
+                    "invariant": false,
+                    "interpolation": null
+                  },
                   "typeSpecifier": {
-                    "typeName": "int",
-                    "size": 4,
-                    "bitSize": 32,
-                    "byteSize": 4,
-                    "max": 2147483647,
-                    "min": -2147483648,
-                    "integer": true,
-                    "signed": true,
-                    "wasmType": "i32",
-                    "kind": "Native",
                     "precision": null
                   },
                   "structDeclarationList": [
@@ -510,13 +472,7 @@
                 "nodeType": "NoScopeBlock",
                 "statements": [
                   {
-                    "nodeType": "Expression",
-                    "expression": [
-                      {
-                        "nodeType": "identifier",
-                        "name": "c"
-                      }
-                    ]
+                    "nodeType": "Expression"
                   },
                   {
                     "nodeType": "SelectionStatement",
@@ -557,6 +513,120 @@
               {
                 "nodeType": "identifier",
                 "name": "c"
+              }
+            ],
+            "nodeType": "ReturnStatement"
+          }
+        ]
+      }
+    },
+    {
+      "nodeType": "VariableDeclarationList",
+      "type": {
+        "typeName": "int",
+        "size": 4,
+        "bitSize": 32,
+        "byteSize": 4,
+        "max": 2147483647,
+        "min": -2147483648,
+        "integer": true,
+        "signed": true,
+        "wasmType": "i32",
+        "kind": "Native",
+        "precision": null
+      },
+      "identifiers": [
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "c"
+          },
+          "array": false,
+          "length": null,
+          "initializer": null
+        },
+        {
+          "identifier": {
+            "nodeType": "identifier",
+            "name": "d"
+          },
+          "array": false,
+          "length": null,
+          "initializer": null
+        }
+      ]
+    },
+    {
+      "nodeType": "FunctionDefinition",
+      "functionPrototype": {
+        "nodeType": "FunctionPrototype",
+        "prototype": {
+          "returnType": {
+            "typeName": "int",
+            "size": 4,
+            "bitSize": 32,
+            "byteSize": 4,
+            "max": 2147483647,
+            "min": -2147483648,
+            "integer": true,
+            "signed": true,
+            "wasmType": "i32",
+            "kind": "Native",
+            "precision": null
+          },
+          "functionName": {
+            "nodeType": "identifier",
+            "name": "funcb"
+          },
+          "params": [
+            {
+              "nodeType": "ParameterDeclarator",
+              "type": null,
+              "id": [
+                "in",
+                null
+              ],
+              "array": {
+                "nodeType": "ParameterDeclarator",
+                "type": {
+                  "typeName": "int",
+                  "size": 4,
+                  "bitSize": 32,
+                  "byteSize": 4,
+                  "max": 2147483647,
+                  "min": -2147483648,
+                  "integer": true,
+                  "signed": true,
+                  "wasmType": "i32",
+                  "kind": "Native",
+                  "precision": null
+                },
+                "id": {
+                  "nodeType": "identifier",
+                  "name": "b"
+                },
+                "array": null
+              }
+            }
+          ]
+        }
+      },
+      "statement": {
+        "nodeType": "NoScopeBlock",
+        "statements": [
+          {
+            "expression": [
+              {
+                "nodeType": "BinaryExpression",
+                "operator": "*",
+                "left": {
+                  "nodeType": "identifier",
+                  "name": "b"
+                },
+                "right": {
+                  "nodeType": "identifier",
+                  "name": "b"
+                }
               }
             ],
             "nodeType": "ReturnStatement"
