@@ -11,7 +11,7 @@ try {
   const parser = peg.generate(pegSrc, {
     format: 'commonjs',
     output: 'source',
-    trace:false
+    trace:true
   });
   const testDir = './tests/parser/src/'; 
   await fs.promises.writeFile('./sgl2-0.js', parser, 'utf8');

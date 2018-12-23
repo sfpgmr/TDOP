@@ -4,20 +4,32 @@
 //
 
 {
-
+  let lineNumber = 0;
+  let tokens = [];
 }
 
 
 
-SOURCE_STRINGS = sourceStrings:( COMMENT / LINE_TERMINATOR_SEQUENCE / EOS / TOKEN )* {
+SOURCE_STRINGS = sourceStrings:(__ / TOKEN / SYMBOLS / LINE_TERMINATOR_SEQUENCE / CONCATENATE_CHAR )*  {
   return sourceStrings.filter(n=>n);
 }
 
-TOKEN = token:$(TOKEN_CHARACTER)* 
-SOURCE_CHARACTER = .;
-TOKEN_CHARACTER = (. !(WHITESPACE / LINE_TERMINATOR_SEQUENCE))) / CONCATENATE_CHAR
+TOKEN = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return head + tail.filter(n=>n).join('');}
 
-CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {return '';}
+SOURCE_CHARACTER = .
+
+/* The symbols period (.), plus (+), dash (-), slash (/), asterisk (*), percent (%), angled brackets (<
+and >), square brackets ( [ and ] ), parentheses ( ( and ) ), braces ( { and } ), caret (^), vertical bar
+( | ), ampersand (&), tilde (~), equals (eses ( ( and ) ), braces ( { and } ), caret (^), vertical bar
+( | ), ampersand (&), tilde (~), equals (=), exclamation point (!), colon (:), semicolon (;), comma
+(,), and question mark (?).*/
+
+SYMBOLS = $('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']' / '(' / ')' / '{' / '}' / '^' / '|' / '&' / '~' / '=' / '!' / ':' / ';' / ',' / '?')
+
+PREPROCESSOR_DIRECTIVE = '#' __ 
+
+
+CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {  return null;}
 
 WHITESPACE "whitespace"
   = ("\t"
@@ -28,7 +40,7 @@ WHITESPACE "whitespace"
   / "\uFEFF"
   / ZS)
   {
-    return null;
+    ++lineNumber; return null;
   }
 
 // Separator, Space
@@ -38,13 +50,11 @@ LINE_TERMINATOR
   = [\n\r\u2028\u2029] {return '\n';}
 
 LINE_TERMINATOR_SEQUENCE "end of line"
-  = ("\n"
+  = $("\n"
   / "\r\n"
   / "\r"
   / "\u2028"
-  / "\u2029") {
-    return null;
-  }
+  / "\u2029") {return '\n'}
   
 COMMENT "comment"
   = MULTILINE_COMMENT
@@ -52,27 +62,27 @@ COMMENT "comment"
 
 MULTILINE_COMMENT
   = "/*" text:$(!"*/" SOURCE_CHARACTER)* "*/" {
-    return null;
+    return ' ';
   }
 
 MULTILINE_COMMENT_NO_LINE_TERMINATOR
   = "/*" text:$(!("*/" / LINE_TERMINATOR) SOURCE_CHARACTER)* "*/" {
-    return null;
+    return ' ';
   }
 
 SINGLE_LINE_COMMENT
   = "//" text:$(!LINE_TERMINATOR SOURCE_CHARACTER)* {
-    return null;    
+    return ' ';    
   }
 
 // Skipped
 __
-  =  skipped:(WHITESPACE / LINE_TERMINATOR_SEQUENCE / COMMENT)* {
-    return null;
+  =  skipped:(WHITESPACE / LINE_TERMINATOR_SEQUENCE / COMMENT)+ {
+    return skipped;
   }
 _
-  = skipped:(WHITESPACE / MULTILINE_COMMENT_NO_LINE_TERMINATOR)* {
-    return null;
+  = skipped:(WHITESPACE / MULTILINE_COMMENT_NO_LINE_TERMINATOR)+ {
+    return skipped;
   }
 
 // End of Statement
