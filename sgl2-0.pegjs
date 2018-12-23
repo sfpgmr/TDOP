@@ -9,13 +9,13 @@
 
 
 
-SOURCE_STRINGS = sourceStrings:( __ / EOS / TOKEN )* {
+SOURCE_STRINGS = sourceStrings:( COMMENT / LINE_TERMINATOR_SEQUENCE / EOS / TOKEN )* {
   return sourceStrings.filter(n=>n);
 }
 
-TOKEN = token:(TOKEN_CHARACTER)* { return token.join(); } 
+TOKEN = token:$(TOKEN_CHARACTER)* 
 SOURCE_CHARACTER = .;
-TOKEN_CHARACTER = (. !WHITESPACE) / CONCATENATE_CHAR
+TOKEN_CHARACTER = (. !(WHITESPACE / LINE_TERMINATOR_SEQUENCE))) / CONCATENATE_CHAR
 
 CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {return '';}
 
@@ -43,7 +43,7 @@ LINE_TERMINATOR_SEQUENCE "end of line"
   / "\r"
   / "\u2028"
   / "\u2029") {
-    return '\n';
+    return null;
   }
   
 COMMENT "comment"
