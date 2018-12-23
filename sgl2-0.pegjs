@@ -7,13 +7,17 @@
 
 }
 
-SOURCE_STRINGS = sourceStrings:( COMMENT / CONCATENATE_CHAR / LINE_TERMINATOR_SEQUENCE / EOS / SOURCE_CHARACTER )* {
-  return sourceStrings.filter(n=>n).join('');
+
+
+SOURCE_STRINGS = sourceStrings:( __ / EOS / TOKEN )* {
+  return sourceStrings.filter(n=>n);
 }
 
-SOURCE_CHARACTER = .
-CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {return null;}
+TOKEN = token:(TOKEN_CHARACTER)* { return token.join(); } 
+SOURCE_CHARACTER = .;
+TOKEN_CHARACTER = (. !WHITESPACE) / CONCATENATE_CHAR
 
+CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {return '';}
 
 WHITESPACE "whitespace"
   = ("\t"
