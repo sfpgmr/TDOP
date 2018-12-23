@@ -1,0 +1,1 @@
+"int func(in int a){\n  int b = 2;\n  {\n    {int a = a;}\n  };\n  return b;\n  ;;;;\n  ;\n}\n"

@@ -1,0 +1,1 @@
+"uniform Transform_1\n{\n mat4 modelview;\n};\nuniform Transform_2\n{\n mat4 projec tion;\n} transform_2;\nmat4 modelview; \nmat4 projection; \n "

@@ -1,0 +1,1 @@
+"struct S {\nvec3 sa;\nint sb;\n};\n\nstruct S1 {\n  S s1a;\n  int s1b;\n  float s1c;\n};\n\n\nint func(in int a){\n  S s;\n  S1 s1;\n  int c = a;\n  do {\n    c++;\n    if(a > 10){\n      break;\n    }\n  } while(c < 10);\n  ;;;\n  return c;\n}\n\nint c,d\n\n;\nint funcb(in int b){\n  return b * b;\n};\n"

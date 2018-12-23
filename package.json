@@ -8,7 +8,8 @@
     "debug": "node --experimental-modules --inspect-brk ./tests/test.mjs",
     "test": "node --experimental-modules ./tests/test.mjs",
     "test2": "node --experimental-modules ./tests/parser/sgl2-test.mjs",
-    "test3": "node --experimental-modules ./tests/parser/sgl2-test2.mjs",
+    "test-tokenizer": "node --experimental-modules ./tests/parser/sgl2-tokenizer.mjs",
+    "test4": "node --experimental-modules ./tests/parser/sgl2-test3.mjs",
     "run": "node --experimental-modules  .",
     "web": "node --experimental-modules static-server.js"
   },
