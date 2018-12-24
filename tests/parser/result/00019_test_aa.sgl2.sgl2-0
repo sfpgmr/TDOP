@@ -1,32 +1,466 @@
 [
-  "#",
-  "define",
-  "TT",
-  "1",
-  "{",
-  "}",
-  "uniform",
-  "Transform_1",
-  "{",
-  "mat4",
-  "modelview",
-  ";",
-  "}",
-  ";",
-  "uniform",
-  "Transform_2",
-  "{",
-  "mat4",
-  "projec",
-  "tion",
-  ";",
-  "}",
-  "transform_2",
-  ";",
-  "mat4",
-  "modelview",
-  ";",
-  "mat4",
-  "projection",
-  ";"
+  {
+    "tokenType": "PreprocessorDirective",
+    "string": "#",
+    "location": {
+      "start": {
+        "offset": 0,
+        "line": 1,
+        "column": 1
+      },
+      "end": {
+        "offset": 1,
+        "line": 1,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "define",
+    "location": {
+      "start": {
+        "offset": 1,
+        "line": 1,
+        "column": 2
+      },
+      "end": {
+        "offset": 7,
+        "line": 1,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "TT",
+    "location": {
+      "start": {
+        "offset": 8,
+        "line": 1,
+        "column": 9
+      },
+      "end": {
+        "offset": 10,
+        "line": 1,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "1",
+    "location": {
+      "start": {
+        "offset": 11,
+        "line": 1,
+        "column": 12
+      },
+      "end": {
+        "offset": 12,
+        "line": 1,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 15,
+        "line": 2,
+        "column": 1
+      },
+      "end": {
+        "offset": 16,
+        "line": 2,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 19,
+        "line": 3,
+        "column": 1
+      },
+      "end": {
+        "offset": 20,
+        "line": 3,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "uniform",
+    "location": {
+      "start": {
+        "offset": 21,
+        "line": 4,
+        "column": 1
+      },
+      "end": {
+        "offset": 30,
+        "line": 5,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "Transform_1",
+    "location": {
+      "start": {
+        "offset": 31,
+        "line": 5,
+        "column": 5
+      },
+      "end": {
+        "offset": 44,
+        "line": 6,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 45,
+        "line": 7,
+        "column": 1
+      },
+      "end": {
+        "offset": 46,
+        "line": 7,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "mat4",
+    "location": {
+      "start": {
+        "offset": 48,
+        "line": 8,
+        "column": 2
+      },
+      "end": {
+        "offset": 52,
+        "line": 8,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "modelview",
+    "location": {
+      "start": {
+        "offset": 53,
+        "line": 8,
+        "column": 7
+      },
+      "end": {
+        "offset": 62,
+        "line": 8,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 62,
+        "line": 8,
+        "column": 16
+      },
+      "end": {
+        "offset": 63,
+        "line": 8,
+        "column": 17
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 64,
+        "line": 9,
+        "column": 1
+      },
+      "end": {
+        "offset": 65,
+        "line": 9,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 65,
+        "line": 9,
+        "column": 2
+      },
+      "end": {
+        "offset": 66,
+        "line": 9,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "uniform",
+    "location": {
+      "start": {
+        "offset": 67,
+        "line": 10,
+        "column": 1
+      },
+      "end": {
+        "offset": 74,
+        "line": 10,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "Transform_2",
+    "location": {
+      "start": {
+        "offset": 75,
+        "line": 10,
+        "column": 9
+      },
+      "end": {
+        "offset": 86,
+        "line": 10,
+        "column": 20
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 87,
+        "line": 11,
+        "column": 1
+      },
+      "end": {
+        "offset": 88,
+        "line": 11,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "mat4",
+    "location": {
+      "start": {
+        "offset": 90,
+        "line": 12,
+        "column": 2
+      },
+      "end": {
+        "offset": 94,
+        "line": 12,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "projection",
+    "location": {
+      "start": {
+        "offset": 95,
+        "line": 12,
+        "column": 7
+      },
+      "end": {
+        "offset": 107,
+        "line": 13,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 107,
+        "line": 13,
+        "column": 5
+      },
+      "end": {
+        "offset": 108,
+        "line": 13,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 109,
+        "line": 14,
+        "column": 1
+      },
+      "end": {
+        "offset": 110,
+        "line": 14,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "transform_2",
+    "location": {
+      "start": {
+        "offset": 111,
+        "line": 14,
+        "column": 3
+      },
+      "end": {
+        "offset": 122,
+        "line": 14,
+        "column": 14
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 122,
+        "line": 14,
+        "column": 14
+      },
+      "end": {
+        "offset": 123,
+        "line": 14,
+        "column": 15
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "mat4",
+    "location": {
+      "start": {
+        "offset": 124,
+        "line": 15,
+        "column": 1
+      },
+      "end": {
+        "offset": 128,
+        "line": 15,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "modelview",
+    "location": {
+      "start": {
+        "offset": 129,
+        "line": 15,
+        "column": 6
+      },
+      "end": {
+        "offset": 138,
+        "line": 15,
+        "column": 15
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 138,
+        "line": 15,
+        "column": 15
+      },
+      "end": {
+        "offset": 139,
+        "line": 15,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "mat4",
+    "location": {
+      "start": {
+        "offset": 194,
+        "line": 16,
+        "column": 1
+      },
+      "end": {
+        "offset": 198,
+        "line": 16,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "projection",
+    "location": {
+      "start": {
+        "offset": 199,
+        "line": 16,
+        "column": 6
+      },
+      "end": {
+        "offset": 209,
+        "line": 16,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 209,
+        "line": 16,
+        "column": 16
+      },
+      "end": {
+        "offset": 210,
+        "line": 16,
+        "column": 17
+      }
+    }
+  }
 ]

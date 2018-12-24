@@ -6,15 +6,22 @@
 {
   let lineNumber = 0;
   let tokens = [];
+  class Token {
+    constructor(tokenType,string){
+      this.tokenType = tokenType;
+      this.string = string;
+      this.location = location();
+    }
+  }
 }
 
 
 
-SOURCE_STRINGS = sourceStrings:(__ / TOKEN / SYMBOLS / LINE_TERMINATOR_SEQUENCE / CONCATENATE_CHAR )*  {
+SOURCE_STRINGS = sourceStrings:(__ / TOKEN / SYMBOLS / PREPROCESSOR_DIRECTIVE / EOS / LINE_TERMINATOR_SEQUENCE / CONCATENATE_CHAR )*  {
   return sourceStrings.filter(n=>n);
 }
 
-TOKEN = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return head + tail.filter(n=>n).join('');}
+TOKEN = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return new Token('Token',head + tail.filter(n=>n).join(''));}
 
 SOURCE_CHARACTER = .
 
@@ -24,9 +31,9 @@ and >), square brackets ( [ and ] ), parentheses ( ( and ) ), braces ( { and } )
 ( | ), ampersand (&), tilde (~), equals (=), exclamation point (!), colon (:), semicolon (;), comma
 (,), and question mark (?).*/
 
-SYMBOLS = $('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']' / '(' / ')' / '{' / '}' / '^' / '|' / '&' / '~' / '=' / '!' / ':' / ';' / ',' / '?')
+SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']' / '(' / ')' / '{' / '}' / '^' / '|' / '&' / '~' / '=' / '!' / ':' / ',' / '?') {return new Token('Symbol',text()); }
 
-PREPROCESSOR_DIRECTIVE = '#' __ 
+PREPROCESSOR_DIRECTIVE = '#' {return new Token('PreprocessorDirective',text());}
 
 
 CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE {  return null;}
@@ -40,7 +47,7 @@ WHITESPACE "whitespace"
   / "\uFEFF"
   / ZS)
   {
-    ++lineNumber; return null;
+    return new Token('WhiteSpace',' ');
   }
 
 // Separator, Space
@@ -54,7 +61,7 @@ LINE_TERMINATOR_SEQUENCE "end of line"
   / "\r\n"
   / "\r"
   / "\u2028"
-  / "\u2029") {return '\n'}
+  / "\u2029") {return null;}
   
 COMMENT "comment"
   = MULTILINE_COMMENT
@@ -62,32 +69,32 @@ COMMENT "comment"
 
 MULTILINE_COMMENT
   = "/*" text:$(!"*/" SOURCE_CHARACTER)* "*/" {
-    return ' ';
+    return null;
   }
 
 MULTILINE_COMMENT_NO_LINE_TERMINATOR
-  = "/*" text:$(!("*/" / LINE_TERMINATOR) SOURCE_CHARACTER)* "*/" {
-    return ' ';
+  = "/*" text:(!("*/" / LINE_TERMINATOR) SOURCE_CHARACTER)* "*/" {
+    return null;
   }
 
 SINGLE_LINE_COMMENT
-  = "//" text:$(!LINE_TERMINATOR SOURCE_CHARACTER)* {
-    return ' ';    
+  = "//" text:(!LINE_TERMINATOR SOURCE_CHARACTER)* {
+    return null;    
   }
 
 // Skipped
 __
   =  skipped:(WHITESPACE / LINE_TERMINATOR_SEQUENCE / COMMENT)+ {
-    return skipped;
+    return null;
   }
 _
   = skipped:(WHITESPACE / MULTILINE_COMMENT_NO_LINE_TERMINATOR)+ {
-    return skipped;
+    return null;
   }
 
 // End of Statement
 EOS
-  = $';'
+  = ';' {return new Token('EOS',text());}
    // _ SINGLE_LINE_COMMENT? LINE_TERMINATOR_SEQUENCE
  // _ &"}" 
  // __ EOF

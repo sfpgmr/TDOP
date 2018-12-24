@@ -1,97 +1,1522 @@
 [
-  "struct",
-  "S",
-  "{",
-  "vec3",
-  "sa",
-  ";",
-  "int",
-  "sb",
-  ";",
-  "}",
-  ";",
-  "struct",
-  "S1",
-  "{",
-  "S",
-  "s1a",
-  ";",
-  "int",
-  "s1b",
-  ";",
-  "float",
-  "s1c",
-  ";",
-  "}",
-  ";",
-  "int",
-  "func",
-  "(",
-  "in",
-  "int",
-  "a",
-  ")",
-  "{",
-  "S",
-  "s",
-  ";",
-  "S1",
-  "s1",
-  ";",
-  "int",
-  "c",
-  "=",
-  "a",
-  ";",
-  "do",
-  "{",
-  "c",
-  "+",
-  "+",
-  ";",
-  "if",
-  "(",
-  "a",
-  ">",
-  "10",
-  ")",
-  "{",
-  "break",
-  ";",
-  "}",
-  "}",
-  "while",
-  "(",
-  "c",
-  "<",
-  "10",
-  ")",
-  ";",
-  ";",
-  ";",
-  ";",
-  "return",
-  "c",
-  ";",
-  "}",
-  "int",
-  "c",
-  ",",
-  "d",
-  ";",
-  "int",
-  "funcb",
-  "(",
-  "in",
-  "int",
-  "b",
-  ")",
-  "{",
-  "return",
-  "b",
-  "*",
-  "b",
-  ";",
-  "}",
-  ";"
+  {
+    "tokenType": "Token",
+    "string": "struct",
+    "location": {
+      "start": {
+        "offset": 0,
+        "line": 1,
+        "column": 1
+      },
+      "end": {
+        "offset": 6,
+        "line": 1,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "S",
+    "location": {
+      "start": {
+        "offset": 7,
+        "line": 1,
+        "column": 8
+      },
+      "end": {
+        "offset": 8,
+        "line": 1,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 9,
+        "line": 1,
+        "column": 10
+      },
+      "end": {
+        "offset": 10,
+        "line": 1,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "vec3",
+    "location": {
+      "start": {
+        "offset": 11,
+        "line": 2,
+        "column": 1
+      },
+      "end": {
+        "offset": 15,
+        "line": 2,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "sa",
+    "location": {
+      "start": {
+        "offset": 16,
+        "line": 2,
+        "column": 6
+      },
+      "end": {
+        "offset": 18,
+        "line": 2,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 18,
+        "line": 2,
+        "column": 8
+      },
+      "end": {
+        "offset": 19,
+        "line": 2,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 20,
+        "line": 3,
+        "column": 1
+      },
+      "end": {
+        "offset": 23,
+        "line": 3,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "sb",
+    "location": {
+      "start": {
+        "offset": 24,
+        "line": 3,
+        "column": 5
+      },
+      "end": {
+        "offset": 26,
+        "line": 3,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 26,
+        "line": 3,
+        "column": 7
+      },
+      "end": {
+        "offset": 27,
+        "line": 3,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 28,
+        "line": 4,
+        "column": 1
+      },
+      "end": {
+        "offset": 29,
+        "line": 4,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 29,
+        "line": 4,
+        "column": 2
+      },
+      "end": {
+        "offset": 30,
+        "line": 4,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "struct",
+    "location": {
+      "start": {
+        "offset": 32,
+        "line": 6,
+        "column": 1
+      },
+      "end": {
+        "offset": 38,
+        "line": 6,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "S1",
+    "location": {
+      "start": {
+        "offset": 39,
+        "line": 6,
+        "column": 8
+      },
+      "end": {
+        "offset": 41,
+        "line": 6,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 42,
+        "line": 6,
+        "column": 11
+      },
+      "end": {
+        "offset": 43,
+        "line": 6,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "S",
+    "location": {
+      "start": {
+        "offset": 46,
+        "line": 7,
+        "column": 3
+      },
+      "end": {
+        "offset": 47,
+        "line": 7,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "s1a",
+    "location": {
+      "start": {
+        "offset": 48,
+        "line": 7,
+        "column": 5
+      },
+      "end": {
+        "offset": 51,
+        "line": 7,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 51,
+        "line": 7,
+        "column": 8
+      },
+      "end": {
+        "offset": 52,
+        "line": 7,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 55,
+        "line": 8,
+        "column": 3
+      },
+      "end": {
+        "offset": 58,
+        "line": 8,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "s1b",
+    "location": {
+      "start": {
+        "offset": 59,
+        "line": 8,
+        "column": 7
+      },
+      "end": {
+        "offset": 62,
+        "line": 8,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 62,
+        "line": 8,
+        "column": 10
+      },
+      "end": {
+        "offset": 63,
+        "line": 8,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "float",
+    "location": {
+      "start": {
+        "offset": 66,
+        "line": 9,
+        "column": 3
+      },
+      "end": {
+        "offset": 71,
+        "line": 9,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "s1c",
+    "location": {
+      "start": {
+        "offset": 72,
+        "line": 9,
+        "column": 9
+      },
+      "end": {
+        "offset": 75,
+        "line": 9,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 75,
+        "line": 9,
+        "column": 12
+      },
+      "end": {
+        "offset": 76,
+        "line": 9,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 77,
+        "line": 10,
+        "column": 1
+      },
+      "end": {
+        "offset": 78,
+        "line": 10,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 78,
+        "line": 10,
+        "column": 2
+      },
+      "end": {
+        "offset": 79,
+        "line": 10,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 82,
+        "line": 13,
+        "column": 1
+      },
+      "end": {
+        "offset": 85,
+        "line": 13,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "func",
+    "location": {
+      "start": {
+        "offset": 86,
+        "line": 13,
+        "column": 5
+      },
+      "end": {
+        "offset": 90,
+        "line": 13,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "(",
+    "location": {
+      "start": {
+        "offset": 90,
+        "line": 13,
+        "column": 9
+      },
+      "end": {
+        "offset": 91,
+        "line": 13,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "in",
+    "location": {
+      "start": {
+        "offset": 91,
+        "line": 13,
+        "column": 10
+      },
+      "end": {
+        "offset": 93,
+        "line": 13,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 94,
+        "line": 13,
+        "column": 13
+      },
+      "end": {
+        "offset": 97,
+        "line": 13,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "a",
+    "location": {
+      "start": {
+        "offset": 98,
+        "line": 13,
+        "column": 17
+      },
+      "end": {
+        "offset": 99,
+        "line": 13,
+        "column": 18
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ")",
+    "location": {
+      "start": {
+        "offset": 99,
+        "line": 13,
+        "column": 18
+      },
+      "end": {
+        "offset": 100,
+        "line": 13,
+        "column": 19
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 100,
+        "line": 13,
+        "column": 19
+      },
+      "end": {
+        "offset": 101,
+        "line": 13,
+        "column": 20
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "S",
+    "location": {
+      "start": {
+        "offset": 104,
+        "line": 14,
+        "column": 3
+      },
+      "end": {
+        "offset": 105,
+        "line": 14,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "s",
+    "location": {
+      "start": {
+        "offset": 106,
+        "line": 14,
+        "column": 5
+      },
+      "end": {
+        "offset": 107,
+        "line": 14,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 107,
+        "line": 14,
+        "column": 6
+      },
+      "end": {
+        "offset": 108,
+        "line": 14,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "S1",
+    "location": {
+      "start": {
+        "offset": 111,
+        "line": 15,
+        "column": 3
+      },
+      "end": {
+        "offset": 113,
+        "line": 15,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "s1",
+    "location": {
+      "start": {
+        "offset": 114,
+        "line": 15,
+        "column": 6
+      },
+      "end": {
+        "offset": 116,
+        "line": 15,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 116,
+        "line": 15,
+        "column": 8
+      },
+      "end": {
+        "offset": 117,
+        "line": 15,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 120,
+        "line": 16,
+        "column": 3
+      },
+      "end": {
+        "offset": 123,
+        "line": 16,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "c",
+    "location": {
+      "start": {
+        "offset": 124,
+        "line": 16,
+        "column": 7
+      },
+      "end": {
+        "offset": 125,
+        "line": 16,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "=",
+    "location": {
+      "start": {
+        "offset": 126,
+        "line": 16,
+        "column": 9
+      },
+      "end": {
+        "offset": 127,
+        "line": 16,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "a",
+    "location": {
+      "start": {
+        "offset": 128,
+        "line": 16,
+        "column": 11
+      },
+      "end": {
+        "offset": 129,
+        "line": 16,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 129,
+        "line": 16,
+        "column": 12
+      },
+      "end": {
+        "offset": 130,
+        "line": 16,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "do",
+    "location": {
+      "start": {
+        "offset": 133,
+        "line": 17,
+        "column": 3
+      },
+      "end": {
+        "offset": 135,
+        "line": 17,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 136,
+        "line": 17,
+        "column": 6
+      },
+      "end": {
+        "offset": 137,
+        "line": 17,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "c",
+    "location": {
+      "start": {
+        "offset": 142,
+        "line": 18,
+        "column": 5
+      },
+      "end": {
+        "offset": 143,
+        "line": 18,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "+",
+    "location": {
+      "start": {
+        "offset": 143,
+        "line": 18,
+        "column": 6
+      },
+      "end": {
+        "offset": 144,
+        "line": 18,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "+",
+    "location": {
+      "start": {
+        "offset": 144,
+        "line": 18,
+        "column": 7
+      },
+      "end": {
+        "offset": 145,
+        "line": 18,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 145,
+        "line": 18,
+        "column": 8
+      },
+      "end": {
+        "offset": 146,
+        "line": 18,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "if",
+    "location": {
+      "start": {
+        "offset": 151,
+        "line": 19,
+        "column": 5
+      },
+      "end": {
+        "offset": 153,
+        "line": 19,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "(",
+    "location": {
+      "start": {
+        "offset": 153,
+        "line": 19,
+        "column": 7
+      },
+      "end": {
+        "offset": 154,
+        "line": 19,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "a",
+    "location": {
+      "start": {
+        "offset": 154,
+        "line": 19,
+        "column": 8
+      },
+      "end": {
+        "offset": 155,
+        "line": 19,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ">",
+    "location": {
+      "start": {
+        "offset": 156,
+        "line": 19,
+        "column": 10
+      },
+      "end": {
+        "offset": 157,
+        "line": 19,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "10",
+    "location": {
+      "start": {
+        "offset": 158,
+        "line": 19,
+        "column": 12
+      },
+      "end": {
+        "offset": 160,
+        "line": 19,
+        "column": 14
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ")",
+    "location": {
+      "start": {
+        "offset": 160,
+        "line": 19,
+        "column": 14
+      },
+      "end": {
+        "offset": 161,
+        "line": 19,
+        "column": 15
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 161,
+        "line": 19,
+        "column": 15
+      },
+      "end": {
+        "offset": 162,
+        "line": 19,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "break",
+    "location": {
+      "start": {
+        "offset": 169,
+        "line": 20,
+        "column": 7
+      },
+      "end": {
+        "offset": 174,
+        "line": 20,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 174,
+        "line": 20,
+        "column": 12
+      },
+      "end": {
+        "offset": 175,
+        "line": 20,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 180,
+        "line": 21,
+        "column": 5
+      },
+      "end": {
+        "offset": 181,
+        "line": 21,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 184,
+        "line": 22,
+        "column": 3
+      },
+      "end": {
+        "offset": 185,
+        "line": 22,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "while",
+    "location": {
+      "start": {
+        "offset": 186,
+        "line": 22,
+        "column": 5
+      },
+      "end": {
+        "offset": 191,
+        "line": 22,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "(",
+    "location": {
+      "start": {
+        "offset": 191,
+        "line": 22,
+        "column": 10
+      },
+      "end": {
+        "offset": 192,
+        "line": 22,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "c",
+    "location": {
+      "start": {
+        "offset": 192,
+        "line": 22,
+        "column": 11
+      },
+      "end": {
+        "offset": 193,
+        "line": 22,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "<",
+    "location": {
+      "start": {
+        "offset": 194,
+        "line": 22,
+        "column": 13
+      },
+      "end": {
+        "offset": 195,
+        "line": 22,
+        "column": 14
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "10",
+    "location": {
+      "start": {
+        "offset": 196,
+        "line": 22,
+        "column": 15
+      },
+      "end": {
+        "offset": 198,
+        "line": 22,
+        "column": 17
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ")",
+    "location": {
+      "start": {
+        "offset": 198,
+        "line": 22,
+        "column": 17
+      },
+      "end": {
+        "offset": 199,
+        "line": 22,
+        "column": 18
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 199,
+        "line": 22,
+        "column": 18
+      },
+      "end": {
+        "offset": 200,
+        "line": 22,
+        "column": 19
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 203,
+        "line": 23,
+        "column": 3
+      },
+      "end": {
+        "offset": 204,
+        "line": 23,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 204,
+        "line": 23,
+        "column": 4
+      },
+      "end": {
+        "offset": 205,
+        "line": 23,
+        "column": 5
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 205,
+        "line": 23,
+        "column": 5
+      },
+      "end": {
+        "offset": 206,
+        "line": 23,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "return",
+    "location": {
+      "start": {
+        "offset": 209,
+        "line": 24,
+        "column": 3
+      },
+      "end": {
+        "offset": 215,
+        "line": 24,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "c",
+    "location": {
+      "start": {
+        "offset": 216,
+        "line": 24,
+        "column": 10
+      },
+      "end": {
+        "offset": 217,
+        "line": 24,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 217,
+        "line": 24,
+        "column": 11
+      },
+      "end": {
+        "offset": 218,
+        "line": 24,
+        "column": 12
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 219,
+        "line": 25,
+        "column": 1
+      },
+      "end": {
+        "offset": 220,
+        "line": 25,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 222,
+        "line": 27,
+        "column": 1
+      },
+      "end": {
+        "offset": 225,
+        "line": 27,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "c",
+    "location": {
+      "start": {
+        "offset": 226,
+        "line": 27,
+        "column": 5
+      },
+      "end": {
+        "offset": 227,
+        "line": 27,
+        "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ",",
+    "location": {
+      "start": {
+        "offset": 227,
+        "line": 27,
+        "column": 6
+      },
+      "end": {
+        "offset": 228,
+        "line": 27,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "d",
+    "location": {
+      "start": {
+        "offset": 228,
+        "line": 27,
+        "column": 7
+      },
+      "end": {
+        "offset": 229,
+        "line": 27,
+        "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 231,
+        "line": 29,
+        "column": 1
+      },
+      "end": {
+        "offset": 232,
+        "line": 29,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 233,
+        "line": 30,
+        "column": 1
+      },
+      "end": {
+        "offset": 236,
+        "line": 30,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "funcb",
+    "location": {
+      "start": {
+        "offset": 237,
+        "line": 30,
+        "column": 5
+      },
+      "end": {
+        "offset": 242,
+        "line": 30,
+        "column": 10
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "(",
+    "location": {
+      "start": {
+        "offset": 242,
+        "line": 30,
+        "column": 10
+      },
+      "end": {
+        "offset": 243,
+        "line": 30,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "in",
+    "location": {
+      "start": {
+        "offset": 243,
+        "line": 30,
+        "column": 11
+      },
+      "end": {
+        "offset": 245,
+        "line": 30,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "int",
+    "location": {
+      "start": {
+        "offset": 246,
+        "line": 30,
+        "column": 14
+      },
+      "end": {
+        "offset": 249,
+        "line": 30,
+        "column": 17
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "b",
+    "location": {
+      "start": {
+        "offset": 250,
+        "line": 30,
+        "column": 18
+      },
+      "end": {
+        "offset": 251,
+        "line": 30,
+        "column": 19
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": ")",
+    "location": {
+      "start": {
+        "offset": 251,
+        "line": 30,
+        "column": 19
+      },
+      "end": {
+        "offset": 252,
+        "line": 30,
+        "column": 20
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 252,
+        "line": 30,
+        "column": 20
+      },
+      "end": {
+        "offset": 253,
+        "line": 30,
+        "column": 21
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "return",
+    "location": {
+      "start": {
+        "offset": 256,
+        "line": 31,
+        "column": 3
+      },
+      "end": {
+        "offset": 262,
+        "line": 31,
+        "column": 9
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "b",
+    "location": {
+      "start": {
+        "offset": 263,
+        "line": 31,
+        "column": 10
+      },
+      "end": {
+        "offset": 264,
+        "line": 31,
+        "column": 11
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "*",
+    "location": {
+      "start": {
+        "offset": 265,
+        "line": 31,
+        "column": 12
+      },
+      "end": {
+        "offset": 266,
+        "line": 31,
+        "column": 13
+      }
+    }
+  },
+  {
+    "tokenType": "Token",
+    "string": "b",
+    "location": {
+      "start": {
+        "offset": 267,
+        "line": 31,
+        "column": 14
+      },
+      "end": {
+        "offset": 268,
+        "line": 31,
+        "column": 15
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 268,
+        "line": 31,
+        "column": 15
+      },
+      "end": {
+        "offset": 269,
+        "line": 31,
+        "column": 16
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 270,
+        "line": 32,
+        "column": 1
+      },
+      "end": {
+        "offset": 271,
+        "line": 32,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "EOS",
+    "string": ";",
+    "location": {
+      "start": {
+        "offset": 271,
+        "line": 32,
+        "column": 2
+      },
+      "end": {
+        "offset": 272,
+        "line": 32,
+        "column": 3
+      }
+    }
+  }
 ]
