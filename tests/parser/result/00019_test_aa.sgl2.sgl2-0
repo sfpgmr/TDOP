@@ -32,6 +32,22 @@
     }
   },
   {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 7,
+        "line": 1,
+        "column": 8
+      },
+      "end": {
+        "offset": 8,
+        "line": 1,
+        "column": 9
+      }
+    }
+  },
+  {
     "tokenType": "Token",
     "string": "TT",
     "location": {
@@ -48,50 +64,82 @@
     }
   },
   {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 10,
+        "line": 1,
+        "column": 11
+      },
+      "end": {
+        "offset": 11,
+        "line": 1,
+        "column": 12
+      }
+    }
+  },
+  {
     "tokenType": "Token",
     "string": "1",
     "location": {
       "start": {
-        "offset": 11,
-        "line": 1,
-        "column": 12
+        "offset": 13,
+        "line": 2,
+        "column": 1
       },
       "end": {
-        "offset": 12,
-        "line": 1,
-        "column": 13
+        "offset": 14,
+        "line": 2,
+        "column": 2
       }
     }
   },
   {
-    "tokenType": "Symbol",
-    "string": "{",
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 14,
+        "line": 2,
+        "column": 2
+      },
+      "end": {
+        "offset": 15,
+        "line": 2,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
     "location": {
       "start": {
         "offset": 15,
         "line": 2,
-        "column": 1
+        "column": 3
       },
       "end": {
         "offset": 16,
-        "line": 2,
-        "column": 2
+        "line": 3,
+        "column": 1
       }
     }
   },
   {
-    "tokenType": "Symbol",
-    "string": "}",
+    "tokenType": "NewLine",
+    "string": "\n",
     "location": {
       "start": {
-        "offset": 19,
+        "offset": 16,
         "line": 3,
         "column": 1
       },
       "end": {
-        "offset": 20,
-        "line": 3,
-        "column": 2
+        "offset": 17,
+        "line": 4,
+        "column": 1
       }
     }
   },
@@ -100,14 +148,30 @@
     "string": "uniform",
     "location": {
       "start": {
-        "offset": 21,
+        "offset": 17,
         "line": 4,
         "column": 1
       },
       "end": {
-        "offset": 30,
+        "offset": 26,
         "line": 5,
         "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 26,
+        "line": 5,
+        "column": 4
+      },
+      "end": {
+        "offset": 27,
+        "line": 5,
+        "column": 5
       }
     }
   },
@@ -116,14 +180,30 @@
     "string": "Transform_1",
     "location": {
       "start": {
-        "offset": 31,
+        "offset": 27,
         "line": 5,
         "column": 5
       },
       "end": {
-        "offset": 44,
+        "offset": 40,
         "line": 6,
         "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 40,
+        "line": 6,
+        "column": 6
+      },
+      "end": {
+        "offset": 41,
+        "line": 7,
+        "column": 1
       }
     }
   },
@@ -132,13 +212,45 @@
     "string": "{",
     "location": {
       "start": {
-        "offset": 45,
+        "offset": 41,
         "line": 7,
         "column": 1
       },
       "end": {
-        "offset": 46,
+        "offset": 42,
         "line": 7,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 42,
+        "line": 7,
+        "column": 2
+      },
+      "end": {
+        "offset": 43,
+        "line": 8,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 43,
+        "line": 8,
+        "column": 1
+      },
+      "end": {
+        "offset": 44,
+        "line": 8,
         "column": 2
       }
     }
@@ -148,14 +260,30 @@
     "string": "mat4",
     "location": {
       "start": {
-        "offset": 48,
+        "offset": 44,
         "line": 8,
         "column": 2
       },
       "end": {
-        "offset": 52,
+        "offset": 48,
         "line": 8,
         "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 48,
+        "line": 8,
+        "column": 6
+      },
+      "end": {
+        "offset": 49,
+        "line": 8,
+        "column": 7
       }
     }
   },
@@ -164,12 +292,12 @@
     "string": "modelview",
     "location": {
       "start": {
-        "offset": 53,
+        "offset": 49,
         "line": 8,
         "column": 7
       },
       "end": {
-        "offset": 62,
+        "offset": 58,
         "line": 8,
         "column": 16
       }
@@ -180,14 +308,190 @@
     "string": ";",
     "location": {
       "start": {
-        "offset": 62,
+        "offset": 58,
         "line": 8,
         "column": 16
       },
       "end": {
-        "offset": 63,
+        "offset": 59,
         "line": 8,
         "column": 17
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 59,
+        "line": 8,
+        "column": 17
+      },
+      "end": {
+        "offset": 60,
+        "line": 9,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 60,
+        "line": 9,
+        "column": 1
+      },
+      "end": {
+        "offset": 61,
+        "line": 9,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 61,
+        "line": 9,
+        "column": 2
+      },
+      "end": {
+        "offset": 66,
+        "line": 9,
+        "column": 7
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 66,
+        "line": 9,
+        "column": 7
+      },
+      "end": {
+        "offset": 67,
+        "line": 10,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 67,
+        "line": 10,
+        "column": 1
+      },
+      "end": {
+        "offset": 68,
+        "line": 10,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 68,
+        "line": 10,
+        "column": 2
+      },
+      "end": {
+        "offset": 70,
+        "line": 10,
+        "column": 4
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 70,
+        "line": 10,
+        "column": 4
+      },
+      "end": {
+        "offset": 71,
+        "line": 11,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 71,
+        "line": 11,
+        "column": 1
+      },
+      "end": {
+        "offset": 72,
+        "line": 11,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "{",
+    "location": {
+      "start": {
+        "offset": 72,
+        "line": 11,
+        "column": 2
+      },
+      "end": {
+        "offset": 73,
+        "line": 11,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 73,
+        "line": 11,
+        "column": 3
+      },
+      "end": {
+        "offset": 74,
+        "line": 12,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 74,
+        "line": 12,
+        "column": 1
+      },
+      "end": {
+        "offset": 75,
+        "line": 12,
+        "column": 2
       }
     }
   },
@@ -196,13 +500,45 @@
     "string": "}",
     "location": {
       "start": {
-        "offset": 64,
-        "line": 9,
+        "offset": 75,
+        "line": 12,
+        "column": 2
+      },
+      "end": {
+        "offset": 76,
+        "line": 12,
+        "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 76,
+        "line": 12,
+        "column": 3
+      },
+      "end": {
+        "offset": 77,
+        "line": 13,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "Symbol",
+    "string": "}",
+    "location": {
+      "start": {
+        "offset": 77,
+        "line": 13,
         "column": 1
       },
       "end": {
-        "offset": 65,
-        "line": 9,
+        "offset": 78,
+        "line": 13,
         "column": 2
       }
     }
@@ -212,14 +548,46 @@
     "string": ";",
     "location": {
       "start": {
-        "offset": 65,
-        "line": 9,
+        "offset": 78,
+        "line": 13,
         "column": 2
       },
       "end": {
-        "offset": 66,
-        "line": 9,
+        "offset": 79,
+        "line": 13,
         "column": 3
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 79,
+        "line": 13,
+        "column": 3
+      },
+      "end": {
+        "offset": 80,
+        "line": 14,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 80,
+        "line": 14,
+        "column": 1
+      },
+      "end": {
+        "offset": 81,
+        "line": 15,
+        "column": 1
       }
     }
   },
@@ -228,14 +596,30 @@
     "string": "uniform",
     "location": {
       "start": {
-        "offset": 67,
-        "line": 10,
+        "offset": 81,
+        "line": 15,
         "column": 1
       },
       "end": {
-        "offset": 74,
-        "line": 10,
+        "offset": 88,
+        "line": 15,
         "column": 8
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 88,
+        "line": 15,
+        "column": 8
+      },
+      "end": {
+        "offset": 89,
+        "line": 15,
+        "column": 9
       }
     }
   },
@@ -244,14 +628,30 @@
     "string": "Transform_2",
     "location": {
       "start": {
-        "offset": 75,
-        "line": 10,
+        "offset": 89,
+        "line": 15,
         "column": 9
       },
       "end": {
-        "offset": 86,
-        "line": 10,
+        "offset": 100,
+        "line": 15,
         "column": 20
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 100,
+        "line": 15,
+        "column": 20
+      },
+      "end": {
+        "offset": 101,
+        "line": 16,
+        "column": 1
       }
     }
   },
@@ -260,13 +660,45 @@
     "string": "{",
     "location": {
       "start": {
-        "offset": 87,
-        "line": 11,
+        "offset": 101,
+        "line": 16,
         "column": 1
       },
       "end": {
-        "offset": 88,
-        "line": 11,
+        "offset": 102,
+        "line": 16,
+        "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 102,
+        "line": 16,
+        "column": 2
+      },
+      "end": {
+        "offset": 103,
+        "line": 17,
+        "column": 1
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 103,
+        "line": 17,
+        "column": 1
+      },
+      "end": {
+        "offset": 104,
+        "line": 17,
         "column": 2
       }
     }
@@ -276,14 +708,30 @@
     "string": "mat4",
     "location": {
       "start": {
-        "offset": 90,
-        "line": 12,
+        "offset": 104,
+        "line": 17,
         "column": 2
       },
       "end": {
-        "offset": 94,
-        "line": 12,
+        "offset": 108,
+        "line": 17,
         "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 108,
+        "line": 17,
+        "column": 6
+      },
+      "end": {
+        "offset": 109,
+        "line": 17,
+        "column": 7
       }
     }
   },
@@ -292,13 +740,13 @@
     "string": "projection",
     "location": {
       "start": {
-        "offset": 95,
-        "line": 12,
+        "offset": 109,
+        "line": 17,
         "column": 7
       },
       "end": {
-        "offset": 107,
-        "line": 13,
+        "offset": 121,
+        "line": 18,
         "column": 5
       }
     }
@@ -308,14 +756,30 @@
     "string": ";",
     "location": {
       "start": {
-        "offset": 107,
-        "line": 13,
+        "offset": 121,
+        "line": 18,
         "column": 5
       },
       "end": {
-        "offset": 108,
-        "line": 13,
+        "offset": 122,
+        "line": 18,
         "column": 6
+      }
+    }
+  },
+  {
+    "tokenType": "NewLine",
+    "string": "\n",
+    "location": {
+      "start": {
+        "offset": 122,
+        "line": 18,
+        "column": 6
+      },
+      "end": {
+        "offset": 123,
+        "line": 19,
+        "column": 1
       }
     }
   },
@@ -324,14 +788,30 @@
     "string": "}",
     "location": {
       "start": {
-        "offset": 109,
-        "line": 14,
+        "offset": 123,
+        "line": 19,
         "column": 1
       },
       "end": {
-        "offset": 110,
-        "line": 14,
+        "offset": 124,
+        "line": 19,
         "column": 2
+      }
+    }
+  },
+  {
+    "tokenType": "WhiteSpace",
+    "string": " ",
+    "location": {
+      "start": {
+        "offset": 124,
+        "line": 19,
+        "column": 2
+      },
+      "end": {
+        "offset": 125,
+        "line": 19,
+        "column": 3
       }
     }
   },
@@ -340,13 +820,13 @@
     "string": "transform_2",
     "location": {
       "start": {
-        "offset": 111,
-        "line": 14,
+        "offset": 125,
+        "line": 19,
         "column": 3
       },
       "end": {
-        "offset": 122,
-        "line": 14,
+        "offset": 136,
+        "line": 19,
         "column": 14
       }
     }
@@ -356,110 +836,30 @@
     "string": ";",
     "location": {
       "start": {
-        "offset": 122,
-        "line": 14,
+        "offset": 136,
+        "line": 19,
         "column": 14
       },
       "end": {
-        "offset": 123,
-        "line": 14,
+        "offset": 137,
+        "line": 19,
         "column": 15
       }
     }
   },
   {
-    "tokenType": "Token",
-    "string": "mat4",
+    "tokenType": "NewLine",
+    "string": "\n",
     "location": {
       "start": {
-        "offset": 124,
-        "line": 15,
-        "column": 1
-      },
-      "end": {
-        "offset": 128,
-        "line": 15,
-        "column": 5
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "modelview",
-    "location": {
-      "start": {
-        "offset": 129,
-        "line": 15,
-        "column": 6
+        "offset": 137,
+        "line": 19,
+        "column": 15
       },
       "end": {
         "offset": 138,
-        "line": 15,
-        "column": 15
-      }
-    }
-  },
-  {
-    "tokenType": "EOS",
-    "string": ";",
-    "location": {
-      "start": {
-        "offset": 138,
-        "line": 15,
-        "column": 15
-      },
-      "end": {
-        "offset": 139,
-        "line": 15,
-        "column": 16
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "mat4",
-    "location": {
-      "start": {
-        "offset": 194,
-        "line": 16,
+        "line": 20,
         "column": 1
-      },
-      "end": {
-        "offset": 198,
-        "line": 16,
-        "column": 5
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "projection",
-    "location": {
-      "start": {
-        "offset": 199,
-        "line": 16,
-        "column": 6
-      },
-      "end": {
-        "offset": 209,
-        "line": 16,
-        "column": 16
-      }
-    }
-  },
-  {
-    "tokenType": "EOS",
-    "string": ";",
-    "location": {
-      "start": {
-        "offset": 209,
-        "line": 16,
-        "column": 16
-      },
-      "end": {
-        "offset": 210,
-        "line": 16,
-        "column": 17
       }
     }
   }

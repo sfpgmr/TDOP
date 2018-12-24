@@ -6,6 +6,10 @@ orm Transf\
 orm_1
 {
  mat4 modelview;
+ /* */
+ //
+ {
+ }
 };
 
 uniform Transform_2
