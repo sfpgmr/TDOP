@@ -1,5 +1,6 @@
-#define TT \
-1 
+   #   \
+   define TT(a) \
+   func(a);
 
 unif\
 orm Transf\
@@ -17,3 +18,13 @@ uniform Transform_2
  mat4 projec\
 tion;
 } transform_2;
+
+int func (in int a,int b){
+if( a <\
+= b){
+  b = a;
+} else {
+ a *= a << b;
+}
+return a * b;
+}

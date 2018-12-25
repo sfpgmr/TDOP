@@ -7,15 +7,15 @@ import Binaryen from '../../binaryen-wasm.js';
 
 test('parse-test', async t => {
 try {
-  const pegSrc = await fs.promises.readFile('./sgl2-0.pegjs', 'utf-8');
+  const pegSrc = await fs.promises.readFile('./tokenizer.pegjs', 'utf-8');
   const parser = peg.generate(pegSrc, {
     format: 'commonjs',
     output: 'source',
     trace:true
   });
   const testDir = './tests/parser/src/'; 
-  await fs.promises.writeFile('./sgl2-0.js', parser, 'utf8');
-  let sgl2 = (await import('../../sgl2-0.js')).default;
+  await fs.promises.writeFile('./tokenizer.js', parser, 'utf8');
+  let sgl2 = (await import('../../tokenizer.js')).default;
   const exec = util.promisify(exec_);
   let testFiles = await fs.promises.readdir(testDir);
   testFiles = testFiles.filter(file=>{
@@ -26,7 +26,7 @@ try {
     const testSrc = await fs.promises.readFile(testDir + file,'utf8');
     console.log(`***** ${file}をパースします。*****`);
     const ast =  JSON.stringify(sgl2.parse(testSrc,{ }),null,2);
-    await fs.promises.writeFile('./tests/parser/result/' + file + '.sgl2-0',ast,'utf8');
+    await fs.promises.writeFile('./tests/parser/result/' + file + '.token.json',ast,'utf8');
   }
 } catch (e) {
     console.log(e,e.stack);

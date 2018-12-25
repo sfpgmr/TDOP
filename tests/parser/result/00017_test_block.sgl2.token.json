@@ -1,7 +1,7 @@
 [
   {
-    "tokenType": "Token",
-    "string": "int",
+    "tokenType": "Name",
+    "value": "int",
     "location": {
       "start": {
         "offset": 0,
@@ -16,24 +16,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 3,
-        "line": 1,
-        "column": 4
-      },
-      "end": {
-        "offset": 4,
-        "line": 1,
-        "column": 5
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "func",
+    "tokenType": "Name",
+    "value": "func",
     "location": {
       "start": {
         "offset": 4,
@@ -49,7 +33,7 @@
   },
   {
     "tokenType": "Symbol",
-    "string": "(",
+    "value": "(",
     "location": {
       "start": {
         "offset": 8,
@@ -64,8 +48,8 @@
     }
   },
   {
-    "tokenType": "Token",
-    "string": "in",
+    "tokenType": "Name",
+    "value": "in",
     "location": {
       "start": {
         "offset": 9,
@@ -80,24 +64,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 11,
-        "line": 1,
-        "column": 12
-      },
-      "end": {
-        "offset": 12,
-        "line": 1,
-        "column": 13
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "int",
+    "tokenType": "Name",
+    "value": "int",
     "location": {
       "start": {
         "offset": 12,
@@ -112,24 +80,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 15,
-        "line": 1,
-        "column": 16
-      },
-      "end": {
-        "offset": 16,
-        "line": 1,
-        "column": 17
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "a",
+    "tokenType": "Name",
+    "value": "a",
     "location": {
       "start": {
         "offset": 16,
@@ -145,7 +97,7 @@
   },
   {
     "tokenType": "Symbol",
-    "string": ")",
+    "value": ")",
     "location": {
       "start": {
         "offset": 17,
@@ -161,7 +113,7 @@
   },
   {
     "tokenType": "Symbol",
-    "string": "{",
+    "value": "{",
     "location": {
       "start": {
         "offset": 18,
@@ -177,7 +129,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 19,
@@ -192,40 +144,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 20,
-        "line": 2,
-        "column": 1
-      },
-      "end": {
-        "offset": 21,
-        "line": 2,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 21,
-        "line": 2,
-        "column": 2
-      },
-      "end": {
-        "offset": 22,
-        "line": 2,
-        "column": 3
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "int",
+    "tokenType": "Name",
+    "value": "int",
     "location": {
       "start": {
         "offset": 22,
@@ -240,24 +160,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 25,
-        "line": 2,
-        "column": 6
-      },
-      "end": {
-        "offset": 26,
-        "line": 2,
-        "column": 7
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "b",
+    "tokenType": "Name",
+    "value": "b",
     "location": {
       "start": {
         "offset": 26,
@@ -268,28 +172,12 @@
         "offset": 27,
         "line": 2,
         "column": 8
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 27,
-        "line": 2,
-        "column": 8
-      },
-      "end": {
-        "offset": 28,
-        "line": 2,
-        "column": 9
       }
     }
   },
   {
     "tokenType": "Operator",
-    "string": "=",
+    "value": "=",
     "location": {
       "start": {
         "offset": 28,
@@ -304,24 +192,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 29,
-        "line": 2,
-        "column": 10
-      },
-      "end": {
-        "offset": 30,
-        "line": 2,
-        "column": 11
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "2",
+    "tokenType": "Name",
+    "value": "2",
     "location": {
       "start": {
         "offset": 30,
@@ -337,7 +209,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 31,
@@ -353,7 +225,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 32,
@@ -368,40 +240,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 33,
-        "line": 3,
-        "column": 1
-      },
-      "end": {
-        "offset": 34,
-        "line": 3,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 34,
-        "line": 3,
-        "column": 2
-      },
-      "end": {
-        "offset": 35,
-        "line": 3,
-        "column": 3
-      }
-    }
-  },
-  {
     "tokenType": "Symbol",
-    "string": "{",
+    "value": "{",
     "location": {
       "start": {
         "offset": 35,
@@ -417,7 +257,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 36,
@@ -432,72 +272,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 37,
-        "line": 4,
-        "column": 1
-      },
-      "end": {
-        "offset": 38,
-        "line": 4,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 38,
-        "line": 4,
-        "column": 2
-      },
-      "end": {
-        "offset": 39,
-        "line": 4,
-        "column": 3
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 39,
-        "line": 4,
-        "column": 3
-      },
-      "end": {
-        "offset": 40,
-        "line": 4,
-        "column": 4
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 40,
-        "line": 4,
-        "column": 4
-      },
-      "end": {
-        "offset": 41,
-        "line": 4,
-        "column": 5
-      }
-    }
-  },
-  {
     "tokenType": "Symbol",
-    "string": "{",
+    "value": "{",
     "location": {
       "start": {
         "offset": 41,
@@ -512,8 +288,8 @@
     }
   },
   {
-    "tokenType": "Token",
-    "string": "int",
+    "tokenType": "Name",
+    "value": "int",
     "location": {
       "start": {
         "offset": 42,
@@ -528,24 +304,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 45,
-        "line": 4,
-        "column": 9
-      },
-      "end": {
-        "offset": 46,
-        "line": 4,
-        "column": 10
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "a",
+    "tokenType": "Name",
+    "value": "a",
     "location": {
       "start": {
         "offset": 46,
@@ -556,28 +316,12 @@
         "offset": 47,
         "line": 4,
         "column": 11
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 47,
-        "line": 4,
-        "column": 11
-      },
-      "end": {
-        "offset": 48,
-        "line": 4,
-        "column": 12
       }
     }
   },
   {
     "tokenType": "Operator",
-    "string": "=",
+    "value": "=",
     "location": {
       "start": {
         "offset": 48,
@@ -592,24 +336,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 49,
-        "line": 4,
-        "column": 13
-      },
-      "end": {
-        "offset": 50,
-        "line": 4,
-        "column": 14
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "a",
+    "tokenType": "Name",
+    "value": "a",
     "location": {
       "start": {
         "offset": 50,
@@ -625,7 +353,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 51,
@@ -641,7 +369,7 @@
   },
   {
     "tokenType": "Symbol",
-    "string": "}",
+    "value": "}",
     "location": {
       "start": {
         "offset": 52,
@@ -657,7 +385,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 53,
@@ -672,40 +400,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 54,
-        "line": 5,
-        "column": 1
-      },
-      "end": {
-        "offset": 55,
-        "line": 5,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 55,
-        "line": 5,
-        "column": 2
-      },
-      "end": {
-        "offset": 56,
-        "line": 5,
-        "column": 3
-      }
-    }
-  },
-  {
     "tokenType": "Symbol",
-    "string": "}",
+    "value": "}",
     "location": {
       "start": {
         "offset": 56,
@@ -721,7 +417,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 57,
@@ -737,7 +433,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 58,
@@ -752,40 +448,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 59,
-        "line": 6,
-        "column": 1
-      },
-      "end": {
-        "offset": 60,
-        "line": 6,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 60,
-        "line": 6,
-        "column": 2
-      },
-      "end": {
-        "offset": 61,
-        "line": 6,
-        "column": 3
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "return",
+    "tokenType": "Name",
+    "value": "return",
     "location": {
       "start": {
         "offset": 61,
@@ -800,24 +464,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 67,
-        "line": 6,
-        "column": 9
-      },
-      "end": {
-        "offset": 68,
-        "line": 6,
-        "column": 10
-      }
-    }
-  },
-  {
-    "tokenType": "Token",
-    "string": "b",
+    "tokenType": "Name",
+    "value": "b",
     "location": {
       "start": {
         "offset": 68,
@@ -833,7 +481,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 69,
@@ -849,7 +497,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 70,
@@ -864,40 +512,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 71,
-        "line": 7,
-        "column": 1
-      },
-      "end": {
-        "offset": 72,
-        "line": 7,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 72,
-        "line": 7,
-        "column": 2
-      },
-      "end": {
-        "offset": 73,
-        "line": 7,
-        "column": 3
-      }
-    }
-  },
-  {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 73,
@@ -913,7 +529,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 74,
@@ -929,7 +545,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 75,
@@ -945,7 +561,7 @@
   },
   {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 76,
@@ -961,7 +577,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 77,
@@ -976,40 +592,8 @@
     }
   },
   {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 78,
-        "line": 8,
-        "column": 1
-      },
-      "end": {
-        "offset": 79,
-        "line": 8,
-        "column": 2
-      }
-    }
-  },
-  {
-    "tokenType": "WhiteSpace",
-    "string": " ",
-    "location": {
-      "start": {
-        "offset": 79,
-        "line": 8,
-        "column": 2
-      },
-      "end": {
-        "offset": 80,
-        "line": 8,
-        "column": 3
-      }
-    }
-  },
-  {
     "tokenType": "EOS",
-    "string": ";",
+    "value": ";",
     "location": {
       "start": {
         "offset": 80,
@@ -1025,7 +609,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 81,
@@ -1041,7 +625,7 @@
   },
   {
     "tokenType": "Symbol",
-    "string": "}",
+    "value": "}",
     "location": {
       "start": {
         "offset": 82,
@@ -1057,7 +641,7 @@
   },
   {
     "tokenType": "NewLine",
-    "string": "\n",
+    "value": "\n",
     "location": {
       "start": {
         "offset": 83,

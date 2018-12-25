@@ -7,9 +7,9 @@
   let lineNumber = 0;
   let tokens = [];
   class Token {
-    constructor(tokenType,string){
+    constructor(tokenType,value){
       this.tokenType = tokenType;
-      this.string = string;
+      this.value = value;
       this.location = location();
     }
   }
@@ -17,15 +17,15 @@
 
 
 
-SOURCE_STRINGS = sourceStrings:(OPERATOR / NAME / SYMBOLS / PREPROCESSOR_DIRECTIVE / EOS / CONCATENATE_CHAR / __ )*  {
+SOURCE_STRINGS = sourceStrings:(PREPROCESSOR_DIRECTIVE / OPERATOR / NAME / SYMBOLS / EOS / CONCATENATE_CHAR / __ )*  {
   sourceStrings.filter(n=>n).forEach(t=>{
-    (t instanceof Array) ? tokens.push(...t) : tokens.push(t);
+    (t instanceof Array) ? tokens.push(...(t.filter(n=>n))) : tokens.push(t);
   });
   return tokens;
 }
 
-NAME = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return new Token('Token',head + (tail ? tail.filter(n=>n).join(''):''));}
-OPERATOR = head:[=<>\!\+\-\*\&|/%^] tail:([=<>\+\-\&|] / CONCATENATE_CHAR)* {return new Token('Operator',head + (tail ? tail.filter(n=>n).join(''):''));}
+NAME = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return new Token('Name',head + (tail ? tail.filter(n=>n).join(''):''));}
+OPERATOR = head:[=<>\!\+\-\*\&|/%\^] tail:([=<>\+\-\&|] / CONCATENATE_CHAR)* {return new Token('Operator',head + (tail ? tail.filter(n=>n).join(''):''));}
 SOURCE_CHARACTER = .
 
 /* The symbols period (.), plus (+), dash (-), slash (/), asterisk (*), percent (%), angled brackets (<
@@ -35,7 +35,11 @@ and >), square brackets ( [ and ] ), parentheses ( ( and ) ), braces ( { and } )
 
 SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']' / '(' / ')' / '{' / '}' / '^' / '|' / '&' / '~' / '=' / '!' / ':' / ',' / '?') {return new Token('Symbol',text()); }
 
-PREPROCESSOR_DIRECTIVE = '#' CONCATENATE_CHAR? NAME / SYMBOLS /  {return new Token('PreprocessorDirective',text());}
+PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
+  const tokens = [head];
+  tail && tail.length && tokens.push(...tail.filter(n=>n)); 
+  return new Token('PreprocessorDirective',tokens);
+}
 
 
 CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE { return null;}
@@ -49,7 +53,7 @@ WHITESPACE "whitespace"
   / "\uFEFF"
   / ZS)
   {
-    return null;//new Token('WhiteSpace',' ');
+    return null; //new Token('WhiteSpace',' ');
   }
 
 // Separator, Space
@@ -71,20 +75,32 @@ COMMENT "comment"
 
 MULTILINE_COMMENT
   = "/*" text:$(!"*/" SOURCE_CHARACTER)* "*/" {
-    return null ;//new Token('WhiteSpace',' ');
+    return null;//new Token('WhiteSpace',' ');
   }
 
 MULTILINE_COMMENT_NO_LINE_TERMINATOR
   = "/*" text:(!("*/" / LINE_TERMINATOR) SOURCE_CHARACTER)* "*/" {
-    return null ; //new Token('WhiteSpace',' ');
+    return null;//new Token('WhiteSpace',' ');
   }
 
 SINGLE_LINE_COMMENT
   = "//" text:(!LINE_TERMINATOR SOURCE_CHARACTER)* {
-    return null; //new Token('WhiteSpace',' ');    
+    return null;//new Token('WhiteSpace',' ');    
   }
 
 // Skipped
+___
+  =  skipped:(CONCATENATE_CHAR / WHITESPACE / COMMENT)+ {
+    skipped = skipped.filter(n=>n);
+    
+    if(skipped.length == 1){
+      skipped = skipped[0];
+    } else if (!skipped.length){
+      skipped = null;
+    }
+
+    return skipped;
+  }
 __
   =  skipped:(CONCATENATE_CHAR / WHITESPACE / LINE_TERMINATOR_SEQUENCE / COMMENT)+ {
     return skipped;
