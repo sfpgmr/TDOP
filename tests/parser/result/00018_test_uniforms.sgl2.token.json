@@ -1,7 +1,7 @@
 [
   {
-    "tokenType": "Name",
-    "value": "uniform",
+    "id": "uniform",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 0,
@@ -16,8 +16,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "Transform_1",
+    "id": "Transform_1",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 8,
@@ -32,8 +32,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 19,
@@ -48,8 +48,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 20,
@@ -64,8 +64,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 21,
@@ -80,8 +80,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 23,
@@ -96,8 +96,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "modelview",
+    "id": "modelview",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 28,
@@ -112,8 +112,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 37,
@@ -128,8 +128,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 38,
@@ -144,8 +144,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 39,
@@ -160,8 +160,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 40,
@@ -176,8 +176,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 41,
@@ -192,8 +192,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "uniform",
+    "id": "uniform",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 42,
@@ -208,8 +208,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "Transform_2",
+    "id": "Transform_2",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 50,
@@ -224,8 +224,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 61,
@@ -240,8 +240,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 62,
@@ -256,8 +256,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 63,
@@ -272,8 +272,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 65,
@@ -288,8 +288,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "projec",
+    "id": "projec",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 70,
@@ -304,8 +304,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "tion",
+    "id": "tion",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 79,
@@ -320,8 +320,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 83,
@@ -336,8 +336,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 84,
@@ -352,8 +352,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 85,
@@ -368,8 +368,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "transform_2",
+    "id": "transform_2",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 87,
@@ -384,8 +384,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 98,
@@ -400,8 +400,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 99,
@@ -416,8 +416,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 100,
@@ -432,8 +432,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "modelview",
+    "id": "modelview",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 105,
@@ -448,8 +448,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 114,
@@ -464,8 +464,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 169,
@@ -480,8 +480,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 170,
@@ -496,8 +496,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "projection",
+    "id": "projection",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 175,
@@ -512,8 +512,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 185,
@@ -528,8 +528,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 240,

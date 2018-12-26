@@ -1,173 +1,188 @@
 [
   {
-    "tokenType": "PreprocessorDirective",
-    "value": [
-      {
-        "tokenType": "Name",
-        "value": "define",
-        "location": {
-          "start": {
-            "offset": 12,
-            "line": 2,
-            "column": 4
-          },
-          "end": {
-            "offset": 18,
-            "line": 2,
-            "column": 10
-          }
-        }
-      },
-      {
-        "tokenType": "Name",
-        "value": "TT",
-        "location": {
-          "start": {
-            "offset": 19,
-            "line": 2,
-            "column": 11
-          },
-          "end": {
-            "offset": 21,
-            "line": 2,
-            "column": 13
-          }
-        }
-      },
-      {
-        "tokenType": "Symbol",
-        "value": "(",
-        "location": {
-          "start": {
-            "offset": 21,
-            "line": 2,
-            "column": 13
-          },
-          "end": {
-            "offset": 22,
-            "line": 2,
-            "column": 14
-          }
-        }
-      },
-      {
-        "tokenType": "Name",
-        "value": "a",
-        "location": {
-          "start": {
-            "offset": 22,
-            "line": 2,
-            "column": 14
-          },
-          "end": {
-            "offset": 23,
-            "line": 2,
-            "column": 15
-          }
-        }
-      },
-      {
-        "tokenType": "Symbol",
-        "value": ")",
-        "location": {
-          "start": {
-            "offset": 23,
-            "line": 2,
-            "column": 15
-          },
-          "end": {
-            "offset": 24,
-            "line": 2,
-            "column": 16
-          }
-        }
-      },
-      {
-        "tokenType": "Name",
-        "value": "func",
-        "location": {
-          "start": {
-            "offset": 30,
-            "line": 3,
-            "column": 4
-          },
-          "end": {
-            "offset": 34,
-            "line": 3,
-            "column": 8
-          }
-        }
-      },
-      {
-        "tokenType": "Symbol",
-        "value": "(",
-        "location": {
-          "start": {
-            "offset": 34,
-            "line": 3,
-            "column": 8
-          },
-          "end": {
-            "offset": 35,
-            "line": 3,
-            "column": 9
-          }
-        }
-      },
-      {
-        "tokenType": "Name",
-        "value": "a",
-        "location": {
-          "start": {
-            "offset": 35,
-            "line": 3,
-            "column": 9
-          },
-          "end": {
-            "offset": 36,
-            "line": 3,
-            "column": 10
-          }
-        }
-      },
-      {
-        "tokenType": "Symbol",
-        "value": ")",
-        "location": {
-          "start": {
-            "offset": 36,
-            "line": 3,
-            "column": 10
-          },
-          "end": {
-            "offset": 37,
-            "line": 3,
-            "column": 11
-          }
-        }
-      },
-      {
-        "tokenType": "EOS",
-        "value": ";",
-        "location": {
-          "start": {
-            "offset": 37,
-            "line": 3,
-            "column": 11
-          },
-          "end": {
-            "offset": 38,
-            "line": 3,
-            "column": 12
-          }
-        }
-      }
-    ],
+    "id": "#",
+    "type": "PreprocessorDirective",
     "location": {
       "start": {
         "offset": 3,
         "line": 1,
         "column": 4
+      },
+      "end": {
+        "offset": 4,
+        "line": 1,
+        "column": 5
+      }
+    }
+  },
+  {
+    "id": "define",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 12,
+        "line": 2,
+        "column": 4
+      },
+      "end": {
+        "offset": 18,
+        "line": 2,
+        "column": 10
+      }
+    }
+  },
+  {
+    "id": "TT",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 19,
+        "line": 2,
+        "column": 11
+      },
+      "end": {
+        "offset": 21,
+        "line": 2,
+        "column": 13
+      }
+    }
+  },
+  {
+    "id": "(",
+    "type": "Symbol",
+    "location": {
+      "start": {
+        "offset": 21,
+        "line": 2,
+        "column": 13
+      },
+      "end": {
+        "offset": 22,
+        "line": 2,
+        "column": 14
+      }
+    }
+  },
+  {
+    "id": "a",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 22,
+        "line": 2,
+        "column": 14
+      },
+      "end": {
+        "offset": 23,
+        "line": 2,
+        "column": 15
+      }
+    }
+  },
+  {
+    "id": ")",
+    "type": "Symbol",
+    "location": {
+      "start": {
+        "offset": 23,
+        "line": 2,
+        "column": 15
+      },
+      "end": {
+        "offset": 24,
+        "line": 2,
+        "column": 16
+      }
+    }
+  },
+  {
+    "id": "func",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 30,
+        "line": 3,
+        "column": 4
+      },
+      "end": {
+        "offset": 34,
+        "line": 3,
+        "column": 8
+      }
+    }
+  },
+  {
+    "id": "(",
+    "type": "Symbol",
+    "location": {
+      "start": {
+        "offset": 34,
+        "line": 3,
+        "column": 8
+      },
+      "end": {
+        "offset": 35,
+        "line": 3,
+        "column": 9
+      }
+    }
+  },
+  {
+    "id": "a",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 35,
+        "line": 3,
+        "column": 9
+      },
+      "end": {
+        "offset": 36,
+        "line": 3,
+        "column": 10
+      }
+    }
+  },
+  {
+    "id": ")",
+    "type": "Symbol",
+    "location": {
+      "start": {
+        "offset": 36,
+        "line": 3,
+        "column": 10
+      },
+      "end": {
+        "offset": 37,
+        "line": 3,
+        "column": 11
+      }
+    }
+  },
+  {
+    "id": ";",
+    "type": "EOS",
+    "location": {
+      "start": {
+        "offset": 37,
+        "line": 3,
+        "column": 11
+      },
+      "end": {
+        "offset": 38,
+        "line": 3,
+        "column": 12
+      }
+    }
+  },
+  {
+    "id": "\n",
+    "type": "NewLine",
+    "location": {
+      "start": {
+        "offset": 38,
+        "line": 3,
+        "column": 12
       },
       "end": {
         "offset": 39,
@@ -177,8 +192,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 39,
@@ -193,8 +208,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "uniform",
+    "id": "uniform",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 40,
@@ -209,8 +224,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "Transform_1",
+    "id": "Transform_1",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 50,
@@ -225,8 +240,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 63,
@@ -241,8 +256,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 64,
@@ -257,8 +272,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 65,
@@ -273,8 +288,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 67,
@@ -289,8 +304,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "modelview",
+    "id": "modelview",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 72,
@@ -305,8 +320,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 81,
@@ -321,8 +336,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 82,
@@ -337,8 +352,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 89,
@@ -353,8 +368,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 93,
@@ -369,8 +384,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 95,
@@ -385,8 +400,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 96,
@@ -401,8 +416,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 98,
@@ -417,8 +432,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 99,
@@ -433,8 +448,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 100,
@@ -449,8 +464,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 101,
@@ -465,8 +480,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 102,
@@ -481,62 +496,93 @@
     }
   },
   {
-    "tokenType": "PreprocessorDirective",
-    "value": [
-      {
-        "tokenType": "Name",
-        "value": "define",
-        "location": {
-          "start": {
-            "offset": 104,
-            "line": 15,
-            "column": 2
-          },
-          "end": {
-            "offset": 110,
-            "line": 15,
-            "column": 8
-          }
-        }
-      },
-      {
-        "tokenType": "Name",
-        "value": "A",
-        "location": {
-          "start": {
-            "offset": 111,
-            "line": 15,
-            "column": 9
-          },
-          "end": {
-            "offset": 112,
-            "line": 15,
-            "column": 10
-          }
-        }
-      },
-      {
-        "tokenType": "IntConstant",
-        "value": 1,
-        "location": {
-          "start": {
-            "offset": 113,
-            "line": 15,
-            "column": 11
-          },
-          "end": {
-            "offset": 118,
-            "line": 15,
-            "column": 16
-          }
-        }
-      }
-    ],
+    "id": "#",
+    "type": "PreprocessorDirective",
     "location": {
       "start": {
         "offset": 103,
         "line": 15,
         "column": 1
+      },
+      "end": {
+        "offset": 104,
+        "line": 15,
+        "column": 2
+      }
+    }
+  },
+  {
+    "id": "define",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 104,
+        "line": 15,
+        "column": 2
+      },
+      "end": {
+        "offset": 110,
+        "line": 15,
+        "column": 8
+      }
+    }
+  },
+  {
+    "id": "A",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 111,
+        "line": 15,
+        "column": 9
+      },
+      "end": {
+        "offset": 112,
+        "line": 15,
+        "column": 10
+      }
+    }
+  },
+  {
+    "id": 0,
+    "type": "FloatConstant",
+    "location": {
+      "start": {
+        "offset": 113,
+        "line": 15,
+        "column": 11
+      },
+      "end": {
+        "offset": 114,
+        "line": 15,
+        "column": 12
+      }
+    }
+  },
+  {
+    "id": "x100",
+    "type": "Name",
+    "location": {
+      "start": {
+        "offset": 114,
+        "line": 15,
+        "column": 12
+      },
+      "end": {
+        "offset": 118,
+        "line": 15,
+        "column": 16
+      }
+    }
+  },
+  {
+    "id": "\n",
+    "type": "NewLine",
+    "location": {
+      "start": {
+        "offset": 118,
+        "line": 15,
+        "column": 16
       },
       "end": {
         "offset": 119,
@@ -546,8 +592,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "uniform",
+    "id": "uniform",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 119,
@@ -562,8 +608,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "Transform_2",
+    "id": "Transform_2",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 127,
@@ -578,8 +624,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 138,
@@ -594,8 +640,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 139,
@@ -610,8 +656,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 140,
@@ -626,8 +672,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "mat4",
+    "id": "mat4",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 142,
@@ -642,8 +688,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "projection",
+    "id": "projection",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 147,
@@ -658,8 +704,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 159,
@@ -674,8 +720,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 160,
@@ -690,8 +736,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 161,
@@ -706,8 +752,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "transform_2",
+    "id": "transform_2",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 163,
@@ -722,8 +768,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 174,
@@ -738,8 +784,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 175,
@@ -754,8 +800,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 176,
@@ -770,8 +816,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 177,
@@ -786,8 +832,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "func",
+    "id": "func",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 181,
@@ -802,8 +848,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 186,
@@ -818,8 +864,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "in",
+    "id": "in",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 187,
@@ -834,8 +880,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 190,
@@ -850,8 +896,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 194,
@@ -866,8 +912,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ",",
+    "id": ",",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 195,
@@ -882,8 +928,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 196,
@@ -898,8 +944,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 200,
@@ -914,8 +960,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 201,
@@ -930,8 +976,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 202,
@@ -946,8 +992,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 203,
@@ -962,8 +1008,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "if",
+    "id": "if",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 204,
@@ -978,8 +1024,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 206,
@@ -994,8 +1040,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 208,
@@ -1010,8 +1056,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "<=",
+    "id": "<=",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 210,
@@ -1026,8 +1072,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 215,
@@ -1042,8 +1088,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 216,
@@ -1058,8 +1104,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 217,
@@ -1074,8 +1120,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 218,
@@ -1090,8 +1136,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 221,
@@ -1106,8 +1152,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "=",
+    "id": "=",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 223,
@@ -1122,8 +1168,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 225,
@@ -1138,8 +1184,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 226,
@@ -1154,8 +1200,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 227,
@@ -1170,8 +1216,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 228,
@@ -1186,8 +1232,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "else",
+    "id": "else",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 230,
@@ -1202,8 +1248,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 235,
@@ -1218,8 +1264,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 236,
@@ -1234,8 +1280,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 238,
@@ -1250,8 +1296,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "*=",
+    "id": "*=",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 240,
@@ -1266,8 +1312,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 243,
@@ -1282,8 +1328,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "<<",
+    "id": "<<",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 245,
@@ -1298,8 +1344,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 248,
@@ -1314,8 +1360,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 249,
@@ -1330,8 +1376,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 250,
@@ -1346,8 +1392,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 251,
@@ -1362,8 +1408,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 252,
@@ -1378,8 +1424,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "return",
+    "id": "return",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 253,
@@ -1394,8 +1440,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 260,
@@ -1410,8 +1456,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "*",
+    "id": "*",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 262,
@@ -1426,8 +1472,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 264,
@@ -1442,8 +1488,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 265,
@@ -1458,8 +1504,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 266,
@@ -1474,8 +1520,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 267,
@@ -1490,8 +1536,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 268,

@@ -7,9 +7,9 @@
   let lineNumber = 0;
   let tokens = [];
   class Token {
-    constructor(tokenType,value){
-      this.tokenType = tokenType;
-      this.value = value;
+    constructor(type,id){
+      this.id = id;
+      this.type = type;
       this.location = location();
     }
   }
@@ -94,10 +94,16 @@ SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']
 // プリプロセッサ Preprocessor Directive
 //////////////////////////////////////
 
+/*
 PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / INTEGER_CONSTANT / FLOATING_CONSTANT /  NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
   const tokens = [head];
   tail && tail.length && tokens.push(...tail.filter(n=>n)); 
   return new Token('PreprocessorDirective',tokens);
+}
+*/
+
+PREPROCESSOR_DIRECTIVE = '#' {
+  return new Token('PreprocessorDirective',text());
 }
 
 // 行連結シーケンス

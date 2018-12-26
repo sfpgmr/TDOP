@@ -1,7 +1,7 @@
 [
   {
-    "tokenType": "Name",
-    "value": "struct",
+    "id": "struct",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 0,
@@ -16,8 +16,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "S",
+    "id": "S",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 7,
@@ -32,8 +32,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 9,
@@ -48,8 +48,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 10,
@@ -64,8 +64,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "vec3",
+    "id": "vec3",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 11,
@@ -80,8 +80,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "sa",
+    "id": "sa",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 16,
@@ -96,8 +96,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 18,
@@ -112,8 +112,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 19,
@@ -128,8 +128,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 20,
@@ -144,8 +144,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "sb",
+    "id": "sb",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 24,
@@ -160,8 +160,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 26,
@@ -176,8 +176,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 27,
@@ -192,8 +192,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 28,
@@ -208,8 +208,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 29,
@@ -224,8 +224,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 30,
@@ -240,8 +240,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 31,
@@ -256,8 +256,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "struct",
+    "id": "struct",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 32,
@@ -272,8 +272,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "S1",
+    "id": "S1",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 39,
@@ -288,8 +288,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 42,
@@ -304,8 +304,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 43,
@@ -320,8 +320,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "S",
+    "id": "S",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 46,
@@ -336,8 +336,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "s1a",
+    "id": "s1a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 48,
@@ -352,8 +352,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 51,
@@ -368,8 +368,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 52,
@@ -384,8 +384,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 55,
@@ -400,8 +400,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "s1b",
+    "id": "s1b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 59,
@@ -416,8 +416,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 62,
@@ -432,8 +432,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 63,
@@ -448,8 +448,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "float",
+    "id": "float",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 66,
@@ -464,8 +464,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "s1c",
+    "id": "s1c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 72,
@@ -480,8 +480,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 75,
@@ -496,8 +496,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 76,
@@ -512,8 +512,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 77,
@@ -528,8 +528,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 78,
@@ -544,8 +544,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 79,
@@ -560,8 +560,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 80,
@@ -576,8 +576,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 81,
@@ -592,8 +592,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 82,
@@ -608,8 +608,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "func",
+    "id": "func",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 86,
@@ -624,8 +624,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 90,
@@ -640,8 +640,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "in",
+    "id": "in",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 91,
@@ -656,8 +656,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 94,
@@ -672,8 +672,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 98,
@@ -688,8 +688,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 99,
@@ -704,8 +704,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 100,
@@ -720,8 +720,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 101,
@@ -736,8 +736,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "S",
+    "id": "S",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 104,
@@ -752,8 +752,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "s",
+    "id": "s",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 106,
@@ -768,8 +768,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 107,
@@ -784,8 +784,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 108,
@@ -800,8 +800,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "S1",
+    "id": "S1",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 111,
@@ -816,8 +816,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "s1",
+    "id": "s1",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 114,
@@ -832,8 +832,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 116,
@@ -848,8 +848,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 117,
@@ -864,8 +864,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 120,
@@ -880,8 +880,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "c",
+    "id": "c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 124,
@@ -896,8 +896,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "=",
+    "id": "=",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 126,
@@ -912,8 +912,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 128,
@@ -928,8 +928,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 129,
@@ -944,8 +944,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 130,
@@ -960,8 +960,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "do",
+    "id": "do",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 133,
@@ -976,8 +976,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 136,
@@ -992,8 +992,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 137,
@@ -1008,8 +1008,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "c",
+    "id": "c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 142,
@@ -1024,8 +1024,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "++",
+    "id": "++",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 143,
@@ -1040,8 +1040,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 145,
@@ -1056,8 +1056,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 146,
@@ -1072,8 +1072,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "if",
+    "id": "if",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 151,
@@ -1088,8 +1088,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 153,
@@ -1104,8 +1104,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "a",
+    "id": "a",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 154,
@@ -1120,8 +1120,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": ">",
+    "id": ">",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 156,
@@ -1136,8 +1136,8 @@
     }
   },
   {
-    "tokenType": "FloatConstant",
-    "value": 10,
+    "id": 10,
+    "type": "FloatConstant",
     "location": {
       "start": {
         "offset": 158,
@@ -1152,8 +1152,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 160,
@@ -1168,8 +1168,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 161,
@@ -1184,8 +1184,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 162,
@@ -1200,8 +1200,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "break",
+    "id": "break",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 169,
@@ -1216,8 +1216,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 174,
@@ -1232,8 +1232,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 175,
@@ -1248,8 +1248,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 180,
@@ -1264,8 +1264,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 181,
@@ -1280,8 +1280,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 184,
@@ -1296,8 +1296,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "while",
+    "id": "while",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 186,
@@ -1312,8 +1312,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 191,
@@ -1328,8 +1328,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "c",
+    "id": "c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 192,
@@ -1344,8 +1344,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "<",
+    "id": "<",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 194,
@@ -1360,8 +1360,8 @@
     }
   },
   {
-    "tokenType": "FloatConstant",
-    "value": 10,
+    "id": 10,
+    "type": "FloatConstant",
     "location": {
       "start": {
         "offset": 196,
@@ -1376,8 +1376,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 198,
@@ -1392,8 +1392,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 199,
@@ -1408,8 +1408,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 200,
@@ -1424,8 +1424,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 203,
@@ -1440,8 +1440,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 204,
@@ -1456,8 +1456,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 205,
@@ -1472,8 +1472,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 206,
@@ -1488,8 +1488,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "return",
+    "id": "return",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 209,
@@ -1504,8 +1504,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "c",
+    "id": "c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 216,
@@ -1520,8 +1520,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 217,
@@ -1536,8 +1536,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 218,
@@ -1552,8 +1552,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 219,
@@ -1568,8 +1568,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 220,
@@ -1584,8 +1584,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 221,
@@ -1600,8 +1600,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 222,
@@ -1616,8 +1616,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "c",
+    "id": "c",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 226,
@@ -1632,8 +1632,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ",",
+    "id": ",",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 227,
@@ -1648,8 +1648,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "d",
+    "id": "d",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 228,
@@ -1664,8 +1664,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 229,
@@ -1680,8 +1680,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 230,
@@ -1696,8 +1696,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 231,
@@ -1712,8 +1712,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 232,
@@ -1728,8 +1728,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 233,
@@ -1744,8 +1744,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "funcb",
+    "id": "funcb",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 237,
@@ -1760,8 +1760,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "(",
+    "id": "(",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 242,
@@ -1776,8 +1776,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "in",
+    "id": "in",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 243,
@@ -1792,8 +1792,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "int",
+    "id": "int",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 246,
@@ -1808,8 +1808,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 250,
@@ -1824,8 +1824,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": ")",
+    "id": ")",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 251,
@@ -1840,8 +1840,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "{",
+    "id": "{",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 252,
@@ -1856,8 +1856,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 253,
@@ -1872,8 +1872,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "return",
+    "id": "return",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 256,
@@ -1888,8 +1888,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 263,
@@ -1904,8 +1904,8 @@
     }
   },
   {
-    "tokenType": "Operator",
-    "value": "*",
+    "id": "*",
+    "type": "Operator",
     "location": {
       "start": {
         "offset": 265,
@@ -1920,8 +1920,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "b",
+    "id": "b",
+    "type": "Name",
     "location": {
       "start": {
         "offset": 267,
@@ -1936,8 +1936,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 268,
@@ -1952,8 +1952,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 269,
@@ -1968,8 +1968,8 @@
     }
   },
   {
-    "tokenType": "Symbol",
-    "value": "}",
+    "id": "}",
+    "type": "Symbol",
     "location": {
       "start": {
         "offset": 270,
@@ -1984,8 +1984,8 @@
     }
   },
   {
-    "tokenType": "EOS",
-    "value": ";",
+    "id": ";",
+    "type": "EOS",
     "location": {
       "start": {
         "offset": 271,
@@ -2000,8 +2000,8 @@
     }
   },
   {
-    "tokenType": "NewLine",
-    "value": "\n",
+    "id": "\n",
+    "type": "NewLine",
     "location": {
       "start": {
         "offset": 272,

@@ -235,10 +235,8 @@ function peg$parse(input, options) {
       peg$c78 = function(symbol) {return new Token('Symbol',text()); },
       peg$c79 = "#",
       peg$c80 = peg$literalExpectation("#", false),
-      peg$c81 = function(head, tail) {
-        const tokens = [head];
-        tail && tail.length && tokens.push(...tail.filter(n=>n)); 
-        return new Token('PreprocessorDirective',tokens);
+      peg$c81 = function() {
+        return new Token('PreprocessorDirective',text());
       },
       peg$c82 = /^[\\]/,
       peg$c83 = peg$classExpectation(["\\"], false, false),
@@ -1360,7 +1358,7 @@ function peg$parse(input, options) {
   }
 
   function peg$parsePREPROCESSOR_DIRECTIVE() {
-    var s0, s1, s2, s3, s4, s5;
+    var s0, s1;
 
     s0 = peg$currPos;
     if (input.charCodeAt(peg$currPos) === 35) {
@@ -1371,87 +1369,10 @@ function peg$parse(input, options) {
       if (peg$silentFails === 0) { peg$fail(peg$c80); }
     }
     if (s1 !== peg$FAILED) {
-      s2 = peg$parse___();
-      if (s2 === peg$FAILED) {
-        s2 = null;
-      }
-      if (s2 !== peg$FAILED) {
-        s3 = peg$parseNAME();
-        if (s3 !== peg$FAILED) {
-          s4 = [];
-          s5 = peg$parse___();
-          if (s5 === peg$FAILED) {
-            s5 = peg$parseOPERATOR();
-            if (s5 === peg$FAILED) {
-              s5 = peg$parseINTEGER_CONSTANT();
-              if (s5 === peg$FAILED) {
-                s5 = peg$parseFLOATING_CONSTANT();
-                if (s5 === peg$FAILED) {
-                  s5 = peg$parseNAME();
-                  if (s5 === peg$FAILED) {
-                    s5 = peg$parseSYMBOLS();
-                    if (s5 === peg$FAILED) {
-                      s5 = peg$parseCONCATENATE_CHAR();
-                      if (s5 === peg$FAILED) {
-                        s5 = peg$parseEOS();
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          while (s5 !== peg$FAILED) {
-            s4.push(s5);
-            s5 = peg$parse___();
-            if (s5 === peg$FAILED) {
-              s5 = peg$parseOPERATOR();
-              if (s5 === peg$FAILED) {
-                s5 = peg$parseINTEGER_CONSTANT();
-                if (s5 === peg$FAILED) {
-                  s5 = peg$parseFLOATING_CONSTANT();
-                  if (s5 === peg$FAILED) {
-                    s5 = peg$parseNAME();
-                    if (s5 === peg$FAILED) {
-                      s5 = peg$parseSYMBOLS();
-                      if (s5 === peg$FAILED) {
-                        s5 = peg$parseCONCATENATE_CHAR();
-                        if (s5 === peg$FAILED) {
-                          s5 = peg$parseEOS();
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          if (s4 !== peg$FAILED) {
-            s5 = peg$parseLINE_TERMINATOR_SEQUENCE();
-            if (s5 !== peg$FAILED) {
-              peg$savedPos = s0;
-              s1 = peg$c81(s3, s4);
-              s0 = s1;
-            } else {
-              peg$currPos = s0;
-              s0 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s0;
-            s0 = peg$FAILED;
-          }
-        } else {
-          peg$currPos = s0;
-          s0 = peg$FAILED;
-        }
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
+      peg$savedPos = s0;
+      s1 = peg$c81();
     }
+    s0 = s1;
 
     return s0;
   }
@@ -2136,9 +2057,9 @@ function peg$parse(input, options) {
     let lineNumber = 0;
     let tokens = [];
     class Token {
-      constructor(tokenType,value){
-        this.tokenType = tokenType;
-        this.value = value;
+      constructor(type,id){
+        this.id = id;
+        this.type = type;
         this.location = location();
       }
     }

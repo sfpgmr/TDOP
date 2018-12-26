@@ -6,53 +6,6 @@ function error(message, t = this) {
   throw t;
 }
 
-class FunctionScope {
-  constructor() {
-    this.funcVars = [];
-    this.length = 0;
-  }
-  scopeIn() {
-    this.funcVars.push(0);
-    this.length = this.funcVars.length;
-    this.stackTop = this.length - 1;
-    this.current = 0;
-  }
-
-  scopeOut() {
-    if (this.length == 0) throw new Error('配列インデックスの上限を超えています。');
-
-    this.funcVars.pop();
-    this.length = this.funcVars.length;
-    if (this.length >= 1) {
-      this.stackTop = this.length - 1;
-      this.current = this.funcVars[this.stackTop];
-    } else {
-      this.stackTop = undefined;
-      this.current = undefined;
-    }
-  }
-
-  index(inc = true) {
-    if (inc) {
-      const ret = this.current;
-      this.incIndex();
-      return ret;
-    } else {
-      return this.current;
-    }
-  }
-
-  incIndex() {
-    ++this.current;
-    this.funcVars[this.stackTop] = this.current;
-  }
-
-  get global() {
-    return this.current === undefined;
-  }
-}
-
-
 
 // パーサの生成
 export default function make_parse() {
@@ -61,12 +14,7 @@ export default function make_parse() {
   let token;
   let tokens;
   let token_nr;
-  let scope;
-  let scopeTop;
-  let funcScope = new FunctionScope();
-  let currentType = null;
-  let DefaultType;
-
+  let scope = createScope();
 
   function createScope() {
     const s = new Scope(scope);
@@ -164,8 +112,6 @@ export default function make_parse() {
     let o;
     let t;
     let v;
-    let sign = true;
-    let type;
     if (id && token.id !== id) {
       error('Expected "' + id + '".', token);
     }
@@ -175,36 +121,23 @@ export default function make_parse() {
     }
     t = tokens[token_nr];
     token_nr += 1;
-    v = t.value;
     a = t.type;
-    let ref = false;
-    if (a === 'name') {
-      // 型名かどうか
-      o = scope.find(v, true);
-      // 変数名かどうか
-      if (!o) {
+    switch(a){
+      case 'Name':
         o = scope.find(v, false);
-        o && (ref = true);
-      }
-      if (!o) o = symbol_table.get('(name)');
-    } else if (a === 'operator') {
-      o = symbol_table.get(v);
-      if (!o) {
-        error('Unknown operator.', t);
-      }
-    } else if (a == 'i8' || a == 'u8' || a == 'u16' || a == 'i16' || a == 'string' ||  a == 'f64' || a == 'f32' || a == 'i32' || a == 'i64' || a == 'u32' || a == 'u64') {
-      o = symbol_table.get('(literal)');
-      type = scope.find(a,true);
-      //type = a;
-      a = 'literal';
-      if (a.substr(0, 1) == 'i') {
-        sign = true;
-      } else {
-        sign = false;
-      }
-
-    } else {
-      error('Unexpected token.', t);
+        if (!o) o = symbol_table.get('(name)');
+        break;
+      case 'Operator':
+        o = symbol_table.get(v);
+        if (!o) {
+          error('Unknown operator.', t);
+        }
+        break;
+      case 'NewLine':
+        
+        break;
+      default:
+        error('Unexpected token.', t);
     }
 
     token = Object.assign(Object.create(o),o);
