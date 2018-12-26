@@ -192,8 +192,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "2",
+    "tokenType": "FloatConstant",
+    "value": 2,
     "location": {
       "start": {
         "offset": 30,

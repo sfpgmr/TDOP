@@ -12,7 +12,7 @@ orm_1
  {
  }
 };
-
+#define A 0x100
 uniform Transform_2
 {
  mat4 projec\

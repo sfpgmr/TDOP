@@ -1136,8 +1136,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "10",
+    "tokenType": "FloatConstant",
+    "value": 10,
     "location": {
       "start": {
         "offset": 158,
@@ -1360,8 +1360,8 @@
     }
   },
   {
-    "tokenType": "Name",
-    "value": "10",
+    "tokenType": "FloatConstant",
+    "value": 10,
     "location": {
       "start": {
         "offset": 196,
