@@ -11,7 +11,7 @@ try {
   const parser = peg.generate(pegSrc, {
     format: 'commonjs',
     output: 'source',
-    trace:true
+    trace:false
   });
   const testDir = './tests/parser/src/'; 
   await fs.promises.writeFile('./tokenizer.js', parser, 'utf8');

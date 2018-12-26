@@ -516,8 +516,8 @@
         }
       },
       {
-        "tokenType": "Name",
-        "value": "0x100",
+        "tokenType": "IntConstant",
+        "value": 1,
         "location": {
           "start": {
             "offset": 113,

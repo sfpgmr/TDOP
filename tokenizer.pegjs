@@ -53,7 +53,7 @@ INTEGER_CONSTANT =
 	value:(DECIMAL_CONSTANT /
 	OCTAL_CONSTANT  /
 	HEXADECIMAL_CONSTANT) uint:INTEGER_SUFFIX? {
-    return new Token(uint?'Uint':'Int',value);
+    return new Token(uint?'UintConstant':'IntConstant',value);
   }
 
 INTEGER_SUFFIX = [uU]
@@ -94,7 +94,7 @@ SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']
 // プリプロセツサ Preprocessor Directive
 //////////////////////////////////////
 
-PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
+PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / INTEGER_CONSTANT / FLOATING_CONSTANT /  NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
   const tokens = [head];
   tail && tail.length && tokens.push(...tail.filter(n=>n)); 
   return new Token('PreprocessorDirective',tokens);
