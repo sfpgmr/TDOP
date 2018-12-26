@@ -91,7 +91,7 @@ and >), square brackets ( [ and ] ), parentheses ( ( and ) ), braces ( { and } )
 SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']' / '(' / ')' / '{' / '}' / '^' / '|' / '&' / '~' / '=' / '!' / ':' / ',' / '?') {return new Token('Symbol',text()); }
 
 //////////////////////////////////////
-// プリプロセツサ Preprocessor Directive
+// プリプロセッサ Preprocessor Directive
 //////////////////////////////////////
 
 PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / INTEGER_CONSTANT / FLOATING_CONSTANT /  NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
@@ -172,9 +172,6 @@ _
 // End of Statement
 EOS
   = ';' {return new Token('EOS',text());}
-   // _ SINGLE_LINE_COMMENT? LINE_TERMINATOR_SEQUENCE
- // _ &"}" 
- // __ EOF
 
 EOF  = !.
 
