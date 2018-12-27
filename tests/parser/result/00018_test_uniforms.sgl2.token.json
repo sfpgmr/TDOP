@@ -1,6 +1,6 @@
 [
   {
-    "id": "uniform",
+    "value": "uniform",
     "type": "Name",
     "location": {
       "start": {
@@ -16,7 +16,7 @@
     }
   },
   {
-    "id": "Transform_1",
+    "value": "Transform_1",
     "type": "Name",
     "location": {
       "start": {
@@ -32,7 +32,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -48,7 +48,7 @@
     }
   },
   {
-    "id": "{",
+    "value": "{",
     "type": "Symbol",
     "location": {
       "start": {
@@ -64,7 +64,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -80,7 +80,7 @@
     }
   },
   {
-    "id": "mat4",
+    "value": "mat4",
     "type": "Name",
     "location": {
       "start": {
@@ -96,7 +96,7 @@
     }
   },
   {
-    "id": "modelview",
+    "value": "modelview",
     "type": "Name",
     "location": {
       "start": {
@@ -112,7 +112,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -128,7 +128,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -144,7 +144,7 @@
     }
   },
   {
-    "id": "}",
+    "value": "}",
     "type": "Symbol",
     "location": {
       "start": {
@@ -160,7 +160,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -176,7 +176,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -192,7 +192,7 @@
     }
   },
   {
-    "id": "uniform",
+    "value": "uniform",
     "type": "Name",
     "location": {
       "start": {
@@ -208,7 +208,7 @@
     }
   },
   {
-    "id": "Transform_2",
+    "value": "Transform_2",
     "type": "Name",
     "location": {
       "start": {
@@ -224,7 +224,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -240,7 +240,7 @@
     }
   },
   {
-    "id": "{",
+    "value": "{",
     "type": "Symbol",
     "location": {
       "start": {
@@ -256,7 +256,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -272,7 +272,7 @@
     }
   },
   {
-    "id": "mat4",
+    "value": "mat4",
     "type": "Name",
     "location": {
       "start": {
@@ -288,7 +288,7 @@
     }
   },
   {
-    "id": "projec",
+    "value": "projec",
     "type": "Name",
     "location": {
       "start": {
@@ -304,7 +304,7 @@
     }
   },
   {
-    "id": "tion",
+    "value": "tion",
     "type": "Name",
     "location": {
       "start": {
@@ -320,7 +320,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -336,7 +336,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -352,7 +352,7 @@
     }
   },
   {
-    "id": "}",
+    "value": "}",
     "type": "Symbol",
     "location": {
       "start": {
@@ -368,7 +368,7 @@
     }
   },
   {
-    "id": "transform_2",
+    "value": "transform_2",
     "type": "Name",
     "location": {
       "start": {
@@ -384,7 +384,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -400,7 +400,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -416,7 +416,7 @@
     }
   },
   {
-    "id": "mat4",
+    "value": "mat4",
     "type": "Name",
     "location": {
       "start": {
@@ -432,7 +432,7 @@
     }
   },
   {
-    "id": "modelview",
+    "value": "modelview",
     "type": "Name",
     "location": {
       "start": {
@@ -448,7 +448,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -464,7 +464,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -480,7 +480,7 @@
     }
   },
   {
-    "id": "mat4",
+    "value": "mat4",
     "type": "Name",
     "location": {
       "start": {
@@ -496,7 +496,7 @@
     }
   },
   {
-    "id": "projection",
+    "value": "projection",
     "type": "Name",
     "location": {
       "start": {
@@ -512,7 +512,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -528,7 +528,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {

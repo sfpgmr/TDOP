@@ -7,8 +7,8 @@
   let lineNumber = 0;
   let tokens = [];
   class Token {
-    constructor(type,id){
-      this.id = id;
+    constructor(type,value){
+      this.value = value;
       this.type = type;
       this.location = location();
     }

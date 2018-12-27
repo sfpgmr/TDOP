@@ -1,6 +1,6 @@
 [
   {
-    "id": "int",
+    "value": "int",
     "type": "Name",
     "location": {
       "start": {
@@ -16,7 +16,7 @@
     }
   },
   {
-    "id": "func",
+    "value": "func",
     "type": "Name",
     "location": {
       "start": {
@@ -32,7 +32,7 @@
     }
   },
   {
-    "id": "(",
+    "value": "(",
     "type": "Symbol",
     "location": {
       "start": {
@@ -48,7 +48,7 @@
     }
   },
   {
-    "id": "in",
+    "value": "in",
     "type": "Name",
     "location": {
       "start": {
@@ -64,7 +64,7 @@
     }
   },
   {
-    "id": "int",
+    "value": "int",
     "type": "Name",
     "location": {
       "start": {
@@ -80,7 +80,7 @@
     }
   },
   {
-    "id": "a",
+    "value": "a",
     "type": "Name",
     "location": {
       "start": {
@@ -96,7 +96,7 @@
     }
   },
   {
-    "id": ")",
+    "value": ")",
     "type": "Symbol",
     "location": {
       "start": {
@@ -112,7 +112,7 @@
     }
   },
   {
-    "id": "{",
+    "value": "{",
     "type": "Symbol",
     "location": {
       "start": {
@@ -128,7 +128,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -144,7 +144,7 @@
     }
   },
   {
-    "id": "int",
+    "value": "int",
     "type": "Name",
     "location": {
       "start": {
@@ -160,7 +160,7 @@
     }
   },
   {
-    "id": "b",
+    "value": "b",
     "type": "Name",
     "location": {
       "start": {
@@ -176,7 +176,7 @@
     }
   },
   {
-    "id": "=",
+    "value": "=",
     "type": "Operator",
     "location": {
       "start": {
@@ -192,7 +192,7 @@
     }
   },
   {
-    "id": 2,
+    "value": 2,
     "type": "FloatConstant",
     "location": {
       "start": {
@@ -208,7 +208,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -224,7 +224,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -240,7 +240,7 @@
     }
   },
   {
-    "id": "{",
+    "value": "{",
     "type": "Symbol",
     "location": {
       "start": {
@@ -256,7 +256,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -272,7 +272,7 @@
     }
   },
   {
-    "id": "{",
+    "value": "{",
     "type": "Symbol",
     "location": {
       "start": {
@@ -288,7 +288,7 @@
     }
   },
   {
-    "id": "int",
+    "value": "int",
     "type": "Name",
     "location": {
       "start": {
@@ -304,7 +304,7 @@
     }
   },
   {
-    "id": "a",
+    "value": "a",
     "type": "Name",
     "location": {
       "start": {
@@ -320,7 +320,7 @@
     }
   },
   {
-    "id": "=",
+    "value": "=",
     "type": "Operator",
     "location": {
       "start": {
@@ -336,7 +336,7 @@
     }
   },
   {
-    "id": "a",
+    "value": "a",
     "type": "Name",
     "location": {
       "start": {
@@ -352,7 +352,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -368,7 +368,7 @@
     }
   },
   {
-    "id": "}",
+    "value": "}",
     "type": "Symbol",
     "location": {
       "start": {
@@ -384,7 +384,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -400,7 +400,7 @@
     }
   },
   {
-    "id": "}",
+    "value": "}",
     "type": "Symbol",
     "location": {
       "start": {
@@ -416,7 +416,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -432,7 +432,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -448,7 +448,7 @@
     }
   },
   {
-    "id": "return",
+    "value": "return",
     "type": "Name",
     "location": {
       "start": {
@@ -464,7 +464,7 @@
     }
   },
   {
-    "id": "b",
+    "value": "b",
     "type": "Name",
     "location": {
       "start": {
@@ -480,7 +480,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -496,7 +496,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -512,7 +512,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -528,7 +528,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -544,7 +544,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -560,7 +560,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -576,7 +576,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -592,7 +592,7 @@
     }
   },
   {
-    "id": ";",
+    "value": ";",
     "type": "EOS",
     "location": {
       "start": {
@@ -608,7 +608,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
@@ -624,7 +624,7 @@
     }
   },
   {
-    "id": "}",
+    "value": "}",
     "type": "Symbol",
     "location": {
       "start": {
@@ -640,7 +640,7 @@
     }
   },
   {
-    "id": "\n",
+    "value": "\n",
     "type": "NewLine",
     "location": {
       "start": {
