@@ -23,7 +23,7 @@ try {
   });
   console.log(testFiles);
   for(const file of testFiles){
-    const testSrc = await fs.promises.readFile(testDir + file,'utf8');
+    const testSrc = (await fs.promises.readFile(testDir + file,'utf8'));
     console.log(`***** ${file}をパースします。*****`);
     const ast =  JSON.stringify(sgl2.parse(testSrc,{ }),null,2);
     await fs.promises.writeFile('./tests/parser/result/' + file + '.token.json',ast,'utf8');

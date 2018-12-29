@@ -13,15 +13,25 @@
       this.location = location();
     }
   }
+  class PreprocessorDirective extends Token{
+    constructor(directive,value){
+      super('PreprocessorDirective',value);
+      this.directive = directive;
+    }
+  }
 }
 
+SOURCE_FILE = sourceFile:(PREPROCESSOR_DIRECTIVE / SOURCE_STRINGS)* {
+  return sourceFile.filter(n=>(n instanceof Array)?n.length:n);
+}
 
-
-SOURCE_STRINGS = sourceStrings:(PREPROCESSOR_DIRECTIVE / FLOATING_CONSTANT / INTEGER_CONSTANT / OPERATOR / NAME / SYMBOLS / EOS / CONCATENATE_CHAR / __ )*  {
+SOURCE_STRINGS = sourceStrings:(FLOATING_CONSTANT / INTEGER_CONSTANT / OPERATOR / NAME / SYMBOLS / EOS / CONCATENATE_CHAR / __ )+ {
+  let tokens = [];
   sourceStrings.filter(n=>n).forEach(t=>{
     (t instanceof Array) ? tokens.push(...(t.filter(n=>n))) : tokens.push(t);
   });
-  return tokens;
+
+  return tokens.length ? new Token('SourceTexts',tokens):null;
 }
 
 NAME = head:[0-9a-zA-Z_] tail:([0-9a-zA-Z_] / CONCATENATE_CHAR)* {return new Token('Name',head + (tail ? tail.filter(n=>n).join(''):''));}
@@ -94,17 +104,17 @@ SYMBOLS = symbol:('.' / '+' / '+' / '-' / '/' / '*' / '%' / '<' / '>' / '[' / ']
 // プリプロセッサ Preprocessor Directive
 //////////////////////////////////////
 
-/*
-PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / INTEGER_CONSTANT / FLOATING_CONSTANT /  NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
-  const tokens = [head];
-  tail && tail.length && tokens.push(...tail.filter(n=>n)); 
-  return new Token('PreprocessorDirective',tokens);
-}
-*/
 
-PREPROCESSOR_DIRECTIVE = '#' {
-  return new Token('PreprocessorDirective',text());
+PREPROCESSOR_DIRECTIVE = '#' ___? head:NAME tail:( ___ / OPERATOR / INTEGER_CONSTANT / FLOATING_CONSTANT /  NAME / SYMBOLS / CONCATENATE_CHAR / EOS )* LINE_TERMINATOR_SEQUENCE {
+  const tokens = [];
+  tail && tail.length && tokens.push(...tail.filter(n=>n)); 
+  return new PreprocessorDirective(head,tokens);
 }
+
+
+//PREPROCESSOR_DIRECTIVE = '#' {
+//  return new Token('PreprocessorDirective',text());
+//}
 
 // 行連結シーケンス
 CONCATENATE_CHAR = [\\] LINE_TERMINATOR_SEQUENCE { return null;}
@@ -132,7 +142,7 @@ LINE_TERMINATOR_SEQUENCE "end of line"
   / "\r\n"
   / "\r"
   / "\u2028"
-  / "\u2029") {return new Token('NewLine','\n');}
+  / "\u2029") {return null;/*new Token('NewLine','\n');*/}
   
 COMMENT "comment"
   = MULTILINE_COMMENT

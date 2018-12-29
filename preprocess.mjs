@@ -201,16 +201,13 @@ export default function make_parse() {
   function statements() {
     const a = [];
     let s;
+    
     while (true) {
-      if (token.id === '}' || token.id === '(end)') {
+      if (token.id === '(end)') {
         break;
       }
       s = statement();
       setDefaultType();
-
-      // 未決定の型の識別子があれば既定値に設定する
-      //undeterminedTypeIds.forEach(d=>{(!d.type)&&(d.type = 'i32')});
-      //undeterminedTypeIds.length = 0;
 
       if (s instanceof Array) {
         a.push(...s);
@@ -219,14 +216,7 @@ export default function make_parse() {
       }
     }
     return a;
-    // .length === 0
-    //   ? null
-    //   : a.length === 1
-    //     ? a[0]
-    //     : a;
   }
-
-
 
   class SymbolBase {
     constructor({ id, value, bp = 0, nud, led, std }) {
@@ -284,14 +274,6 @@ export default function make_parse() {
 
   function constant(s, v) {
     return symbol({ id: s, value: v, nud: Constant.prototype.nud, cons: Constant });
-    // x.nud = function () {
-    //   scope.reserve(this);
-    //   this.value = symbol_table.get(this.id).value;
-    //   this.nodeType = 'literal';
-    //   return this;
-    // };
-    // x.value = v;
-    // return x;
   }
 
   class Infix extends SymbolBase {
@@ -306,10 +288,6 @@ export default function make_parse() {
       this.second = expression(this.lbp);
       this.second.rvalue = true;
 
-      //!this.type && (this.type = left.type);
-      // if(this.first.type != this.second.type){
-      //   this.error('type unmatched.');
-      // }
       this.nodeType = 'binary';
       return this;
     }
@@ -317,14 +295,6 @@ export default function make_parse() {
 
   function infix(id, bp, led) {
     return symbol({ id: id, bp: bp, led: led || Infix.prototype.led, cons: Infix });
-    // const s = symbol(id, bp);
-    // s.led = led || function (left) {
-    //   this.first = left;
-    //   this.second = expression(bp);
-    //   this.nodeType = 'binary';
-    //   return this;
-    // };
-    // return s;
   }
 
   class Infixr extends SymbolBase {
@@ -337,7 +307,6 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
-      //!this.type && (this.type = left.type);
       this.nodeType = 'binary';
       return this;
     }
@@ -345,14 +314,6 @@ export default function make_parse() {
 
   function infixr(id, bp, led) {
     return symbol({ id: id, bp: bp, led: led || Infixr.prototype.led, cons: Infixr });
-    // const s = symbol(id, bp);
-    // s.led = led || function (left) {
-    //   this.first = left;
-    //   this.second = expression(bp - 1);
-    //   this.nodeType = 'binary';
-    //   return this;
-    // };
-    // return s;
   }
 
   class Assignment extends SymbolBase {
@@ -367,29 +328,14 @@ export default function make_parse() {
       this.rvalue = this.first.rvalue = rvalue;
       this.second = expression(this.lbp - 1, true);
       this.second.rvalue = true;
-      // if(this.first.type != this.second.type ){
-      //   error('type unmatch',this);
-      // }
-
-      //!this.type && (this.type = left.type);
       this.assignment = true;
       this.nodeType = 'binary';
       return this;
     }
   }
-  //   if (left.id !== '.' && left.id !== '[' && left.nodeType !== 'name') {
 
   function assignment(id) {
     return symbol({ id: id, bp: 10, led: Assignment.prototype.led, cons: Assignment });
-    // return infixr(id, 10, function (left) {
-    //     left.error('Bad lvalue.');
-    //   }
-    //   this.first = left;
-    //   this.second = expression(9);
-    //   this.assignment = true;
-    //   this.nodeType = 'binary';
-    //   return this;
-    // });
   }
 
   class Prefix extends SymbolBase {
@@ -401,7 +347,6 @@ export default function make_parse() {
       scope.reserve(this);
       this.first = expression(70);
       this.rvalue = this.first.rvalue = rvalue;
-      //!this.type && (this.type = this.first.type);
       this.nodeType = 'unary';
       return this;
     }
@@ -409,20 +354,11 @@ export default function make_parse() {
 
   function prefix(id, nud) {
     return symbol({ id: id, nud: nud || Prefix.prototype.nud, cons: Prefix });
-    // const s = symbol(id);
-    // s.nud = nud || function () {
-    //   scope.reserve(this);
-    //   this.first = expression(70);
-    //   this.nodeType = 'unary';
-    //   return this;
-    // };
-    // return s;
   }
 
   function suffix(id, led = function (left, rvalue = true) {
     this.first = left;
     this.rvalue = this.first.rvalue = rvalue;
-    //!this.type && (this.type = left.type);
     this.nodeType = 'suffix';
     return this;
   }) {
@@ -437,9 +373,6 @@ export default function make_parse() {
 
   function stmt(id, std) {
     return symbol({ id: id, std: std });
-    // const x = symbol(s);
-    // x.std = f;
-    // return x;
   }
 
   sym('(end)');
@@ -499,9 +432,6 @@ export default function make_parse() {
 
   infix('<<',45);//shl
   infix('>>',45);//shr_s
-  infix('>>>',45);//shr_u
-  infix('<<&',45);// rotl
-  infix('>>&',45);// rotr
   infix('&',43);// and
   infix('|',43);// or
   infix('^',43);// xor
@@ -547,11 +477,6 @@ export default function make_parse() {
     return this;
   });
 
-  prefix('++');
-  prefix('--');
-  suffix('++').lbp = 70;
-  suffix('--').lbp = 70;
-
   prefix('!');
   prefix('-');
   prefix('~',80);
@@ -575,19 +500,23 @@ export default function make_parse() {
   });
 
   return function (t) {
-    tokens = t;
-    token_nr = 0;
+    const sourceFiles = [];
+    //tokens = t;
+    //token_nr = 0;
     scopeTop = createScope();
-    advance();
-    const s = statements();
-    advance('(end)');
+    for(const node of t){
+     switch(node.type){
+      case 'PreprocessorDirective':
+        break;
+      case 'SourceTexts':
+        sourceFiles.push(node);
+        break;
+     }
+    }
     scope.pop();
-    console.log('** parse end **');
     return {
-      id: '(program)',
       scope: scopeTop,
-      builtInTypes:builtinTypes,
-      statements: s
+      sources: s
     };
   };
 }

@@ -1,2012 +1,1517 @@
 [
   {
-    "value": "struct",
-    "type": "Name",
+    "value": [
+      {
+        "value": "struct",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 0,
+            "line": 1,
+            "column": 1
+          },
+          "end": {
+            "offset": 6,
+            "line": 1,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "S",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 7,
+            "line": 1,
+            "column": 8
+          },
+          "end": {
+            "offset": 8,
+            "line": 1,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 9,
+            "line": 1,
+            "column": 10
+          },
+          "end": {
+            "offset": 10,
+            "line": 1,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "vec3",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 11,
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "offset": 15,
+            "line": 2,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "sa",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 16,
+            "line": 2,
+            "column": 6
+          },
+          "end": {
+            "offset": 18,
+            "line": 2,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 18,
+            "line": 2,
+            "column": 8
+          },
+          "end": {
+            "offset": 19,
+            "line": 2,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 20,
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "offset": 23,
+            "line": 3,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "sb",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 24,
+            "line": 3,
+            "column": 5
+          },
+          "end": {
+            "offset": 26,
+            "line": 3,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 26,
+            "line": 3,
+            "column": 7
+          },
+          "end": {
+            "offset": 27,
+            "line": 3,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 28,
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "offset": 29,
+            "line": 4,
+            "column": 2
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 29,
+            "line": 4,
+            "column": 2
+          },
+          "end": {
+            "offset": 30,
+            "line": 4,
+            "column": 3
+          }
+        }
+      },
+      {
+        "value": "struct",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 32,
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "offset": 38,
+            "line": 6,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "S1",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 39,
+            "line": 6,
+            "column": 8
+          },
+          "end": {
+            "offset": 41,
+            "line": 6,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 42,
+            "line": 6,
+            "column": 11
+          },
+          "end": {
+            "offset": 43,
+            "line": 6,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": "S",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 46,
+            "line": 7,
+            "column": 3
+          },
+          "end": {
+            "offset": 47,
+            "line": 7,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "s1a",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 48,
+            "line": 7,
+            "column": 5
+          },
+          "end": {
+            "offset": 51,
+            "line": 7,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 51,
+            "line": 7,
+            "column": 8
+          },
+          "end": {
+            "offset": 52,
+            "line": 7,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 55,
+            "line": 8,
+            "column": 3
+          },
+          "end": {
+            "offset": 58,
+            "line": 8,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "s1b",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 59,
+            "line": 8,
+            "column": 7
+          },
+          "end": {
+            "offset": 62,
+            "line": 8,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 62,
+            "line": 8,
+            "column": 10
+          },
+          "end": {
+            "offset": 63,
+            "line": 8,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "float",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 66,
+            "line": 9,
+            "column": 3
+          },
+          "end": {
+            "offset": 71,
+            "line": 9,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "s1c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 72,
+            "line": 9,
+            "column": 9
+          },
+          "end": {
+            "offset": 75,
+            "line": 9,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 75,
+            "line": 9,
+            "column": 12
+          },
+          "end": {
+            "offset": 76,
+            "line": 9,
+            "column": 13
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 77,
+            "line": 10,
+            "column": 1
+          },
+          "end": {
+            "offset": 78,
+            "line": 10,
+            "column": 2
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 78,
+            "line": 10,
+            "column": 2
+          },
+          "end": {
+            "offset": 79,
+            "line": 10,
+            "column": 3
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 82,
+            "line": 13,
+            "column": 1
+          },
+          "end": {
+            "offset": 85,
+            "line": 13,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "func",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 86,
+            "line": 13,
+            "column": 5
+          },
+          "end": {
+            "offset": 90,
+            "line": 13,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "(",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 90,
+            "line": 13,
+            "column": 9
+          },
+          "end": {
+            "offset": 91,
+            "line": 13,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": "in",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 91,
+            "line": 13,
+            "column": 10
+          },
+          "end": {
+            "offset": 93,
+            "line": 13,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 94,
+            "line": 13,
+            "column": 13
+          },
+          "end": {
+            "offset": 97,
+            "line": 13,
+            "column": 16
+          }
+        }
+      },
+      {
+        "value": "a",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 98,
+            "line": 13,
+            "column": 17
+          },
+          "end": {
+            "offset": 99,
+            "line": 13,
+            "column": 18
+          }
+        }
+      },
+      {
+        "value": ")",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 99,
+            "line": 13,
+            "column": 18
+          },
+          "end": {
+            "offset": 100,
+            "line": 13,
+            "column": 19
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 100,
+            "line": 13,
+            "column": 19
+          },
+          "end": {
+            "offset": 101,
+            "line": 13,
+            "column": 20
+          }
+        }
+      },
+      {
+        "value": "S",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 104,
+            "line": 14,
+            "column": 3
+          },
+          "end": {
+            "offset": 105,
+            "line": 14,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "s",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 106,
+            "line": 14,
+            "column": 5
+          },
+          "end": {
+            "offset": 107,
+            "line": 14,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 107,
+            "line": 14,
+            "column": 6
+          },
+          "end": {
+            "offset": 108,
+            "line": 14,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "S1",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 111,
+            "line": 15,
+            "column": 3
+          },
+          "end": {
+            "offset": 113,
+            "line": 15,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "s1",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 114,
+            "line": 15,
+            "column": 6
+          },
+          "end": {
+            "offset": 116,
+            "line": 15,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 116,
+            "line": 15,
+            "column": 8
+          },
+          "end": {
+            "offset": 117,
+            "line": 15,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 120,
+            "line": 16,
+            "column": 3
+          },
+          "end": {
+            "offset": 123,
+            "line": 16,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 124,
+            "line": 16,
+            "column": 7
+          },
+          "end": {
+            "offset": 125,
+            "line": 16,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "=",
+        "type": "Operator",
+        "location": {
+          "start": {
+            "offset": 126,
+            "line": 16,
+            "column": 9
+          },
+          "end": {
+            "offset": 127,
+            "line": 16,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": "a",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 128,
+            "line": 16,
+            "column": 11
+          },
+          "end": {
+            "offset": 129,
+            "line": 16,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 129,
+            "line": 16,
+            "column": 12
+          },
+          "end": {
+            "offset": 130,
+            "line": 16,
+            "column": 13
+          }
+        }
+      },
+      {
+        "value": "do",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 133,
+            "line": 17,
+            "column": 3
+          },
+          "end": {
+            "offset": 135,
+            "line": 17,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 136,
+            "line": 17,
+            "column": 6
+          },
+          "end": {
+            "offset": 137,
+            "line": 17,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 142,
+            "line": 18,
+            "column": 5
+          },
+          "end": {
+            "offset": 143,
+            "line": 18,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "++",
+        "type": "Operator",
+        "location": {
+          "start": {
+            "offset": 143,
+            "line": 18,
+            "column": 6
+          },
+          "end": {
+            "offset": 145,
+            "line": 18,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 145,
+            "line": 18,
+            "column": 8
+          },
+          "end": {
+            "offset": 146,
+            "line": 18,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "if",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 151,
+            "line": 19,
+            "column": 5
+          },
+          "end": {
+            "offset": 153,
+            "line": 19,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "(",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 153,
+            "line": 19,
+            "column": 7
+          },
+          "end": {
+            "offset": 154,
+            "line": 19,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "a",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 154,
+            "line": 19,
+            "column": 8
+          },
+          "end": {
+            "offset": 155,
+            "line": 19,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": ">",
+        "type": "Operator",
+        "location": {
+          "start": {
+            "offset": 156,
+            "line": 19,
+            "column": 10
+          },
+          "end": {
+            "offset": 157,
+            "line": 19,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": 10,
+        "type": "FloatConstant",
+        "location": {
+          "start": {
+            "offset": 158,
+            "line": 19,
+            "column": 12
+          },
+          "end": {
+            "offset": 160,
+            "line": 19,
+            "column": 14
+          }
+        }
+      },
+      {
+        "value": ")",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 160,
+            "line": 19,
+            "column": 14
+          },
+          "end": {
+            "offset": 161,
+            "line": 19,
+            "column": 15
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 161,
+            "line": 19,
+            "column": 15
+          },
+          "end": {
+            "offset": 162,
+            "line": 19,
+            "column": 16
+          }
+        }
+      },
+      {
+        "value": "break",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 169,
+            "line": 20,
+            "column": 7
+          },
+          "end": {
+            "offset": 174,
+            "line": 20,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 174,
+            "line": 20,
+            "column": 12
+          },
+          "end": {
+            "offset": 175,
+            "line": 20,
+            "column": 13
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 180,
+            "line": 21,
+            "column": 5
+          },
+          "end": {
+            "offset": 181,
+            "line": 21,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 184,
+            "line": 22,
+            "column": 3
+          },
+          "end": {
+            "offset": 185,
+            "line": 22,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "while",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 186,
+            "line": 22,
+            "column": 5
+          },
+          "end": {
+            "offset": 191,
+            "line": 22,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": "(",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 191,
+            "line": 22,
+            "column": 10
+          },
+          "end": {
+            "offset": 192,
+            "line": 22,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 192,
+            "line": 22,
+            "column": 11
+          },
+          "end": {
+            "offset": 193,
+            "line": 22,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": "<",
+        "type": "Operator",
+        "location": {
+          "start": {
+            "offset": 194,
+            "line": 22,
+            "column": 13
+          },
+          "end": {
+            "offset": 195,
+            "line": 22,
+            "column": 14
+          }
+        }
+      },
+      {
+        "value": 10,
+        "type": "FloatConstant",
+        "location": {
+          "start": {
+            "offset": 196,
+            "line": 22,
+            "column": 15
+          },
+          "end": {
+            "offset": 198,
+            "line": 22,
+            "column": 17
+          }
+        }
+      },
+      {
+        "value": ")",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 198,
+            "line": 22,
+            "column": 17
+          },
+          "end": {
+            "offset": 199,
+            "line": 22,
+            "column": 18
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 199,
+            "line": 22,
+            "column": 18
+          },
+          "end": {
+            "offset": 200,
+            "line": 22,
+            "column": 19
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 203,
+            "line": 23,
+            "column": 3
+          },
+          "end": {
+            "offset": 204,
+            "line": 23,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 204,
+            "line": 23,
+            "column": 4
+          },
+          "end": {
+            "offset": 205,
+            "line": 23,
+            "column": 5
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 205,
+            "line": 23,
+            "column": 5
+          },
+          "end": {
+            "offset": 206,
+            "line": 23,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": "return",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 209,
+            "line": 24,
+            "column": 3
+          },
+          "end": {
+            "offset": 215,
+            "line": 24,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 216,
+            "line": 24,
+            "column": 10
+          },
+          "end": {
+            "offset": 217,
+            "line": 24,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 217,
+            "line": 24,
+            "column": 11
+          },
+          "end": {
+            "offset": 218,
+            "line": 24,
+            "column": 12
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 219,
+            "line": 25,
+            "column": 1
+          },
+          "end": {
+            "offset": 220,
+            "line": 25,
+            "column": 2
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 222,
+            "line": 27,
+            "column": 1
+          },
+          "end": {
+            "offset": 225,
+            "line": 27,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "c",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 226,
+            "line": 27,
+            "column": 5
+          },
+          "end": {
+            "offset": 227,
+            "line": 27,
+            "column": 6
+          }
+        }
+      },
+      {
+        "value": ",",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 227,
+            "line": 27,
+            "column": 6
+          },
+          "end": {
+            "offset": 228,
+            "line": 27,
+            "column": 7
+          }
+        }
+      },
+      {
+        "value": "d",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 228,
+            "line": 27,
+            "column": 7
+          },
+          "end": {
+            "offset": 229,
+            "line": 27,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 231,
+            "line": 29,
+            "column": 1
+          },
+          "end": {
+            "offset": 232,
+            "line": 29,
+            "column": 2
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 233,
+            "line": 30,
+            "column": 1
+          },
+          "end": {
+            "offset": 236,
+            "line": 30,
+            "column": 4
+          }
+        }
+      },
+      {
+        "value": "funcb",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 237,
+            "line": 30,
+            "column": 5
+          },
+          "end": {
+            "offset": 242,
+            "line": 30,
+            "column": 10
+          }
+        }
+      },
+      {
+        "value": "(",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 242,
+            "line": 30,
+            "column": 10
+          },
+          "end": {
+            "offset": 243,
+            "line": 30,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "in",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 243,
+            "line": 30,
+            "column": 11
+          },
+          "end": {
+            "offset": 245,
+            "line": 30,
+            "column": 13
+          }
+        }
+      },
+      {
+        "value": "int",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 246,
+            "line": 30,
+            "column": 14
+          },
+          "end": {
+            "offset": 249,
+            "line": 30,
+            "column": 17
+          }
+        }
+      },
+      {
+        "value": "b",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 250,
+            "line": 30,
+            "column": 18
+          },
+          "end": {
+            "offset": 251,
+            "line": 30,
+            "column": 19
+          }
+        }
+      },
+      {
+        "value": ")",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 251,
+            "line": 30,
+            "column": 19
+          },
+          "end": {
+            "offset": 252,
+            "line": 30,
+            "column": 20
+          }
+        }
+      },
+      {
+        "value": "{",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 252,
+            "line": 30,
+            "column": 20
+          },
+          "end": {
+            "offset": 253,
+            "line": 30,
+            "column": 21
+          }
+        }
+      },
+      {
+        "value": "return",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 256,
+            "line": 31,
+            "column": 3
+          },
+          "end": {
+            "offset": 262,
+            "line": 31,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "b",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 263,
+            "line": 31,
+            "column": 10
+          },
+          "end": {
+            "offset": 264,
+            "line": 31,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "*",
+        "type": "Operator",
+        "location": {
+          "start": {
+            "offset": 265,
+            "line": 31,
+            "column": 12
+          },
+          "end": {
+            "offset": 266,
+            "line": 31,
+            "column": 13
+          }
+        }
+      },
+      {
+        "value": "b",
+        "type": "Name",
+        "location": {
+          "start": {
+            "offset": 267,
+            "line": 31,
+            "column": 14
+          },
+          "end": {
+            "offset": 268,
+            "line": 31,
+            "column": 15
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 268,
+            "line": 31,
+            "column": 15
+          },
+          "end": {
+            "offset": 269,
+            "line": 31,
+            "column": 16
+          }
+        }
+      },
+      {
+        "value": "}",
+        "type": "Symbol",
+        "location": {
+          "start": {
+            "offset": 270,
+            "line": 32,
+            "column": 1
+          },
+          "end": {
+            "offset": 271,
+            "line": 32,
+            "column": 2
+          }
+        }
+      },
+      {
+        "value": ";",
+        "type": "EOS",
+        "location": {
+          "start": {
+            "offset": 271,
+            "line": 32,
+            "column": 2
+          },
+          "end": {
+            "offset": 272,
+            "line": 32,
+            "column": 3
+          }
+        }
+      }
+    ],
+    "type": "SourceTexts",
     "location": {
       "start": {
         "offset": 0,
         "line": 1,
         "column": 1
-      },
-      "end": {
-        "offset": 6,
-        "line": 1,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "S",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 7,
-        "line": 1,
-        "column": 8
-      },
-      "end": {
-        "offset": 8,
-        "line": 1,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 9,
-        "line": 1,
-        "column": 10
-      },
-      "end": {
-        "offset": 10,
-        "line": 1,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 10,
-        "line": 1,
-        "column": 11
-      },
-      "end": {
-        "offset": 11,
-        "line": 2,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "vec3",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 11,
-        "line": 2,
-        "column": 1
-      },
-      "end": {
-        "offset": 15,
-        "line": 2,
-        "column": 5
-      }
-    }
-  },
-  {
-    "value": "sa",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 16,
-        "line": 2,
-        "column": 6
-      },
-      "end": {
-        "offset": 18,
-        "line": 2,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 18,
-        "line": 2,
-        "column": 8
-      },
-      "end": {
-        "offset": 19,
-        "line": 2,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 19,
-        "line": 2,
-        "column": 9
-      },
-      "end": {
-        "offset": 20,
-        "line": 3,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 20,
-        "line": 3,
-        "column": 1
-      },
-      "end": {
-        "offset": 23,
-        "line": 3,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "sb",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 24,
-        "line": 3,
-        "column": 5
-      },
-      "end": {
-        "offset": 26,
-        "line": 3,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 26,
-        "line": 3,
-        "column": 7
-      },
-      "end": {
-        "offset": 27,
-        "line": 3,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 27,
-        "line": 3,
-        "column": 8
-      },
-      "end": {
-        "offset": 28,
-        "line": 4,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 28,
-        "line": 4,
-        "column": 1
-      },
-      "end": {
-        "offset": 29,
-        "line": 4,
-        "column": 2
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 29,
-        "line": 4,
-        "column": 2
-      },
-      "end": {
-        "offset": 30,
-        "line": 4,
-        "column": 3
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 30,
-        "line": 4,
-        "column": 3
-      },
-      "end": {
-        "offset": 31,
-        "line": 5,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 31,
-        "line": 5,
-        "column": 1
-      },
-      "end": {
-        "offset": 32,
-        "line": 6,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "struct",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 32,
-        "line": 6,
-        "column": 1
-      },
-      "end": {
-        "offset": 38,
-        "line": 6,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "S1",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 39,
-        "line": 6,
-        "column": 8
-      },
-      "end": {
-        "offset": 41,
-        "line": 6,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 42,
-        "line": 6,
-        "column": 11
-      },
-      "end": {
-        "offset": 43,
-        "line": 6,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 43,
-        "line": 6,
-        "column": 12
-      },
-      "end": {
-        "offset": 44,
-        "line": 7,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "S",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 46,
-        "line": 7,
-        "column": 3
-      },
-      "end": {
-        "offset": 47,
-        "line": 7,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "s1a",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 48,
-        "line": 7,
-        "column": 5
-      },
-      "end": {
-        "offset": 51,
-        "line": 7,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 51,
-        "line": 7,
-        "column": 8
-      },
-      "end": {
-        "offset": 52,
-        "line": 7,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 52,
-        "line": 7,
-        "column": 9
-      },
-      "end": {
-        "offset": 53,
-        "line": 8,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 55,
-        "line": 8,
-        "column": 3
-      },
-      "end": {
-        "offset": 58,
-        "line": 8,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": "s1b",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 59,
-        "line": 8,
-        "column": 7
-      },
-      "end": {
-        "offset": 62,
-        "line": 8,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 62,
-        "line": 8,
-        "column": 10
-      },
-      "end": {
-        "offset": 63,
-        "line": 8,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 63,
-        "line": 8,
-        "column": 11
-      },
-      "end": {
-        "offset": 64,
-        "line": 9,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "float",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 66,
-        "line": 9,
-        "column": 3
-      },
-      "end": {
-        "offset": 71,
-        "line": 9,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": "s1c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 72,
-        "line": 9,
-        "column": 9
-      },
-      "end": {
-        "offset": 75,
-        "line": 9,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 75,
-        "line": 9,
-        "column": 12
-      },
-      "end": {
-        "offset": 76,
-        "line": 9,
-        "column": 13
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 76,
-        "line": 9,
-        "column": 13
-      },
-      "end": {
-        "offset": 77,
-        "line": 10,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 77,
-        "line": 10,
-        "column": 1
-      },
-      "end": {
-        "offset": 78,
-        "line": 10,
-        "column": 2
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 78,
-        "line": 10,
-        "column": 2
-      },
-      "end": {
-        "offset": 79,
-        "line": 10,
-        "column": 3
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 79,
-        "line": 10,
-        "column": 3
-      },
-      "end": {
-        "offset": 80,
-        "line": 11,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 80,
-        "line": 11,
-        "column": 1
-      },
-      "end": {
-        "offset": 81,
-        "line": 12,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 81,
-        "line": 12,
-        "column": 1
-      },
-      "end": {
-        "offset": 82,
-        "line": 13,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 82,
-        "line": 13,
-        "column": 1
-      },
-      "end": {
-        "offset": 85,
-        "line": 13,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "func",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 86,
-        "line": 13,
-        "column": 5
-      },
-      "end": {
-        "offset": 90,
-        "line": 13,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "(",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 90,
-        "line": 13,
-        "column": 9
-      },
-      "end": {
-        "offset": 91,
-        "line": 13,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": "in",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 91,
-        "line": 13,
-        "column": 10
-      },
-      "end": {
-        "offset": 93,
-        "line": 13,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 94,
-        "line": 13,
-        "column": 13
-      },
-      "end": {
-        "offset": 97,
-        "line": 13,
-        "column": 16
-      }
-    }
-  },
-  {
-    "value": "a",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 98,
-        "line": 13,
-        "column": 17
-      },
-      "end": {
-        "offset": 99,
-        "line": 13,
-        "column": 18
-      }
-    }
-  },
-  {
-    "value": ")",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 99,
-        "line": 13,
-        "column": 18
-      },
-      "end": {
-        "offset": 100,
-        "line": 13,
-        "column": 19
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 100,
-        "line": 13,
-        "column": 19
-      },
-      "end": {
-        "offset": 101,
-        "line": 13,
-        "column": 20
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 101,
-        "line": 13,
-        "column": 20
-      },
-      "end": {
-        "offset": 102,
-        "line": 14,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "S",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 104,
-        "line": 14,
-        "column": 3
-      },
-      "end": {
-        "offset": 105,
-        "line": 14,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "s",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 106,
-        "line": 14,
-        "column": 5
-      },
-      "end": {
-        "offset": 107,
-        "line": 14,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 107,
-        "line": 14,
-        "column": 6
-      },
-      "end": {
-        "offset": 108,
-        "line": 14,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 108,
-        "line": 14,
-        "column": 7
-      },
-      "end": {
-        "offset": 109,
-        "line": 15,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "S1",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 111,
-        "line": 15,
-        "column": 3
-      },
-      "end": {
-        "offset": 113,
-        "line": 15,
-        "column": 5
-      }
-    }
-  },
-  {
-    "value": "s1",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 114,
-        "line": 15,
-        "column": 6
-      },
-      "end": {
-        "offset": 116,
-        "line": 15,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 116,
-        "line": 15,
-        "column": 8
-      },
-      "end": {
-        "offset": 117,
-        "line": 15,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 117,
-        "line": 15,
-        "column": 9
-      },
-      "end": {
-        "offset": 118,
-        "line": 16,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 120,
-        "line": 16,
-        "column": 3
-      },
-      "end": {
-        "offset": 123,
-        "line": 16,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": "c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 124,
-        "line": 16,
-        "column": 7
-      },
-      "end": {
-        "offset": 125,
-        "line": 16,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": "=",
-    "type": "Operator",
-    "location": {
-      "start": {
-        "offset": 126,
-        "line": 16,
-        "column": 9
-      },
-      "end": {
-        "offset": 127,
-        "line": 16,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": "a",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 128,
-        "line": 16,
-        "column": 11
-      },
-      "end": {
-        "offset": 129,
-        "line": 16,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 129,
-        "line": 16,
-        "column": 12
-      },
-      "end": {
-        "offset": 130,
-        "line": 16,
-        "column": 13
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 130,
-        "line": 16,
-        "column": 13
-      },
-      "end": {
-        "offset": 131,
-        "line": 17,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "do",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 133,
-        "line": 17,
-        "column": 3
-      },
-      "end": {
-        "offset": 135,
-        "line": 17,
-        "column": 5
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 136,
-        "line": 17,
-        "column": 6
-      },
-      "end": {
-        "offset": 137,
-        "line": 17,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 137,
-        "line": 17,
-        "column": 7
-      },
-      "end": {
-        "offset": 138,
-        "line": 18,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 142,
-        "line": 18,
-        "column": 5
-      },
-      "end": {
-        "offset": 143,
-        "line": 18,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": "++",
-    "type": "Operator",
-    "location": {
-      "start": {
-        "offset": 143,
-        "line": 18,
-        "column": 6
-      },
-      "end": {
-        "offset": 145,
-        "line": 18,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 145,
-        "line": 18,
-        "column": 8
-      },
-      "end": {
-        "offset": 146,
-        "line": 18,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 146,
-        "line": 18,
-        "column": 9
-      },
-      "end": {
-        "offset": 147,
-        "line": 19,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "if",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 151,
-        "line": 19,
-        "column": 5
-      },
-      "end": {
-        "offset": 153,
-        "line": 19,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "(",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 153,
-        "line": 19,
-        "column": 7
-      },
-      "end": {
-        "offset": 154,
-        "line": 19,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": "a",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 154,
-        "line": 19,
-        "column": 8
-      },
-      "end": {
-        "offset": 155,
-        "line": 19,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": ">",
-    "type": "Operator",
-    "location": {
-      "start": {
-        "offset": 156,
-        "line": 19,
-        "column": 10
-      },
-      "end": {
-        "offset": 157,
-        "line": 19,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": 10,
-    "type": "FloatConstant",
-    "location": {
-      "start": {
-        "offset": 158,
-        "line": 19,
-        "column": 12
-      },
-      "end": {
-        "offset": 160,
-        "line": 19,
-        "column": 14
-      }
-    }
-  },
-  {
-    "value": ")",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 160,
-        "line": 19,
-        "column": 14
-      },
-      "end": {
-        "offset": 161,
-        "line": 19,
-        "column": 15
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 161,
-        "line": 19,
-        "column": 15
-      },
-      "end": {
-        "offset": 162,
-        "line": 19,
-        "column": 16
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 162,
-        "line": 19,
-        "column": 16
-      },
-      "end": {
-        "offset": 163,
-        "line": 20,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "break",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 169,
-        "line": 20,
-        "column": 7
-      },
-      "end": {
-        "offset": 174,
-        "line": 20,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 174,
-        "line": 20,
-        "column": 12
-      },
-      "end": {
-        "offset": 175,
-        "line": 20,
-        "column": 13
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 175,
-        "line": 20,
-        "column": 13
-      },
-      "end": {
-        "offset": 176,
-        "line": 21,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 180,
-        "line": 21,
-        "column": 5
-      },
-      "end": {
-        "offset": 181,
-        "line": 21,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 181,
-        "line": 21,
-        "column": 6
-      },
-      "end": {
-        "offset": 182,
-        "line": 22,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 184,
-        "line": 22,
-        "column": 3
-      },
-      "end": {
-        "offset": 185,
-        "line": 22,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "while",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 186,
-        "line": 22,
-        "column": 5
-      },
-      "end": {
-        "offset": 191,
-        "line": 22,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": "(",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 191,
-        "line": 22,
-        "column": 10
-      },
-      "end": {
-        "offset": 192,
-        "line": 22,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": "c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 192,
-        "line": 22,
-        "column": 11
-      },
-      "end": {
-        "offset": 193,
-        "line": 22,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": "<",
-    "type": "Operator",
-    "location": {
-      "start": {
-        "offset": 194,
-        "line": 22,
-        "column": 13
-      },
-      "end": {
-        "offset": 195,
-        "line": 22,
-        "column": 14
-      }
-    }
-  },
-  {
-    "value": 10,
-    "type": "FloatConstant",
-    "location": {
-      "start": {
-        "offset": 196,
-        "line": 22,
-        "column": 15
-      },
-      "end": {
-        "offset": 198,
-        "line": 22,
-        "column": 17
-      }
-    }
-  },
-  {
-    "value": ")",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 198,
-        "line": 22,
-        "column": 17
-      },
-      "end": {
-        "offset": 199,
-        "line": 22,
-        "column": 18
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 199,
-        "line": 22,
-        "column": 18
-      },
-      "end": {
-        "offset": 200,
-        "line": 22,
-        "column": 19
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 200,
-        "line": 22,
-        "column": 19
-      },
-      "end": {
-        "offset": 201,
-        "line": 23,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 203,
-        "line": 23,
-        "column": 3
-      },
-      "end": {
-        "offset": 204,
-        "line": 23,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 204,
-        "line": 23,
-        "column": 4
-      },
-      "end": {
-        "offset": 205,
-        "line": 23,
-        "column": 5
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 205,
-        "line": 23,
-        "column": 5
-      },
-      "end": {
-        "offset": 206,
-        "line": 23,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 206,
-        "line": 23,
-        "column": 6
-      },
-      "end": {
-        "offset": 207,
-        "line": 24,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "return",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 209,
-        "line": 24,
-        "column": 3
-      },
-      "end": {
-        "offset": 215,
-        "line": 24,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 216,
-        "line": 24,
-        "column": 10
-      },
-      "end": {
-        "offset": 217,
-        "line": 24,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 217,
-        "line": 24,
-        "column": 11
-      },
-      "end": {
-        "offset": 218,
-        "line": 24,
-        "column": 12
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 218,
-        "line": 24,
-        "column": 12
-      },
-      "end": {
-        "offset": 219,
-        "line": 25,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 219,
-        "line": 25,
-        "column": 1
-      },
-      "end": {
-        "offset": 220,
-        "line": 25,
-        "column": 2
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 220,
-        "line": 25,
-        "column": 2
-      },
-      "end": {
-        "offset": 221,
-        "line": 26,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 221,
-        "line": 26,
-        "column": 1
-      },
-      "end": {
-        "offset": 222,
-        "line": 27,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 222,
-        "line": 27,
-        "column": 1
-      },
-      "end": {
-        "offset": 225,
-        "line": 27,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "c",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 226,
-        "line": 27,
-        "column": 5
-      },
-      "end": {
-        "offset": 227,
-        "line": 27,
-        "column": 6
-      }
-    }
-  },
-  {
-    "value": ",",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 227,
-        "line": 27,
-        "column": 6
-      },
-      "end": {
-        "offset": 228,
-        "line": 27,
-        "column": 7
-      }
-    }
-  },
-  {
-    "value": "d",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 228,
-        "line": 27,
-        "column": 7
-      },
-      "end": {
-        "offset": 229,
-        "line": 27,
-        "column": 8
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 229,
-        "line": 27,
-        "column": 8
-      },
-      "end": {
-        "offset": 230,
-        "line": 28,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 230,
-        "line": 28,
-        "column": 1
-      },
-      "end": {
-        "offset": 231,
-        "line": 29,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 231,
-        "line": 29,
-        "column": 1
-      },
-      "end": {
-        "offset": 232,
-        "line": 29,
-        "column": 2
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 232,
-        "line": 29,
-        "column": 2
-      },
-      "end": {
-        "offset": 233,
-        "line": 30,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 233,
-        "line": 30,
-        "column": 1
-      },
-      "end": {
-        "offset": 236,
-        "line": 30,
-        "column": 4
-      }
-    }
-  },
-  {
-    "value": "funcb",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 237,
-        "line": 30,
-        "column": 5
-      },
-      "end": {
-        "offset": 242,
-        "line": 30,
-        "column": 10
-      }
-    }
-  },
-  {
-    "value": "(",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 242,
-        "line": 30,
-        "column": 10
-      },
-      "end": {
-        "offset": 243,
-        "line": 30,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": "in",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 243,
-        "line": 30,
-        "column": 11
-      },
-      "end": {
-        "offset": 245,
-        "line": 30,
-        "column": 13
-      }
-    }
-  },
-  {
-    "value": "int",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 246,
-        "line": 30,
-        "column": 14
-      },
-      "end": {
-        "offset": 249,
-        "line": 30,
-        "column": 17
-      }
-    }
-  },
-  {
-    "value": "b",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 250,
-        "line": 30,
-        "column": 18
-      },
-      "end": {
-        "offset": 251,
-        "line": 30,
-        "column": 19
-      }
-    }
-  },
-  {
-    "value": ")",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 251,
-        "line": 30,
-        "column": 19
-      },
-      "end": {
-        "offset": 252,
-        "line": 30,
-        "column": 20
-      }
-    }
-  },
-  {
-    "value": "{",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 252,
-        "line": 30,
-        "column": 20
-      },
-      "end": {
-        "offset": 253,
-        "line": 30,
-        "column": 21
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 253,
-        "line": 30,
-        "column": 21
-      },
-      "end": {
-        "offset": 254,
-        "line": 31,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "return",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 256,
-        "line": 31,
-        "column": 3
-      },
-      "end": {
-        "offset": 262,
-        "line": 31,
-        "column": 9
-      }
-    }
-  },
-  {
-    "value": "b",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 263,
-        "line": 31,
-        "column": 10
-      },
-      "end": {
-        "offset": 264,
-        "line": 31,
-        "column": 11
-      }
-    }
-  },
-  {
-    "value": "*",
-    "type": "Operator",
-    "location": {
-      "start": {
-        "offset": 265,
-        "line": 31,
-        "column": 12
-      },
-      "end": {
-        "offset": 266,
-        "line": 31,
-        "column": 13
-      }
-    }
-  },
-  {
-    "value": "b",
-    "type": "Name",
-    "location": {
-      "start": {
-        "offset": 267,
-        "line": 31,
-        "column": 14
-      },
-      "end": {
-        "offset": 268,
-        "line": 31,
-        "column": 15
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 268,
-        "line": 31,
-        "column": 15
-      },
-      "end": {
-        "offset": 269,
-        "line": 31,
-        "column": 16
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 269,
-        "line": 31,
-        "column": 16
-      },
-      "end": {
-        "offset": 270,
-        "line": 32,
-        "column": 1
-      }
-    }
-  },
-  {
-    "value": "}",
-    "type": "Symbol",
-    "location": {
-      "start": {
-        "offset": 270,
-        "line": 32,
-        "column": 1
-      },
-      "end": {
-        "offset": 271,
-        "line": 32,
-        "column": 2
-      }
-    }
-  },
-  {
-    "value": ";",
-    "type": "EOS",
-    "location": {
-      "start": {
-        "offset": 271,
-        "line": 32,
-        "column": 2
-      },
-      "end": {
-        "offset": 272,
-        "line": 32,
-        "column": 3
-      }
-    }
-  },
-  {
-    "value": "\n",
-    "type": "NewLine",
-    "location": {
-      "start": {
-        "offset": 272,
-        "line": 32,
-        "column": 3
       },
       "end": {
         "offset": 273,
