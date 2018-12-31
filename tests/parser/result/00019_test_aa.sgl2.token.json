@@ -146,7 +146,7 @@
         }
       }
     ],
-    "type": "PreprocessorDirective",
+    "type": "define",
     "location": {
       "start": {
         "offset": 3,
@@ -159,22 +159,7 @@
         "column": 1
       }
     },
-    "directive": {
-      "value": "define",
-      "type": "Name",
-      "location": {
-        "start": {
-          "offset": 12,
-          "line": 2,
-          "column": 4
-        },
-        "end": {
-          "offset": 18,
-          "line": 2,
-          "column": 10
-        }
-      }
-    }
+    "directive": true
   },
   {
     "value": [
@@ -388,7 +373,7 @@
         }
       }
     ],
-    "type": "PreprocessorDirective",
+    "type": "define",
     "location": {
       "start": {
         "offset": 103,
@@ -401,22 +386,7 @@
         "column": 1
       }
     },
-    "directive": {
-      "value": "define",
-      "type": "Name",
-      "location": {
-        "start": {
-          "offset": 104,
-          "line": 15,
-          "column": 2
-        },
-        "end": {
-          "offset": 110,
-          "line": 15,
-          "column": 8
-        }
-      }
-    }
+    "directive": true
   },
   {
     "value": [

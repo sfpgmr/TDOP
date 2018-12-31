@@ -2173,8 +2173,8 @@ function peg$parse(input, options) {
     }
     class PreprocessorDirective extends Token{
       constructor(directive,value){
-        super('PreprocessorDirective',value);
-        this.directive = directive;
+        super(directive.value,value);
+        this.directive = true;
       }
     }
 

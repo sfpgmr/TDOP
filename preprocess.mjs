@@ -105,48 +105,47 @@ export default function make_parse() {
     }
   }
 
-  // tokenを進める
-  function advance(id) {
-    let a;
-    let o;
-    let t;
-    let v;
-    if (value && token.value !== value) {
-      error('Expected "' + value + '".', token);
+  class Tokens {
+    constructor(tokens) {
+      this.tokens = tokens;
+      this.index = 0;
+      this.token = null;
     }
-    if (token_nr >= tokens.length) {
-      token = symbol_table.get('(end)');
-      return;
-    }
-    t = tokens[token_nr];
-    token_nr += 1;
-    a = t.type;
-    v = t.value
-    switch(a){
-      case 'Name':
-        o = scope.find(v, false);
-        if (!o) o = symbol_table.get('(name)');
-        break;
-      case 'Operator':
-        o = symbol_table.get(v);
-        if (!o) {
-          error('Unknown operator.', t);
-        }
-        break;
-      case 'NewLine':
-        
-        break;
-      default:
-        error('Unexpected token.', t);
-    }
+    // tokenを進める
+    advance(value) {
+      let a;
+      let o;
+      let t;
+      let v;
+      const token = this.token;
+      const tokens = this.tokens;
 
-    token = Object.assign(Object.create(o),o);
-    token.location = t.location;
-    token.value =  v;
-    token.nodeType = a;
+      if (value && token.value !== value) {
+        error('Expected "' + value + '".', token);
+      }
+      
+      if (this.index >= tokens.length) {
+        this.token = symbol_table.get('(end)');
+        return this.token;
+      }
+      t = this.tokens[this.index];
+      this.index += 1;
+      a = t.type;
+      v = t.value;
+      o = symbol_table.get(a);
+      if(!o){
+        error('Unknown operator.', t);
+      }
+     
+      this.token = Object.assign(Object.create(o),o);
+      this.token.location = t.location;
+      this.token.value =  v;
+      this.token.nodeType = a;
 
-    return token;
+      return this.token;
+    }
   }
+
 
   
   // 式
@@ -389,30 +388,9 @@ export default function make_parse() {
 
   stmt('(name)');
 
-  sym(':');
-  sym(';');
-  sym(')');
-  sym(']');
-  sym('}');
-  sym(',');
   sym('else');
 
   sym('(literal)').nud = itself;
-
-  assignment('=');
-  assignment('+=');
-  assignment('-=');
-
-  infix('?', 20, function (left, rvalue = true) {
-    this.first = left;
-    this.rvalue = this.first.rvalue = rvalue;
-    this.second = expression(0);
-    this.second.rvalue = true;
-    advance(':');
-    this.third = expression(0);
-    this.nodeType = 'ternary';
-    return this;
-  });
 
   infixr('&&', 30);
   infixr('||', 30);
@@ -478,7 +456,6 @@ export default function make_parse() {
   });
 
   prefix('!');
-  prefix('-');
   prefix('~',80);
 
   stmt('if', function () {
@@ -499,10 +476,22 @@ export default function make_parse() {
     return this;
   });
 
+  stmt('define');
+  stmt('undef')
+  stmt('ifdef');
+  stmt('ifndef');
+  stmt('else');
+  stmt('elif');
+  stmt('endif');
+  stmt('error');
+  stmt('pragma');
+  stmt('extension');
+  stmt('line');
+
   return function (t) {
     const sourceFiles = [];
-    //tokens = t;
-    //token_nr = 0;
+    tokens = t;
+    token_nr = 0;
     scopeTop = createScope();
     for(const node of t){
      switch(node.type){
