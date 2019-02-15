@@ -62,7 +62,7 @@ export default async function generateCode(ast, binaryen_) {
       });
     });
   }
-  // debugger;
+  debugger;
   // const binaryen = await new Promise(
   //   (resolve,reject)=>{
   //     b.then(function(bin) {
