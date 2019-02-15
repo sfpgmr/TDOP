@@ -8,7 +8,7 @@ export function getInstance(obj,imports = {}){
 }
 const compilerWasmSrc = `
 (module
-  (export "test" $test)
+  (export "test" (func $test))
   (memory $memory 1)
   (export "memory" (memory $memory))
   (func $test
