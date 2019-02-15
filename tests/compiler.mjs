@@ -47,10 +47,11 @@ export async function compile(name,src,basePath='./tests/out'){
     } 
     , 2);
 
-
+  console.log("compile start"); 
   await fs.promises.writeFile(`${basePath}/${name}.sgl2`, src, 'utf8');
   await fs.promises.writeFile(`${basePath}/${name}.json`, json, 'utf8');
   const module = await generateCode(ast,binaryen);
+  console.log("compile end");
   const wat = module.emitText();
   await fs.promises.writeFile(`${basePath}/${name}.wat`,wat,'utf8');
   module.validate();
