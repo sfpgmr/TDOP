@@ -1,9 +1,11 @@
 import * as compilerConstants from './compilerConstants.mjs';
+import fs from 'fs';
 
 const compilerWasmSrc = `
 (module
-  (export "i32tof32" $i32tof32)
-  (export "i64tof64" $i64tof64)
+  (export "i32tof32" (func $i32tof32))
+  (export "i64tof64" (func $i64tof64))
+  (export "i64Neg" (func $i64Neg))
   (memory $memory 1)
   (export "memory" (memory $memory))
   
@@ -23,15 +25,35 @@ const compilerWasmSrc = `
       (i64.xor
         (i64.or
           (i64.shl 
-            (i64.extend_u(get_local $high))
+            (i64.extend_u/i32 (get_local $high))
             (i64.const 32) 
           )
-          (i64.extend_u (get_local $low))
+          (i64.extend_u/i32 (get_local $low))
         )
         (i64.shl
-          (i64.extend_u(get_local $minus))
+          (i64.extend_u/i32 (get_local $minus))
           (i64.const 32)
         )
+      )
+    )
+  )
+
+  ;; 整数値の2の補数をとる
+  (func $i64Neg (param $low i32) (param $high i32)
+    (i64.store
+      (i32.const 0)
+      (i64.add
+        (i64.xor
+          (i64.or 
+            (i64.extend_u/i32 (get_local $low))
+            (i64.shl 
+              (i64.extend_u/i32 (get_local $high))
+              (i64.const 32) 
+            )
+          )
+          (i64.const 0xffffffffffffffff)
+        )
+        (i64.const 1)
       )
     )
   )
@@ -62,7 +84,7 @@ export default async function generateCode(ast, binaryen_) {
       });
     });
   }
-  debugger;
+  //debugger;
   // const binaryen = await new Promise(
   //   (resolve,reject)=>{
   //     b.then(function(bin) {
@@ -70,6 +92,8 @@ export default async function generateCode(ast, binaryen_) {
   //     });
   //   });
   let module = new binaryen.Module();
+
+//  const literalLib = getInstance(await fs.promises.readFile('./sgl2lib.wasm'));
   const literalLib = getInstance(binaryen.parseText(compilerWasmSrc).emitBinary()).exports;
 
 
