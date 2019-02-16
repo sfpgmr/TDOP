@@ -1,5 +1,4 @@
 import * as compilerConstants from './compilerConstants.mjs';
-import fs from 'fs';
 
 const compilerWasmSrc = `
 (module
