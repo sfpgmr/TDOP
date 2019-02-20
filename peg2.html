@@ -1,0 +1,313 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="keywords" content="JavaScript,wasm">
+  <meta name="description" content="オレオレ言語(sgl2)の文法を作る">
+  <meta name="author" content="SFPGMR">
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@sfpgmr" />
+  <meta name="twitter:title" content="オレオレ言語(sgl2)の文法を作る" />
+  <meta name="twitter:description" content="オレオレ言語(sgl2)のパーサ検証ページです。" />
+  <title>オレオレ言語(sgl2)の文法を作る</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/siimple@3.0.0/dist/siimple.min.css">
+  <style>
+    
+    .OUTPUT:hover {
+            cursor:pointer;
+        }
+
+        .OUTPUT-SHRINK {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+
+        pre {
+            white-space: pre-wrap ;
+            word-break: break-all;
+        }
+        
+        #peg-info {
+          margin-top:10px;
+          padding-top:10px;
+        }
+        .blinking {
+          animation: 0.5s linear 0s alternate none infinite running blink;
+        }
+        @keyframes blink {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }        
+    </style>
+  <script type="text/javascript">
+    if (!window.location.hostname.match(/localhost/)) {
+      (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+          (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date(); a = s.createElement(o),
+          m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+      })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+      ga('create', 'UA-15457703-9', 'auto');
+      ga('send', 'pageview');
+    }
+  </script>
+  <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.js"></script>
+</head>
+
+<body class="siimple-content siimple-content--medium">
+  <div class="siimple-box siimple-box--orange">
+    <h1 class="siimple-box-title">オレオレ言語（sgl2）の文法を作る</h1>
+    <p class- "siimple-box-detail">レポジトリ：
+      <a href="https://github.com/sfpgmr/sgl2" class="siimple-link">https://github.com/sfpgmr/sgl2</a>
+  </div>
+  <div id="info" class="siimple-alert siimple-alert--green blinking">初期化中...お待ちください...</div>
+  <h3>
+    <label class="siimple-label">PEG.jsソース</label>
+  </h3>
+  <pre id="peg-src" class="siimple-box siimple-box--fluid OUTPUT OUTPUT-SHRINK" rows="20" title="peg.js文法"></pre>
+  <div>
+    <pre id="peg-info"></pre>
+  </div>
+  <h2>
+    <label class="siimple-label">パースする言語ソースをここに記述</label>
+  </h2>
+  <div>
+    <button id="Parse" value="parse" type="button" class="siimple-btn siimple-btn--orange">パース</button>
+    localStorageへ
+    <button id="LoadSource" value="Load" type="button" class="siimple-btn siimple-btn--orange">読込</button>
+    <button id="SaveSource" value="Save" type="button" class="siimple-btn siimple-btn--orange">保存</button>
+    <button id="ClearSource" value="Clear" type="button" class="siimple-btn siimple-btn--orange">localStorageのクリア</button>
+  </div>
+  <textarea id="sgl2-src" class="siimple-box siimple-box--fluid" rows="10" title="sgl2の文法を書きます。"></textarea>
+  <div>
+    <pre id="parse-info"></pre>
+  </div>
+  <h2>
+    <label class="siimple-label">Output</label>
+  </h2>
+  <pre id=OUTPUT class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+  <h2>
+    <label class="siimple-label">Source Code URL</label>
+  </h2>
+  <pre id="src-url" class="siimple-box OUTPUT OUTPUT-SHRINK"></pre>
+  <script src="./binaryen-wasm.js"></script>
+  <script src="./peg.js"></script>
+
+  <script type="module">
+
+    function b64EncodeUnicode(str) {
+      // first we use encodeURIComponent to get percent-encoded UTF-8,
+      // then we convert the percent encodings into raw bytes which
+      // can be fed into btoa.
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+          return String.fromCharCode('0x' + p1);
+        }));
+    }
+
+    function b64DecodeUnicode(str) {
+      // Going backwards: from bytestream, to percent-encoding, to original string.
+      return decodeURIComponent(atob(str).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+    }
+
+    const defaultPegSrc = `
+{
+  function makeInteger(o) {
+    return parseInt(o.join(""), 10);
+  }
+}
+
+start
+  = addOrSub
+
+addOrSub
+  = left:mulOrDiv _ op:[+-] _ right:addOrSub { return op == '+' ? left + right : left - right; }
+  / mulOrDiv
+
+mulOrDiv
+  = left:primary _ op:[*/] _ right:mulOrDiv { return op == '*' ? left * right : left / right; }
+  / primary
+
+primary
+  = integer
+  / "(" additive:addOrSub ")" { return additive; }
+
+integer "integer"
+  = digits:[0-9]+ { return makeInteger(digits); }
+  
+_ = [\\n\\t ]*;
+`;
+    const defaultsgl2Src =
+      `2 / (2 * 2 + 3)
+/ 10
+* 10`;
+    let binaryen;
+
+    window.addEventListener('load', async () => {
+
+      if (!binaryen) {
+        await new Promise((resolve, reject) => {
+          binaryen = Binaryen({
+            onRuntimeInitialized: m => {
+              resolve();
+            }
+          });
+        });
+      }
+
+      // wasm ライブラリの読み込み
+      let lib = await fetch('./sgl2lib.wasm').then(response =>
+        response.arrayBuffer()
+      ).then(bytes =>
+        WebAssembly.instantiate(bytes, {})
+      ).then(results=>results.instance.exports);
+
+      let sgl2PegSrc;
+
+      const pegSrc = document.getElementById('peg-src');
+      const sgl2Src = document.getElementById('sgl2-src');
+      const output = document.getElementById('OUTPUT');
+      const parseInfo = document.getElementById('parse-info');
+      const pegInfo = document.getElementById('peg-info');
+      const srcUrl = document.getElementById('src-url');
+      const info = document.getElementById('info');
+
+      let srcData = location.search.substr(0, 0xfffff);
+      {
+        const resp = await fetch('./sgl2.pegjs',{cache:'no-cache'});
+        sgl2PegSrc = await resp.text();
+        pegSrc.innerText = sgl2PegSrc;
+      }
+
+      if (srcData) {
+        try {
+          srcData = srcData.substr(1);
+          sgl2Src.value = LZUTF8.decompress(srcData, { inputEncoding: 'Base64' });
+        } catch (e) {
+          sgl2Src.value = defaultsgl2Src;
+        }
+      } else if (localStorage) {
+
+        let sg = localStorage.getItem("sgl2Src");
+        try {
+          if (sg) {
+            sg = LZUTF8.decompress(sg, { inputEncoding: 'Base64' });
+          } else {
+            sg = defaultsgl2Src;
+          }
+        } catch (e) {
+          sg = defaultsgl2Src;
+        }
+
+        sgl2Src.value = sg;
+      }
+
+      document.querySelectorAll('.OUTPUT').forEach(e => {
+        e.addEventListener('click', () => {
+          e.classList.contains('OUTPUT-SHRINK') ? e.classList.remove('OUTPUT-SHRINK') : e.classList.add('OUTPUT-SHRINK');
+        });
+        e.title = 'clickで全体表示<->縮小表示';
+      });
+
+      document.getElementById('Parse').addEventListener('click', parse);
+  
+      document.getElementById('LoadSource').addEventListener('load', () => {
+        if (localStorage) {
+          sgl2Src.value = LZUTF8.decompress(localStorage.getItem('sgl2Src'), { inputEncoding: 'Base64' });
+        }
+      });
+
+      document.getElementById('SaveSource').addEventListener('click', () => {
+        if (localStorage) {
+          localStorage && localStorage.setItem('sgl2Src', LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' }));
+        }
+      });
+
+      document.getElementById('ClearSource').onclick = function (e) {
+        localStorage && localStorage.removeItem('sgl2Src');
+      };
+      let parser;
+
+      async function compile() {
+
+        pegInfo.innerHTML = '';
+        pegInfo.innerHTML = '';
+        pegInfo.className = '';
+
+        let string;
+
+        try {
+          parser = peg.generate(sgl2PegSrc);
+          pegInfo.innerText = 'パーサ作成完了';
+          pegInfo.className = 'siimple-alert siimple-alert--green';
+        } catch (e) {
+          string = e.stack;
+          pegInfo.innerHTML = string.replace(/&/g, '&amp;')
+            .replace(/[<]/g, '&lt;');
+          ;
+          pegInfo.className = 'siimple-alert siimple-alert--red';
+        }
+
+        srcUrl.innerText = window.location.href.replace(/\?.*$/, '') + '?' + LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' });
+
+      }
+
+      async function parse() {
+
+        if (!parser) {
+          alert('parserがまだ作成されていません。');
+        }
+
+        const wasmModule = new binaryen.Module();
+        wasmModule.setMemory(1, 1);
+        output.innerHTML = parseInfo.innerHTML = '';
+        parseInfo.innerHTML = '';
+        parseInfo.className = '';
+
+        let string, ast;
+        let error = false;
+
+        try {
+          const result = parser.parse(sgl2Src.value, { binaryen:binaryen,module: wasmModule,lib:lib });
+          parseInfo.innerText = 'パース完了';
+          parseInfo.className = 'siimple-alert siimple-alert--green';
+          output.innerText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
+        } catch (e) {
+          string = e.stack ? e.stack : JSON.stringify(e,
+            (key, value) => {
+              if (key == 'parent') return undefined;
+              return value;
+            }
+            , 2);
+
+          parseInfo.innerHTML = string.replace(/&/g, '&amp;')
+            .replace(/[<]/g, '&lt;');
+
+          parseInfo.className = 'siimple-alert siimple-alert--red';
+
+        }
+
+        srcUrl.innerText = window.location.href.replace(/\?.*$/, '') + '?' + LZUTF8.compress(sgl2Src.value, { outputEncoding: 'Base64' });
+
+      }
+
+      await compile();
+      await parse();
+
+      info.innerText = '';
+      info.className = '';
+
+
+    });
+
+
+  </script>
+</body>
+
+</html>
