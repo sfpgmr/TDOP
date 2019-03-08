@@ -1,6 +1,4 @@
-// tokens.mjs
-// 2016-01-13
-
+// 
 // (c) 2006 Douglas Crockford
 
 // Produce an array of simple token objects from a string.
@@ -20,7 +18,12 @@
 // will match any of these:
 //      <=  >>  >>>  <>  >=  +: -: &: &&: &&
 
-/*jslint this */
+// (c) 2019 Sattoshi Fujiwara
+// ES6モジュール化と独自仕様部分のコード追加
+// unicodeを考慮したトークン
+// tokens.mjs
+// 2019-03-10
+
 "use strict";
 
 
@@ -29,18 +32,22 @@ function stringToArray (str) {
   return str.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
 }
 
+// エラー処理
 function error(message, t = this) {
   t.name = 'Tokenizer : Error';
   t.message = message;
   throw t;
 }
 
+// ソースコードをトークンに変換する
 export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-&|") {
   let c;                      // The current character.
   //let from;                   // The index of the start of the token.
   let i = 0;                  // The index of the current character.
   let lineNo = 1;
   let posx = 1;
+  
+  // サロゲートペアを考慮しながら、ソースコードを文字単位で配列化する
   const source = stringToArray(src);
   
   const prefix = stringToArray(prefix_);
@@ -52,23 +59,19 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
 
   let result = [];            // An array to hold the results.
 
-
+  // トークンオブジェクトを生成する // 
   function make(type, value,opt = {}) {
-
-    // Make a token object.
     const o = Object.assign({
       type: type,
       value: value,
       line: lineNo,
       pos:posx
     },opt);
+
     return o;
   }
 
-
-
   // Begin tokenization. If the source string is empty, return nothing.
-
   if (!source) {
     return;
   }
@@ -78,6 +81,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
   // Loop through this text, one character at a time.
 
   c = source[i];
+
   while (c) {
     //from = i;
 
@@ -447,10 +451,7 @@ export default function tokenize(src, prefix_ = "=<>!+-*&|/%^", suffix_ = "=<>+-
 
       }
 
-
-
-      // string
-
+    // string
     } else if (c === '\'' || c === '"') {
       str = '';
       q = c;
