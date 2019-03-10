@@ -974,17 +974,19 @@ export default function make_parse() {
     return this;
   });
 
-  // 変数・関数定義
+  // 変数・関数定義ノードを作成する
   function defineVarAndFunction(typedef = false) {
 
     // 定数定義の場合
-    if (this.const) {
+    if (this.const) { // constフラグが立っていると定数定義
       advance();
+      // 初期値の定数式を処理
       if (token.id == '=') {
         const t = token;
         advance('=');
         this.rvalue = false;
         this.initialExpression = expression(0);
+        // 型チェック
         checkType(this, this.initialExpression);
         this.nodeType = 'define';
         scope.define(this);
@@ -1083,14 +1085,17 @@ export default function make_parse() {
 
   // 関数定義かどうか
   if (token.id === '(') {
-    // 関数定義かユーザー定義型か
+
+    // 関数定義かユーザー定義型かを調べる //
+
     advance();
 
     let isFunc = false;
     if(token.id == ')'){
+      // 引数なしの関数かもしれないので、次のトークンを調べる
       let next = tokens[token_nr];
       if(next.value == '{'){
-        // 関数定義
+        // ブレスで始まっているので関数である
         isFunc = true;
       }
     }
@@ -1124,8 +1129,6 @@ export default function make_parse() {
     if (token.id !== ')') {
 
       // 引数を取り出して配列に格納する
-      advance();
-
       while (true) {
         let pointer = false;
         if (token.nodeType !== 'define' && token.nodeType !== 'builtin') {
@@ -1380,7 +1383,7 @@ return function (t) {
   //new Scope();
   //global = scope;
   scopeTop = createScope();
-  // ビルトイン 型
+  // ビルトイン型
   const builtinTypes = new Map(
     [
       ['i8', { size: 1, bitSize: 8, max: 127, min: -128, integer: true }],
