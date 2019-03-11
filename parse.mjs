@@ -262,6 +262,7 @@ export default function make_parse() {
         //        if(t.value == '*'){
         undeterminedTypeIds.push(t);
         //        }
+
       }
     }
   }
@@ -276,6 +277,7 @@ export default function make_parse() {
     currentType = null;
   }
 
+  // タイプエイリアスから実際の型を取り出す
   function getRealType(t) {
     return !t.alias ? t : getRealType(t.alias);
   }
