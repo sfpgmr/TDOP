@@ -32,7 +32,6 @@
 #### Matrices
 #### Opaque Types
 #####  Samplers
-3
 #### Structures
 #### Arrays
 #### Definitions of Terms
