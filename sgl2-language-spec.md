@@ -3,21 +3,56 @@
 (c) 2019 Satoshi Fujiwara
 
 ## Introduction
-このドキュメントは、sgl2g言語の仕様を定めたものである。
+
+この文書は作成中の状態です。
 
 ### Changes
 ### OverView
+
+この文書はSGL2(仮)言語の仕様を記述する。
+
 ### Error Handling
 ### Typographical Conventions
 ### Compatibility
+
 ## Basics
+
 ### Logical Phases of Compilation
+
+コンパイルフェーズは以下の通りである
+
+1. ソース文字列をトークンに分割する。
+2. プリプロセスを実行する。ソース・インクルードなど。
+2. トークンを解析し、抽象構文木（AST）に変換する。
+3. ASTをbinaryen.jsを使用してWebAssemblyバイトコードに変換する。
+
 ### Character Set
+
+ソースコードの文字コードはUnicodeとし、エンコーディングはutf-8とする。それ以外は受け付けない。
+
 ### Source Strings
+
+Unicodeで定義されているすべての文字を使用できることとする。
+
 ### Version Declaration
+
 ### Preprocessor 
 ### Comments
+
+コメントは`/*`と`*/`、もしくは`//`と`改行`で区切られる。コメントはコメントを示すコメント・マーカー`/*`,`*/`,`//`を含む。
+
 ### Tokens
+
+```BNF
+Token:  
+  keyword  
+  identifier  
+  integer-constant
+  floating-constant
+  operator
+  ;{}
+```
+
 ### Keywords
 ### Identifiers
 ### Definitions
