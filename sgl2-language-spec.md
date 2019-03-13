@@ -3,6 +3,8 @@
 (c) 2019 Satoshi Fujiwara
 
 ## Introduction
+このドキュメントは、sgl2g言語の仕様を定めたものである。
+
 ### Changes
 ### OverView
 ### Error Handling

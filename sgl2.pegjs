@@ -3,6 +3,7 @@
 // ==================
 //
 
+//@skip-begin
 {
   
 
@@ -177,11 +178,12 @@ class Scope {
     return value !== null ? value : [];
   }
 }
+//@skip-end
 
 Start
   = __ program:Program __ { return program; }
 
-// ----- A.1 Lexical Grammar -----
+//# ----- A.1 Lexical Grammar -----
 
 SourceCharacter
   = .
